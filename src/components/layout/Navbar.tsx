@@ -30,8 +30,8 @@ export function Navbar() {
   const linkColor = isDarkTheme ? "text-white/90 hover:text-white" : "text-gray-600 hover:text-[#F0564A]";
   const logoColor = isDarkTheme ? "text-white" : "text-gray-900";
   const portalBtnClass = isDarkTheme 
-    ? "border-white/30 text-white hover:bg-white hover:text-gray-900" 
-    : "border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900";
+    ? "bg-transparent border-white/30 text-white hover:bg-white hover:text-gray-900" 
+    : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900";
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -100,8 +100,8 @@ export function Navbar() {
           <Link href="/portfolio" className={cn("transition-colors", linkColor)}>Portfolio</Link>
         </nav>
         <div className="flex items-center gap-4">
-          <Link href="/portal" className={buttonVariants({ variant: "outline", className: cn("hidden md:inline-flex rounded-full transition-colors", portalBtnClass) })}>Client Portal</Link>
-          <Link href="/contact" className={buttonVariants({ className: "rounded-full bg-[#F0564A] hover:bg-[#D94D42] text-white shadow-sm hover:shadow-md transition-all" })}>Contact Us</Link>
+          <Link href="/portal" className={buttonVariants({ className: cn("hidden md:inline-flex rounded-full transition-colors border", portalBtnClass) })}>Client Portal</Link>
+          <Link href="/contact" className={buttonVariants({ className: "rounded-full bg-gray-900 hover:bg-black text-white shadow-sm hover:shadow-md transition-all" })}>Contact Us</Link>
         </div>
       </div>
     </header>

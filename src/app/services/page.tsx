@@ -136,7 +136,20 @@ export default function Services() {
 
       {/* Interactive Sticky Scroll Section */}
       <section className="relative bg-[#0A0A0A]" ref={containerRef}>
-        <div className="container mx-auto px-4 md:px-12 lg:px-24">
+        {/* Subtle MSC Flame Pattern Background */}
+        <div 
+          className="absolute inset-0 z-0 opacity-[0.03]"
+          style={{
+            backgroundImage: 'url("/images/MSC LOGO BITTERSWEET VECTOR (1).svg")',
+            backgroundSize: '120px 120px',
+            backgroundRepeat: 'repeat',
+            backgroundPosition: 'center'
+          }}
+        />
+        {/* Gradient overlays to fade the pattern at the top and bottom */}
+        <div className="absolute inset-0 z-0 bg-gradient-to-b from-[#0A0A0A] via-transparent to-[#0A0A0A] pointer-events-none" />
+
+        <div className="container mx-auto px-4 md:px-12 lg:px-24 relative z-10">
           <div className="flex flex-col lg:flex-row relative">
             
             {/* Left Side: Sticky Image Gallery */}
@@ -156,7 +169,7 @@ export default function Services() {
                         src={activeImage} 
                         alt="Service Visualization" 
                         fill 
-                        className="object-cover"
+                        className="object-cover object-center"
                       />
                       {/* Subtle overlay for depth */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
@@ -180,7 +193,7 @@ export default function Services() {
                       src={service.image} 
                       alt={service.title} 
                       fill 
-                      className="object-cover"
+                      className="object-cover object-center"
                     />
                   </div>
 
