@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
-import { LogOut, LayoutDashboard, Ticket, FolderOpen, Settings, Plus, FileText, Download } from "lucide-react";
+import { LogOut, LayoutDashboard, Ticket, FolderOpen, Settings, Plus, FileText, Download, Loader2, Trash2 } from "lucide-react";
 import Image from "next/image";
 
 export default function PortalDashboard() {
@@ -12,6 +12,11 @@ export default function PortalDashboard() {
   const [user, setUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("tickets");
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Storage State
+  const [files, setFiles] = useState<any[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -25,6 +30,70 @@ export default function PortalDashboard() {
     };
     checkUser();
   }, [router]);
+
+  // Fetch files when tab changes to 'files'
+  useEffect(() => {
+    if (user && activeTab === "files") {
+      fetchFiles();
+    }
+  }, [user, activeTab]);
+
+  const fetchFiles = async () => {
+    if (!user) return;
+    const { data, error } = await supabase.storage.from('client-vault').list(user.id + '/');
+    if (data) {
+      // Filter out the empty placeholder file that Supabase sometimes creates for folders
+      setFiles(data.filter(f => f.name !== '.emptyFolderPlaceholder'));
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0 || !user) return;
+    
+    const file = e.target.files[0];
+    setIsUploading(true);
+    
+    // Store files in a folder named after the user's ID
+    const filePath = `${user.id}/${file.name}`;
+    
+    const { error } = await supabase.storage.from('client-vault').upload(filePath, file, { 
+      upsert: true 
+    });
+    
+    if (!error) {
+      fetchFiles();
+    } else {
+      alert("Error uploading file: " + error.message);
+    }
+    
+    setIsUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleDownload = async (fileName: string) => {
+    if (!user) return;
+    const { data, error } = await supabase.storage.from('client-vault').download(`${user.id}/${fileName}`);
+    
+    if (data) {
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  const handleDelete = async (fileName: string) => {
+    if (!user || !confirm(`Are you sure you want to delete ${fileName}?`)) return;
+    
+    const { error } = await supabase.storage.from('client-vault').remove([`${user.id}/${fileName}`]);
+    if (!error) {
+      fetchFiles();
+    } else {
+      alert("Error deleting file: " + error.message);
+    }
+  };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -106,10 +175,26 @@ export default function PortalDashboard() {
             </Button>
           )}
           {activeTab === "files" && (
-            <Button className="bg-[#F0564A] hover:bg-[#D94D42] text-white rounded-full px-6">
-              <Plus className="w-4 h-4 mr-2" />
-              Upload File
-            </Button>
+            <>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileUpload} 
+                className="hidden" 
+              />
+              <Button 
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="bg-[#F0564A] hover:bg-[#D94D42] text-white rounded-full px-6"
+              >
+                {isUploading ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Plus className="w-4 h-4 mr-2" />
+                )}
+                {isUploading ? "Uploading..." : "Upload File"}
+              </Button>
+            </>
           )}
         </header>
 
@@ -162,16 +247,60 @@ export default function PortalDashboard() {
                 </div>
               </div>
 
-              <h3 className="text-xl font-bold mb-4">Recent Files</h3>
+              <h3 className="text-xl font-bold mb-4">Your Files</h3>
               <div className="bg-[#111111] border border-white/10 rounded-2xl overflow-hidden">
-                <div className="p-8 text-center">
-                  <FileText className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-                  <h3 className="text-xl font-bold mb-2">Your Vault is Empty</h3>
-                  <p className="text-gray-400 mb-6 max-w-md mx-auto">Upload documents, images, or videos securely. Both you and the MSC team can access files stored here.</p>
-                  <Button variant="outline" className="border-white/20 text-black hover:bg-white/10 rounded-full">
-                    Upload File
-                  </Button>
-                </div>
+                {files.length === 0 ? (
+                  <div className="p-8 text-center">
+                    <FileText className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+                    <h3 className="text-xl font-bold mb-2">Your Vault is Empty</h3>
+                    <p className="text-gray-400 mb-6 max-w-md mx-auto">Upload documents, images, or videos securely. Both you and the MSC team can access files stored here.</p>
+                    <Button 
+                      onClick={() => fileInputRef.current?.click()}
+                      variant="outline" 
+                      className="border-white/20 text-black hover:bg-white/10 rounded-full"
+                    >
+                      Upload First File
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-white/10">
+                    {files.map((file, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-4 hover:bg-white/5 transition-colors">
+                        <div className="flex items-center gap-4">
+                          <div className="p-2 bg-white/5 rounded-lg text-gray-400">
+                            <FileText className="w-6 h-6" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-white">{file.name}</p>
+                            <p className="text-xs text-gray-500">
+                              {(file.metadata.size / 1024 / 1024).toFixed(2)} MB • {new Date(file.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            onClick={() => handleDownload(file.name)}
+                            variant="ghost" 
+                            size="icon" 
+                            className="text-gray-400 hover:text-white hover:bg-white/10"
+                            title="Download"
+                          >
+                            <Download className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            onClick={() => handleDelete(file.name)}
+                            variant="ghost" 
+                            size="icon" 
+                            className="text-gray-400 hover:text-red-500 hover:bg-red-500/10"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
