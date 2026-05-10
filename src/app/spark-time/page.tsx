@@ -83,6 +83,25 @@ export default function SparkTime() {
         </div>
       </section>
 
+      {/* Spotify Embed Section */}
+      <section className="py-16 relative z-10 bg-[#0A0A0A]">
+        <div className="container mx-auto px-4 max-w-5xl">
+          <div className="bg-[#111111] rounded-3xl p-4 md:p-8 border border-white/10 shadow-2xl">
+            <h2 className="text-3xl font-heading font-bold mb-8 text-center">All Episodes</h2>
+            <iframe 
+              style={{ borderRadius: '12px' }} 
+              src="https://open.spotify.com/embed/show/2BiYBgRCWFoIPa3DHwowPC?utm_source=generator&theme=0" 
+              width="100%" 
+              height="352" 
+              frameBorder="0" 
+              allowFullScreen={true} 
+              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+              loading="lazy"
+            ></iframe>
+          </div>
+        </div>
+      </section>
+
       {/* Highlights Section */}
       <section className="py-24 relative overflow-hidden">
         <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[150px] pointer-events-none" />
