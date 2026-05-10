@@ -160,51 +160,53 @@ export default function Home() {
             fill 
             className="object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent backdrop-blur-[2px]" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent" />
         </div>
         
         <div className="container mx-auto px-4 relative z-10">
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.8 }}
-            className="text-left max-w-3xl mb-16 space-y-6 text-white"
-          >
-            <h2 className="text-4xl md:text-6xl font-heading font-bold">Services</h2>
-            <p className="text-xl text-gray-200 leading-relaxed">
-              Want to catch the eye of investors, partners and patients? We&apos;ve got you covered. From powerful pitch decks to unique websites, to scroll-stopping social media and stunning scientific illustrations, we make sure your message gets noticed and remembered.
-            </p>
-            <Button size="lg" variant="outline" className="mt-4 border-white text-white hover:bg-white hover:text-black">
-              View Services
-            </Button>
-          </motion.div>
+          <div className="flex flex-col lg:flex-row gap-16 items-start">
+            <motion.div 
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.8 }}
+              className="text-left max-w-xl space-y-6 text-white lg:sticky lg:top-32"
+            >
+              <h2 className="text-4xl md:text-6xl font-heading font-bold">Services</h2>
+              <p className="text-xl text-gray-200 leading-relaxed">
+                Want to catch the eye of investors, partners and patients? We&apos;ve got you covered. From powerful pitch decks to unique websites, to scroll-stopping social media and stunning scientific illustrations, we make sure your message gets noticed and remembered.
+              </p>
+              <Button size="lg" variant="outline" className="mt-4 border-white bg-white text-black hover:bg-gray-100 hover:text-black">
+                View Services
+              </Button>
+            </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Service Cards */}
-            {[
-              { title: "Corporate Messaging", desc: "Transform complex science into compelling narratives." },
-              { title: "Biotech Pitch Decks", desc: "Command attention and leave investors wanting more." },
-              { title: "Custom Websites", desc: "Draw viewers into your scientific story with modern design." },
-              { title: "Scientific Illustration", desc: "Make your message crystal clear with stunning visuals." },
-              { title: "Public Relations", desc: "Amplify your voice across media channels." },
-              { title: "Social Media", desc: "Scroll-stopping content that resonates with your audience." }
-            ].map((service, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ duration: 0.6, delay: i * 0.1 }}
-              >
-                <Card className="bg-white/10 backdrop-blur-md border-white/20 text-white shadow-2xl hover:bg-white/20 transition-all h-full">
-                  <CardContent className="p-8">
-                    <h3 className="text-2xl font-bold mb-3">{service.title}</h3>
-                    <p className="text-gray-200">{service.desc}</p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
+            <div className="grid md:grid-cols-2 gap-6 flex-1">
+              {/* Service Cards */}
+              {[
+                { title: "Corporate Messaging", desc: "Transform complex science into compelling narratives." },
+                { title: "Biotech Pitch Decks", desc: "Command attention and leave investors wanting more." },
+                { title: "Custom Websites", desc: "Draw viewers into your scientific story with modern design." },
+                { title: "Scientific Illustration", desc: "Make your message crystal clear with stunning visuals." },
+                { title: "Public Relations", desc: "Amplify your voice across media channels." },
+                { title: "Social Media", desc: "Scroll-stopping content that resonates with your audience." }
+              ].map((service, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-50px" }}
+                  transition={{ duration: 0.5, delay: i * 0.1 }}
+                >
+                  <Card className="bg-black/20 backdrop-blur-md border-white/10 text-white shadow-2xl hover:bg-black/40 transition-all h-full">
+                    <CardContent className="p-8">
+                      <h3 className="text-2xl font-bold mb-3">{service.title}</h3>
+                      <p className="text-gray-300">{service.desc}</p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
