@@ -60,7 +60,7 @@ export default function SparkTime() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-8">
             {[
               "2bzHXONO7OLIBqXJtN2NmZ",
               "146qOhZHI1bQS2KdKzaKqp",
@@ -72,9 +72,9 @@ export default function SparkTime() {
               "6XDI3D36PdpLK9Uxq1poKP",
               "2qdMxdPJBpJuuTDAyVprT5"
             ].slice(0, 8).map((id, index) => (
-              <div key={id} className="bg-[#111111] rounded-[1.5rem] p-2 border border-white/5 shadow-2xl hover:border-white/20 hover:bg-[#151515] transition-all duration-500 group relative overflow-hidden">
+              <div key={id} className="bg-[#111111] rounded-[1.5rem] p-3 border border-white/5 shadow-2xl hover:border-white/20 hover:bg-[#151515] transition-all duration-500 group relative overflow-hidden">
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#F0564A] to-orange-400 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="relative z-10 rounded-[1.2rem] overflow-hidden bg-black">
+                <div className="relative z-10 rounded-[1.2rem] overflow-hidden bg-black transition-transform duration-700 group-hover:scale-[1.02]">
                   <iframe 
                     style={{ borderRadius: '12px' }} 
                     src={`https://open.spotify.com/embed/episode/${id}?utm_source=generator&theme=0`} 
@@ -84,7 +84,6 @@ export default function SparkTime() {
                     allowFullScreen={true} 
                     allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
                     loading="lazy"
-                    className="transition-transform duration-700 group-hover:scale-[1.02]"
                   ></iframe>
                 </div>
               </div>
