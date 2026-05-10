@@ -53,7 +53,7 @@ export default function SparkTime() {
                 MSC Podcast
               </div>
               <h1 className="text-5xl md:text-7xl font-heading font-bold tracking-tight">
-                It&apos;s <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F0564A] to-orange-400">Spark Time!</span>
+                It&apos;s <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F0564A] to-orange-400 whitespace-nowrap">Spark Time!</span>
               </h1>
               <p className="text-xl text-gray-400 leading-relaxed">
                 Spark Time! is an intimate exploration of the importance of good communication in the biotech industry. Dani and Will dive deep into the strategy behind successful communication through engaging interviews with key players in the biotech ecosystem.

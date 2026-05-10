@@ -231,7 +231,7 @@ export default function Home() {
                 New Episodes Available
               </div>
               <h2 className="text-6xl md:text-8xl font-heading font-bold tracking-tight">
-                Listen to <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F0564A] to-orange-400">Spark Time!</span>
+                Listen to <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F0564A] to-orange-400 whitespace-nowrap">Spark Time!</span>
               </h2>
               <p className="text-2xl text-gray-600 leading-relaxed">
                 Join Dani and Will as they unpack the secrets to biotech communication success in interviews with industry leaders. Tune in for insights, strategies, and tools to elevate your impact.
