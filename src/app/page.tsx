@@ -160,17 +160,17 @@ export default function Home() {
             fill 
             className="object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/80 to-transparent w-full lg:w-2/3" />
         </div>
         
         <div className="container mx-auto px-4 relative z-10">
-          <div className="flex flex-col lg:flex-row gap-16 items-start">
+          <div className="max-w-3xl">
             <motion.div 
               initial={{ opacity: 0, x: -30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, margin: "-100px" }}
               transition={{ duration: 0.8 }}
-              className="text-left max-w-xl space-y-6 text-white lg:sticky lg:top-32"
+              className="text-left space-y-6 text-white mb-12"
             >
               <h2 className="text-4xl md:text-6xl font-heading font-bold">Services</h2>
               <p className="text-xl text-gray-200 leading-relaxed">
@@ -181,7 +181,7 @@ export default function Home() {
               </Button>
             </motion.div>
 
-            <div className="grid md:grid-cols-2 gap-6 flex-1">
+            <div className="grid sm:grid-cols-2 gap-4">
               {/* Service Cards */}
               {[
                 { title: "Corporate Messaging", desc: "Transform complex science into compelling narratives." },
@@ -193,15 +193,15 @@ export default function Home() {
               ].map((service, i) => (
                 <motion.div
                   key={i}
-                  initial={{ opacity: 0, y: 30 }}
+                  initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-50px" }}
-                  transition={{ duration: 0.5, delay: i * 0.1 }}
+                  transition={{ duration: 0.4, delay: i * 0.05 }}
                 >
-                  <Card className="bg-black/20 backdrop-blur-md border-white/10 text-white shadow-2xl hover:bg-black/40 transition-all h-full">
-                    <CardContent className="p-8">
-                      <h3 className="text-2xl font-bold mb-3">{service.title}</h3>
-                      <p className="text-gray-300">{service.desc}</p>
+                  <Card className="bg-white/5 backdrop-blur-md border-white/10 text-white shadow-xl hover:bg-white/10 transition-all h-full">
+                    <CardContent className="p-5">
+                      <h3 className="text-lg font-bold mb-2">{service.title}</h3>
+                      <p className="text-sm text-gray-300 leading-relaxed">{service.desc}</p>
                     </CardContent>
                   </Card>
                 </motion.div>
