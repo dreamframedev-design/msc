@@ -140,8 +140,8 @@ export default function Bundles() {
       {/* Pricing/Bundles List with Parallax Background */}
       <section className="relative py-32 z-10">
         {/* Fixed Parallax Background Container */}
-        <div className="absolute inset-0 z-0 overflow-hidden">
-          <div className="sticky top-0 h-screen w-full">
+        <div className="absolute inset-0 z-0">
+          <div className="sticky top-0 h-screen w-full overflow-hidden">
             <Image 
               src="/images/flowsaber_a_beautiful_scientific_biotech_close_up_molecular_mic_231de8ff-e324-440e-9056-b28133c799dc_edited (1).jpg" 
               alt="Molecular Background" 
