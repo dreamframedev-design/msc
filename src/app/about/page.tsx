@@ -4,6 +4,12 @@ import { Card, CardContent } from "@/components/ui/card";
 export default function About() {
   const team = [
     {
+      name: "Dani Stoltzfus",
+      role: "Founder + CEO",
+      bio: "Dani is a former biotech leader turned master storyteller. With over 15 years of experience in scientific research, she's a pro at breaking down complex science into messaging that inspires and influences. Her mission is to help companies inspire and influence audiences for transformative change. She holds a PhD, BSc (Hons), and BTech (Forensic & Analytical Chemistry) from Flinders University, Australia.",
+      image: "/images/dani new headshot final web (1).jpg"
+    },
+    {
       name: "Shannon McCarthy",
       role: "Chief Business Officer",
       bio: "Shannon is a dynamic business strategist with a passion for turning biotech breakthroughs into conversations that matter. With decades of experience leading companies and teams, she thrives on bridging the gap between groundbreaking science and the connections that fuel its success. Known for her sharp insights and bold approach, she's on a mission to redefine how biotech companies communicate in a world where every word counts.",
@@ -14,12 +20,6 @@ export default function About() {
       role: "Co-Founder + Scientific Director",
       bio: "Will passionately believes that the data is only half the story - and how you tell it is the other half. With a background in both academia and industry, he knows how to connect science with its audience. His mission is to help biotech companies communicate their value with confidence and clarity, making sure their message lands every time. Will earned his PhD from The University of Chicago and his BS from The University of Illinois.",
       image: "/images/will new headshot web.jpg"
-    },
-    {
-      name: "Dani Stoltzfus",
-      role: "Founder + CEO",
-      bio: "Dani is a former biotech leader turned master storyteller. With over 15 years of experience in scientific research, she's a pro at breaking down complex science into messaging that inspires and influences. Her mission is to help companies inspire and influence audiences for transformative change. She holds a PhD, BSc (Hons), and BTech (Forensic & Analytical Chemistry) from Flinders University, Australia.",
-      image: "/images/dani new headshot final web (1).jpg"
     },
     {
       name: "Zel Stoltzfus",
