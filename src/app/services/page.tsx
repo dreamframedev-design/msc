@@ -104,7 +104,7 @@ export default function Services() {
     <div className="flex flex-col min-h-screen bg-[#0A0A0A]">
       {/* Hero Section */}
       <section className="relative pt-40 pb-20 md:pt-56 md:pb-32 overflow-hidden bg-[#0A0A0A] text-white min-h-[60vh] flex items-center">
-        <div className="absolute inset-0 z-0 opacity-40">
+        <div className="absolute inset-0 z-0 opacity-80">
           <Image 
             src="/images/flowsaber_minimal_simple_opening_photorealistic_cinematic_shot__42eeffda-30d1-41a4-8f73-c49a4ac32608.png" 
             alt="Services Background" 
@@ -112,7 +112,7 @@ export default function Services() {
             className="object-cover object-center"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0A0A0A] via-[#0A0A0A]/80 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0A0A0A] via-[#0A0A0A]/50 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent" />
         </div>
         
