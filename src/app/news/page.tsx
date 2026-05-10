@@ -46,7 +46,7 @@ export default function News() {
     <div className="flex flex-col min-h-screen bg-gray-50">
       {/* Header */}
       <section className="relative py-32 md:py-48 overflow-hidden bg-white border-b border-gray-100">
-        <div className="absolute inset-0 z-0 opacity-40">
+        <div className="absolute inset-0 z-0">
           <Image 
             src="/images/news hero.avif" 
             alt="News Hero Background" 
@@ -54,15 +54,17 @@ export default function News() {
             className="object-cover object-center"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-white/50 via-white/80 to-white" />
+          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/80 to-transparent" />
         </div>
-        <div className="container relative z-10 mx-auto px-4 max-w-4xl text-center">
-          <h1 className="text-5xl md:text-7xl font-heading font-bold mb-6 tracking-tight text-gray-900">
-            News & <span className="text-[#F0564A]">Insights</span>
-          </h1>
-          <p className="text-xl text-gray-600">
-            Making Science Click: Insightful Articles for the Biotech Community
-          </p>
+        <div className="container relative z-10 mx-auto px-4 md:px-12 lg:px-24 text-left">
+          <div className="max-w-2xl">
+            <h1 className="text-5xl md:text-7xl font-heading font-bold mb-6 tracking-tight text-gray-900">
+              News & <span className="text-[#F0564A]">Insights</span>
+            </h1>
+            <p className="text-xl text-gray-600">
+              Making Science Click: Insightful Articles for the Biotech Community
+            </p>
+          </div>
         </div>
       </section>
 

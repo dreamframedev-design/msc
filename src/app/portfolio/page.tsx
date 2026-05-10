@@ -6,7 +6,7 @@ export default function Portfolio() {
   return (
     <div className="flex flex-col min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="relative w-full h-[40vh] md:h-[50vh] flex items-start pt-32 justify-center overflow-hidden bg-white">
+      <section className="relative w-full h-[40vh] md:h-[50vh] flex items-start pt-32 justify-start overflow-hidden bg-white">
         <div className="absolute inset-0 z-0">
           <Image 
             src="/images/background.jpg" 
@@ -15,6 +15,7 @@ export default function Portfolio() {
             className="object-cover"
             priority
           />
+          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/80 to-transparent" />
         </div>
         <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none mix-blend-multiply animate-breath">
           <Image 
@@ -24,7 +25,7 @@ export default function Portfolio() {
             className="object-cover object-center"
           />
         </div>
-        <div className="container relative z-20 mx-auto px-4 mt-12 md:mt-24 text-center">
+        <div className="container relative z-20 mx-auto px-4 md:px-12 lg:px-24 mt-12 md:mt-24 text-left">
           <h1 className="text-5xl md:text-7xl font-heading font-bold tracking-tight text-gray-900">
             Portfolio
           </h1>
