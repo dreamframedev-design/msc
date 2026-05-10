@@ -100,7 +100,7 @@ export function Navbar() {
           <Link href="/portfolio" className={cn("transition-colors", linkColor)}>Portfolio</Link>
         </nav>
         <div className="flex items-center gap-4">
-          <Link href="/portal" className={buttonVariants({ className: cn("hidden md:inline-flex rounded-full transition-colors border", portalBtnClass) })}>Client Portal</Link>
+          <Link href="/portal" className={buttonVariants({ variant: "outline", className: cn("hidden md:inline-flex rounded-full transition-colors border", portalBtnClass) })}>Client Portal</Link>
           <Link href="/contact" className={buttonVariants({ className: "rounded-full bg-gray-900 hover:bg-black text-white shadow-sm hover:shadow-md transition-all" })}>Contact Us</Link>
         </div>
       </div>

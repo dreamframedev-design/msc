@@ -27,7 +27,8 @@ const services = [
     title: "Custom Websites",
     description: "Your website is often the first impression investors and partners get of your company. It needs to do more than look good - it needs to tell your story. We create user experiences that are captivating, memorable, and engaging so your audience keeps coming back for more. Think of it as the ultimate stage for your biotech innovation.",
     image: "/images/laptop mockup hero_edited.jpg",
-    icon: "💻"
+    icon: "💻",
+    objectPosition: "left"
   },
   {
     id: "illustration",
@@ -99,6 +100,7 @@ export default function Services() {
   }, []);
 
   const activeImage = services.find(s => s.id === activeService)?.image || services[0].image;
+  const activePosition = services.find(s => s.id === activeService)?.objectPosition || "center";
 
   return (
     <div className="flex flex-col min-h-screen bg-[#0A0A0A]">
@@ -169,7 +171,8 @@ export default function Services() {
                         src={activeImage} 
                         alt="Service Visualization" 
                         fill 
-                        className="object-cover object-center"
+                        className="object-cover transition-all duration-700"
+                        style={{ objectPosition: activePosition }}
                       />
                       {/* Subtle overlay for depth */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
@@ -193,7 +196,8 @@ export default function Services() {
                       src={service.image} 
                       alt={service.title} 
                       fill 
-                      className="object-cover object-center"
+                      className="object-cover"
+                      style={{ objectPosition: service.objectPosition || "center" }}
                     />
                   </div>
 
