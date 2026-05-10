@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -20,9 +21,11 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const isActive = isScrolled || isHovered;
+
   // Determine if we are on a page with a dark hero section and haven't scrolled yet
   const isDarkHero = pathname === '/services';
-  const isDarkTheme = isDarkHero && !isScrolled;
+  const isDarkTheme = isDarkHero && !isActive;
 
   const linkColor = isDarkTheme ? "text-white/90 hover:text-white" : "text-gray-600 hover:text-[#F0564A]";
   const logoColor = isDarkTheme ? "text-white" : "text-gray-900";
@@ -44,13 +47,17 @@ export function Navbar() {
   };
 
   return (
-    <header className={cn(
-      "fixed top-0 z-50 w-full transition-all duration-300",
-      isScrolled ? "py-4" : "py-0"
-    )}>
+    <header 
+      className={cn(
+        "fixed top-0 z-50 w-full transition-all duration-300",
+        isActive ? "py-4" : "py-0"
+      )}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <div className={cn(
         "mx-auto flex items-center justify-between transition-all duration-300",
-        isScrolled 
+        isActive 
           ? "container max-w-6xl h-16 px-6 bg-white/80 backdrop-blur-md border border-gray-200/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-full" 
           : "container h-24 px-4 bg-transparent border-transparent"
       )}>
