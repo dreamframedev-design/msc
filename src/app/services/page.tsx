@@ -37,7 +37,7 @@ const services = [
     description: "Science is complicated. We make it beautiful. Our skilled illustrators and designers craft visuals that not only captivate but are scientifically precise, ensuring your audience clearly understands even the most complex concepts.",
     image: "/images/flowsaber_a_beautiful_scientific_biotech_close_up_molecular_mic_231de8ff-e324-440e-9056-b28133c799dc_edited (1).jpg",
     icon: "🧬",
-    objectPosition: "left"
+    objectPosition: "right"
   },
   {
     id: "pr",
@@ -72,7 +72,8 @@ const services = [
     title: "SEO Strategy & Optimization",
     description: "Our SEO services go beyond keywords, integrating technical expertise with content strategy to boost visibility, and credibility. From foundational optimization to advanced strategies that drive business development, we ensure your site ranks where it matters and attracts the right partners, investors, and customers.",
     image: "/images/seo hero new.avif",
-    icon: "🔍"
+    icon: "🔍",
+    objectPosition: "right"
   }
 ];
 
