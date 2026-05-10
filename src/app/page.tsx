@@ -160,7 +160,7 @@ export default function Home() {
             fill 
             className="object-cover"
           />
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent backdrop-blur-[2px]" />
         </div>
         
         <div className="container mx-auto px-4 relative z-10">
@@ -169,10 +169,10 @@ export default function Home() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.8 }}
-            className="text-center max-w-3xl mx-auto mb-16 space-y-6 text-white"
+            className="text-left max-w-3xl mb-16 space-y-6 text-white"
           >
             <h2 className="text-4xl md:text-6xl font-heading font-bold">Services</h2>
-            <p className="text-xl text-gray-200">
+            <p className="text-xl text-gray-200 leading-relaxed">
               Want to catch the eye of investors, partners and patients? We&apos;ve got you covered. From powerful pitch decks to unique websites, to scroll-stopping social media and stunning scientific illustrations, we make sure your message gets noticed and remembered.
             </p>
             <Button size="lg" variant="outline" className="mt-4 border-white text-white hover:bg-white hover:text-black">
