@@ -6,11 +6,17 @@ import { motion, AnimatePresence } from "framer-motion";
 import { websites } from "@/app/portfolio/data";
 
 export default function WebsitesShowcase() {
-  const [activeIndex, setActiveIndex] = useState(0);
+  const filteredWebsites = websites.filter(w => w.name !== 'PBL Assay Science');
+  
+  // Find Lytix index in filtered array, default to 0 if not found
+  const lytixIndex = filteredWebsites.findIndex(w => w.name === 'Lytix');
+  const initialIndex = lytixIndex !== -1 ? lytixIndex : 0;
+
+  const [activeIndex, setActiveIndex] = useState(initialIndex);
   const [currentPage, setCurrentPage] = useState(0);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   
-  const activeProject = websites[activeIndex];
+  const activeProject = filteredWebsites[activeIndex];
   const IMAGES_PER_PAGE = 4;
   
   // Reset page when project changes
@@ -63,7 +69,7 @@ export default function WebsitesShowcase() {
           </div>
 
           <div className="flex-1 overflow-y-auto pr-2 space-y-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            {websites.map((project, idx) => (
+            {filteredWebsites.map((project, idx) => (
               <button
                 key={idx}
                 onClick={() => setActiveIndex(idx)}

@@ -34,15 +34,6 @@ const videos = [
     logo: '/images/portfolio/leon/Leon Master Logo1.svg'
   },
   {
-    id: 'leon-fluidic',
-    client: 'Leon',
-    title: 'Fluidic Dynamics Simulation',
-    description: 'Deep dive into the custom-engineered fluidic dynamics simulation created for Leon.',
-    src: '/portfolio client videos/leon/fluidic dynamics.mp4',
-    poster: '/images/portfolio/leon/Screenshot 2026-05-10 141749.png',
-    logo: '/images/portfolio/leon/Leon Master Logo1.svg'
-  },
-  {
     id: 'pbl',
     client: 'PBL Assay Science',
     title: 'Site Walkthrough',
