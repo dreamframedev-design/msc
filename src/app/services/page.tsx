@@ -13,7 +13,8 @@ const services = [
     title: "Compelling Corporate Messaging",
     description: "Every great company starts with a great story, and at Mighty Spark, we're experts in telling yours. We analyze your science and craft clear, impactful messaging. This differentiation becomes the heart of your communication strategy, ensuring you speak with clarity, confidence, and impact to investors and pharma partners.",
     image: "/images/storyboard hero_edited.jpg",
-    icon: "💬"
+    icon: "💬",
+    objectPosition: "right"
   },
   {
     id: "pitch-decks",
@@ -28,7 +29,7 @@ const services = [
     description: "Your website is often the first impression investors and partners get of your company. It needs to do more than look good - it needs to tell your story. We create user experiences that are captivating, memorable, and engaging so your audience keeps coming back for more. Think of it as the ultimate stage for your biotech innovation.",
     image: "/images/laptop mockup hero_edited.jpg",
     icon: "💻",
-    objectPosition: "left"
+    objectPosition: "right"
   },
   {
     id: "illustration",
