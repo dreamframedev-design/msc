@@ -64,78 +64,119 @@ export default function Bundles() {
   ];
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-[#0A0A0A] text-white">
       {/* Header */}
-      <section className="relative py-32 overflow-hidden bg-[#0A0A0A] text-white">
+      <section className="relative pt-40 pb-24 overflow-hidden border-b border-white/10">
         <div className="absolute inset-0 z-0">
           <Image 
             src="/images/female ceo hero.avif" 
             alt="Female CEO" 
             fill 
-            className="object-cover object-top opacity-40"
+            className="object-cover object-top opacity-30 mix-blend-luminosity"
             priority
           />
           <div className="absolute inset-0 bg-gradient-to-b from-[#0A0A0A]/50 via-[#0A0A0A]/80 to-[#0A0A0A]" />
+          <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-[#F0564A]/10 rounded-full blur-[150px] pointer-events-none" />
         </div>
-        <div className="container relative z-10 mx-auto px-4 max-w-3xl text-center">
-          <h1 className="text-5xl md:text-7xl font-heading font-bold mb-6 tracking-tight">
-            Service <span className="text-[#F0564A]">Bundles</span>
+        <div className="container relative z-10 mx-auto px-4 max-w-4xl text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-sm font-medium text-gray-300 mb-8">
+            <span className="w-2 h-2 rounded-full bg-[#F0564A] animate-pulse" />
+            Strategic Packages
+          </div>
+          <h1 className="text-5xl md:text-7xl font-heading font-bold mb-8 tracking-tight">
+            Service <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F0564A] to-orange-400">Bundles</span>
           </h1>
-          <p className="text-xl text-gray-300 mb-4 leading-relaxed">
+          <p className="text-2xl text-gray-400 mb-8 leading-relaxed font-light">
             Who doesn't love a good deal! Choose from one of our bundles of services or create your own custom package.
           </p>
-          <p className="text-lg font-bold text-[#F0564A] tracking-wider uppercase">
-            More Services = Better Deals
-          </p>
+          <div className="inline-block bg-[#111111] border border-white/10 rounded-2xl px-8 py-4 shadow-2xl">
+            <p className="text-xl font-bold text-white tracking-wide">
+              More Services = <span className="text-[#F0564A]">Better Deals</span>
+            </p>
+          </div>
         </div>
       </section>
 
-      {/* Pricing/Bundles Grid */}
-      <section className="pb-24">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {bundles.map((bundle, index) => (
-              <Card key={index} className={`relative flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl ${bundle.popular ? 'border-[#F0564A] shadow-lg scale-105 z-10' : 'border-gray-200'}`}>
-                {bundle.popular && (
-                  <div className="bg-[#F0564A] text-white text-xs font-bold uppercase tracking-wider text-center py-2">
-                    Our Most Popular Package
+      {/* Pricing/Bundles List */}
+      <section className="py-24 relative z-10">
+        <div className="container mx-auto px-4 max-w-5xl space-y-8">
+          {bundles.map((bundle, index) => (
+            <div 
+              key={index} 
+              className={`group relative bg-[#111111] rounded-[2rem] p-8 md:p-12 overflow-hidden transition-all duration-500 ${
+                bundle.popular 
+                  ? 'border border-[#F0564A]/50 shadow-[0_0_40px_rgba(240,86,74,0.1)] hover:shadow-[0_0_60px_rgba(240,86,74,0.2)]' 
+                  : 'border border-white/5 hover:border-white/20 shadow-2xl hover:bg-[#151515]'
+              }`}
+            >
+              {/* Hover Gradient Background */}
+              <div className={`absolute inset-0 bg-gradient-to-br ${bundle.popular ? 'from-[#F0564A]/10' : 'from-white/5'} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+              
+              <div className="relative z-10 grid md:grid-cols-12 gap-12 items-center">
+                
+                {/* Left Column: Content */}
+                <div className="md:col-span-7 space-y-6">
+                  {bundle.popular && (
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F0564A]/10 border border-[#F0564A]/20 text-xs font-bold text-[#F0564A] uppercase tracking-wider">
+                      ★ Our Most Popular Package
+                    </div>
+                  )}
+                  <div>
+                    <h3 className="text-3xl md:text-4xl font-heading font-bold text-white mb-3 group-hover:text-[#F0564A] transition-colors">
+                      {bundle.title}
+                    </h3>
+                    <p className="text-lg font-medium text-gray-400">
+                      {bundle.subtitle}
+                    </p>
                   </div>
-                )}
-                <CardContent className="p-8 flex-grow flex flex-col">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{bundle.title}</h3>
-                  <p className="text-sm font-medium text-[#F0564A] mb-6 min-h-[40px]">{bundle.subtitle}</p>
-                  <p className="text-gray-600 mb-8 text-sm leading-relaxed flex-grow">
+                  <p className="text-lg text-gray-400 leading-relaxed">
                     {bundle.description}
                   </p>
-                  <div className="space-y-3 mb-8">
+                </div>
+
+                {/* Right Column: Features & CTA */}
+                <div className="md:col-span-5 flex flex-col h-full justify-between space-y-8 bg-black/20 p-6 md:p-8 rounded-3xl border border-white/5">
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-6">What's Included</h4>
                     {bundle.features.map((feature, i) => (
                       <div key={i} className="flex items-start gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-[#F0564A] shrink-0" />
-                        <span className="text-sm text-gray-700">{feature}</span>
+                        <CheckCircle2 className={`w-5 h-5 shrink-0 ${bundle.popular ? 'text-[#F0564A]' : 'text-gray-500 group-hover:text-white transition-colors'}`} />
+                        <span className="text-base text-gray-300">{feature}</span>
                       </div>
                     ))}
                   </div>
-                  <Button className={`w-full ${bundle.popular ? 'bg-[#F0564A] hover:bg-[#D94D42] text-white' : 'bg-gray-900 hover:bg-gray-800 text-white'}`}>
+                  <Button 
+                    size="lg" 
+                    className={`w-full rounded-full text-lg font-bold py-6 transition-all duration-300 ${
+                      bundle.popular 
+                        ? 'bg-[#F0564A] hover:bg-[#D94D42] text-white shadow-[0_0_20px_rgba(240,86,74,0.3)] hover:shadow-[0_0_30px_rgba(240,86,74,0.5)]' 
+                        : 'bg-white text-black hover:bg-gray-200'
+                    }`}
+                  >
                     Get Started
                   </Button>
-                </CardContent>
-              </Card>
-            ))}
+                </div>
 
-            {/* Custom Quote Card */}
-            <Card className="relative flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl border-gray-200 bg-gray-900 text-white">
-              <CardContent className="p-8 flex-grow flex flex-col justify-center text-center">
-                <h3 className="text-3xl font-bold mb-4">Custom Quotes</h3>
-                <p className="text-gray-300 mb-8 leading-relaxed">
-                  We recognize that companies within the biotech ecosystem have wildly different needs when it comes to communication, and we are here to help. Contact us for a custom quote.
+              </div>
+            </div>
+          ))}
+
+          {/* Custom Quote Card */}
+          <div className="relative bg-gradient-to-br from-[#F0564A] to-orange-600 rounded-[2rem] p-1 md:p-1 overflow-hidden transition-all duration-500 hover:scale-[1.01] shadow-[0_0_40px_rgba(240,86,74,0.2)] mt-16">
+            <div className="bg-[#0A0A0A] rounded-[1.8rem] p-12 md:p-16 text-center relative overflow-hidden h-full flex flex-col items-center justify-center">
+              <div className="absolute inset-0 bg-[url('/images/MSC%20LOGO%20BITTERSWEET%20VECTOR%20(1).svg')] opacity-[0.03] bg-repeat bg-[length:100px_100px]" />
+              <div className="relative z-10 max-w-3xl mx-auto space-y-8">
+                <h3 className="text-4xl md:text-5xl font-heading font-bold text-white">Need Something Custom?</h3>
+                <p className="text-xl text-gray-400 leading-relaxed font-light">
+                  We recognize that companies within the biotech ecosystem have wildly different needs when it comes to communication, and we are here to help. Contact us to build a package tailored specifically to your goals.
                 </p>
-                <Button variant="outline" className="w-full border-white text-gray-900 hover:bg-gray-100">
-                  Contact Us
+                <Button size="lg" className="bg-[#F0564A] hover:bg-[#D94D42] text-white rounded-full px-12 py-6 text-lg font-bold shadow-[0_0_30px_rgba(240,86,74,0.3)]">
+                  Request a Custom Quote
                 </Button>
-              </CardContent>
-            </Card>
-
+              </div>
+            </div>
           </div>
+
         </div>
       </section>
     </div>
