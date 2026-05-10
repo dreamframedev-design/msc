@@ -24,7 +24,7 @@ export function Navbar() {
   const isActive = isScrolled || isHovered;
 
     // Determine if we are on a page with a dark hero section and haven't scrolled yet
-    const isDarkHero = pathname === '/services' || pathname === '/bundles';
+    const isDarkHero = pathname === '/services' || pathname === '/bundles' || pathname === '/spark-time';
     const isDarkTheme = isDarkHero && !isActive;
 
   const linkColor = isDarkTheme ? "text-white/90 hover:text-white" : "text-gray-600 hover:text-[#F0564A]";
