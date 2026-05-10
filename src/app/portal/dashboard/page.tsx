@@ -1,226 +1,199 @@
 "use client";
 
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PlusCircle, Clock, CheckCircle2, AlertCircle } from "lucide-react";
-import Link from "next/link";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { LogOut, LayoutDashboard, Ticket, FolderOpen, Settings, Plus, FileText, Download } from "lucide-react";
 import Image from "next/image";
 
-export default function ClientDashboard() {
+export default function PortalDashboard() {
+  const router = useRouter();
+  const [user, setUser] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState("tickets");
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.push("/portal");
+      } else {
+        setUser(session.user);
+      }
+      setIsLoading(false);
+    };
+    checkUser();
+  }, [router]);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push("/portal");
+  };
+
+  if (isLoading) {
+    return <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center text-white">Loading...</div>;
+  }
+
+  if (!user) return null;
+
   return (
-    <div className="min-h-screen bg-muted/30">
-      {/* Dashboard Header */}
-      <header className="bg-background border-b sticky top-0 z-10">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/">
-              <Image 
-                src="/images/MSC_Logo with blk tagline (1).svg" 
-                alt="MSC" 
-                width={120} 
-                height={40} 
-                className="dark:invert"
-              />
-            </Link>
-            <span className="text-muted-foreground font-medium">|</span>
-            <span className="font-heading font-semibold">Client Portal</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">Welcome, Agilex Biolabs</span>
-            <Link href="/portal" className={buttonVariants({ variant: "outline", size: "sm" })}>Sign Out</Link>
-          </div>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-heading font-bold">Dashboard</h1>
-            <p className="text-muted-foreground">Manage your website updates and requests.</p>
+    <div className="min-h-screen bg-[#0A0A0A] text-white flex">
+      {/* Sidebar */}
+      <aside className="w-64 bg-[#111111] border-r border-white/10 flex flex-col hidden md:flex">
+        <div className="p-6 border-b border-white/10">
+          <div className="flex items-center gap-3">
+            <Image 
+              src="/images/MSC LOGO BITTERSWEET VECTOR (1).svg" 
+              alt="MSC Logo" 
+              width={32} 
+              height={32} 
+              className="object-contain"
+            />
+            <span className="font-heading font-bold text-xl tracking-tight">Client Portal</span>
           </div>
         </div>
 
-        <Tabs defaultValue="new-request" className="space-y-6">
-          <TabsList className="bg-background border">
-            <TabsTrigger value="new-request">New Request</TabsTrigger>
-            <TabsTrigger value="active-requests">Active Requests (2)</TabsTrigger>
-            <TabsTrigger value="history">History</TabsTrigger>
-          </TabsList>
+        <nav className="flex-1 p-4 space-y-2">
+          <button 
+            onClick={() => setActiveTab("tickets")}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeTab === "tickets" ? "bg-[#F0564A]/10 text-[#F0564A]" : "text-gray-400 hover:bg-white/5 hover:text-white"}`}
+          >
+            <Ticket className="w-5 h-5" />
+            <span className="font-medium">Support Tickets</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab("files")}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeTab === "files" ? "bg-[#F0564A]/10 text-[#F0564A]" : "text-gray-400 hover:bg-white/5 hover:text-white"}`}
+          >
+            <FolderOpen className="w-5 h-5" />
+            <span className="font-medium">File Vault</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab("settings")}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeTab === "settings" ? "bg-[#F0564A]/10 text-[#F0564A]" : "text-gray-400 hover:bg-white/5 hover:text-white"}`}
+          >
+            <Settings className="w-5 h-5" />
+            <span className="font-medium">Settings</span>
+          </button>
+        </nav>
 
-          <TabsContent value="new-request">
-            <Card>
-              <CardHeader>
-                <CardTitle>Submit a New Request</CardTitle>
-                <CardDescription>
-                  Provide as much detail as possible so our team can complete your request efficiently.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form className="space-y-6 max-w-3xl">
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="task-type">Task Type</Label>
-                      <Select>
-                        <SelectTrigger id="task-type">
-                          <SelectValue placeholder="Select task type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="content">Content Update (Text/Images)</SelectItem>
-                          <SelectItem value="page">New Page Creation</SelectItem>
-                          <SelectItem value="design">Design Adjustment</SelectItem>
-                          <SelectItem value="bug">Bug Fix / Issue</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
+        <div className="p-4 border-t border-white/10">
+          <div className="px-4 py-3 mb-2">
+            <p className="text-sm text-gray-400 truncate">{user.email}</p>
+          </div>
+          <button 
+            onClick={handleSignOut}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-red-500/10 hover:text-red-500 transition-colors"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="font-medium">Sign Out</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col h-screen overflow-hidden">
+        {/* Top Header */}
+        <header className="h-20 border-b border-white/10 bg-[#111111]/50 backdrop-blur-md flex items-center justify-between px-8">
+          <h1 className="text-2xl font-heading font-bold capitalize">
+            {activeTab === "tickets" ? "Support Tickets" : activeTab === "files" ? "File Vault" : "Settings"}
+          </h1>
+          {activeTab === "tickets" && (
+            <Button className="bg-[#F0564A] hover:bg-[#D94D42] text-white rounded-full px-6">
+              <Plus className="w-4 h-4 mr-2" />
+              New Ticket
+            </Button>
+          )}
+          {activeTab === "files" && (
+            <Button className="bg-[#F0564A] hover:bg-[#D94D42] text-white rounded-full px-6">
+              <Plus className="w-4 h-4 mr-2" />
+              Upload File
+            </Button>
+          )}
+        </header>
+
+        {/* Dynamic Content Area */}
+        <div className="flex-1 overflow-y-auto p-8">
+          
+          {activeTab === "tickets" && (
+            <div className="max-w-5xl mx-auto">
+              <div className="bg-[#111111] border border-white/10 rounded-2xl p-8 text-center">
+                <Ticket className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+                <h3 className="text-xl font-bold mb-2">No Active Tickets</h3>
+                <p className="text-gray-400 mb-6 max-w-md mx-auto">You don't have any open support requests. If you need updates to your website, deck, or have a general inquiry, create a new ticket.</p>
+                <Button variant="outline" className="border-white/20 text-black hover:bg-white/10 rounded-full">
+                  Create First Ticket
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "files" && (
+            <div className="max-w-5xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                {/* Placeholder Folders */}
+                <div className="bg-[#111111] border border-white/10 rounded-2xl p-6 hover:border-[#F0564A]/50 transition-colors cursor-pointer group">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-blue-500/10 text-blue-400 rounded-xl">
+                      <FolderOpen className="w-6 h-6" />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="priority">Priority</Label>
-                      <Select>
-                        <SelectTrigger id="priority">
-                          <SelectValue placeholder="Select priority" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="low">Low (Whenever possible)</SelectItem>
-                          <SelectItem value="normal">Normal (Standard turnaround)</SelectItem>
-                          <SelectItem value="high">High (ASAP)</SelectItem>
-                          <SelectItem value="urgent">Urgent (Site is broken)</SelectItem>
-                        </SelectContent>
-                      </Select>
+                  </div>
+                  <h3 className="font-bold text-lg mb-1 group-hover:text-[#F0564A] transition-colors">Brand Assets</h3>
+                  <p className="text-sm text-gray-500">Logos, Fonts, Colors</p>
+                </div>
+                <div className="bg-[#111111] border border-white/10 rounded-2xl p-6 hover:border-[#F0564A]/50 transition-colors cursor-pointer group">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-green-500/10 text-green-400 rounded-xl">
+                      <FolderOpen className="w-6 h-6" />
                     </div>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="title">Request Title</Label>
-                    <Input id="title" placeholder="e.g., Update team member bios on About page" />
+                  <h3 className="font-bold text-lg mb-1 group-hover:text-[#F0564A] transition-colors">Pitch Decks</h3>
+                  <p className="text-sm text-gray-500">Final PDF & PPTX</p>
+                </div>
+                <div className="bg-[#111111] border border-white/10 rounded-2xl p-6 hover:border-[#F0564A]/50 transition-colors cursor-pointer group">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-purple-500/10 text-purple-400 rounded-xl">
+                      <FolderOpen className="w-6 h-6" />
+                    </div>
                   </div>
+                  <h3 className="font-bold text-lg mb-1 group-hover:text-[#F0564A] transition-colors">Uploads</h3>
+                  <p className="text-sm text-gray-500">Files you sent us</p>
+                </div>
+              </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="url">Target URL (if applicable)</Label>
-                    <Input id="url" placeholder="https://yourwebsite.com/about" />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Detailed Description</Label>
-                    <Textarea 
-                      id="description" 
-                      placeholder="Please describe exactly what needs to be changed. If replacing text, provide the old text and the new text." 
-                      className="min-h-[150px]"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="attachments">Attachments (Images, Docs, etc.)</Label>
-                    <Input id="attachments" type="file" multiple className="cursor-pointer" />
-                    <p className="text-xs text-muted-foreground">Upload any new images or documents needed for this update.</p>
-                  </div>
-
-                  <Button type="button" className="w-full md:w-auto">
-                    <PlusCircle className="w-4 h-4 mr-2" />
-                    Submit Request
+              <h3 className="text-xl font-bold mb-4">Recent Files</h3>
+              <div className="bg-[#111111] border border-white/10 rounded-2xl overflow-hidden">
+                <div className="p-8 text-center">
+                  <FileText className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+                  <h3 className="text-xl font-bold mb-2">Your Vault is Empty</h3>
+                  <p className="text-gray-400 mb-6 max-w-md mx-auto">Upload documents, images, or videos securely. Both you and the MSC team can access files stored here.</p>
+                  <Button variant="outline" className="border-white/20 text-black hover:bg-white/10 rounded-full">
+                    Upload File
                   </Button>
-                </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                </div>
+              </div>
+            </div>
+          )}
 
-          <TabsContent value="active-requests">
-            <Card>
-              <CardHeader>
-                <CardTitle>Active Requests</CardTitle>
-                <CardDescription>Track the status of your ongoing website updates.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>ID</TableHead>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Date Submitted</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Priority</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell className="font-medium">#REQ-042</TableCell>
-                      <TableCell>Add new press release to News section</TableCell>
-                      <TableCell>May 8, 2026</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 flex w-fit items-center gap-1">
-                          <Clock className="w-3 h-3" /> In Progress
-                        </Badge>
-                      </TableCell>
-                      <TableCell>Normal</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-medium">#REQ-043</TableCell>
-                      <TableCell>Fix broken link in footer</TableCell>
-                      <TableCell>May 9, 2026</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="flex w-fit items-center gap-1">
-                          <AlertCircle className="w-3 h-3" /> Pending Review
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="destructive">High</Badge>
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          {activeTab === "settings" && (
+            <div className="max-w-3xl mx-auto">
+               <div className="bg-[#111111] border border-white/10 rounded-2xl p-8">
+                <h3 className="text-xl font-bold mb-6">Account Settings</h3>
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-2">Email Address</label>
+                    <input type="text" disabled value={user.email} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-gray-300 cursor-not-allowed" />
+                  </div>
+                  <Button variant="outline" className="border-white/20 text-black hover:bg-white/10 rounded-full">
+                    Reset Password
+                  </Button>
+                </div>
+               </div>
+            </div>
+          )}
 
-          <TabsContent value="history">
-            <Card>
-              <CardHeader>
-                <CardTitle>Completed Requests</CardTitle>
-                <CardDescription>View your past website updates.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>ID</TableHead>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Date Completed</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell className="font-medium">#REQ-038</TableCell>
-                      <TableCell>Update hero image on homepage</TableCell>
-                      <TableCell>Apr 24, 2026</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 flex w-fit items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3" /> Completed
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-medium">#REQ-035</TableCell>
-                      <TableCell>Add new team member bio</TableCell>
-                      <TableCell>Apr 12, 2026</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 flex w-fit items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3" /> Completed
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+        </div>
       </main>
     </div>
   );
