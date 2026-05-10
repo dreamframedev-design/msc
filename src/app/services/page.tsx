@@ -14,7 +14,7 @@ export default function Services() {
     },
     {
       title: "Biotech Pitch Decks with Punch",
-      description: "Let's be honest—VCs and pharma partners see a lot of pitch decks. You want yours to stand out, and we make sure it does. Using your differentiated corporate narrative as a foundation, we build decks that leave no audience behind. We simplify complex science into visuals that connect, and with our brand expertise, your pitch will be memorable for all the right reasons.",
+      description: "Let&apos;s be honest—VCs and pharma partners see a lot of pitch decks. You want yours to stand out, and we make sure it does. Using your differentiated corporate narrative as a foundation, we build decks that leave no audience behind. We simplify complex science into visuals that connect, and with our brand expertise, your pitch will be memorable for all the right reasons.",
       icon: "📊"
     },
     {

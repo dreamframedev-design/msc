@@ -1,9 +1,8 @@
 "use client";
 
-import { motion, useMotionValue, useSpring } from "framer-motion";
+import { motion, useMotionValue, useSpring, PanInfo } from "framer-motion";
 import { useRef, useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import Image from "next/image";
 
 interface Testimonial {
   quote: string;
@@ -39,10 +38,10 @@ const testimonials: Testimonial[] = [
     institution: "Resolve Therapeutics",
     institutionShort: "Resolve",
   },
-  {
-    quote:
-      "Mighty Spark’s ability to distill complex scientific and strategic concepts into a cohesive, compelling narrative is unparalleled. They worked on crystallizing our messaging and refining our brand positioning.",
-    attribution: "Jarrett Duncan",
+    {
+      quote:
+        "Mighty Spark&apos;s ability to distill complex scientific and strategic concepts into a cohesive, compelling narrative is unparalleled. They worked on crystallizing our messaging and refining our brand positioning.",
+      attribution: "Jarrett Duncan",
     title: "CEO",
     institution: "RS Oncology",
     institutionShort: "RSO",
@@ -70,7 +69,7 @@ export function TestimonialsSlider() {
   const sliderRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [cardWidth, setCardWidth] = useState(480);
-  const [gap, setGap] = useState(24);
+  const gap = 24;
 
   const x = useMotionValue(0);
   const springX = useSpring(x, { stiffness: 400, damping: 40 });
@@ -100,7 +99,7 @@ export function TestimonialsSlider() {
   const maxScroll = -(testimonials.length - 1) * moveDistance;
   const dragConstraints = { left: maxScroll, right: 0 };
 
-  const handleDragEnd = (event: any, info: any) => {
+  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     const threshold = cardWidth / 4;
     const draggedDistance = info.offset.x;
 
@@ -133,7 +132,7 @@ export function TestimonialsSlider() {
           <div className="flex-1 max-w-2xl">
             <h2 className="text-sm font-bold tracking-widest text-[#F0564A] uppercase mb-4">Testimonials</h2>
             <h3 className="text-4xl md:text-5xl font-heading font-bold tracking-tight text-gray-900">
-              Don't just take our word for it.
+              Don&apos;t just take our word for it.
             </h3>
           </div>
           
@@ -193,7 +192,7 @@ export function TestimonialsSlider() {
                   
                   <div className="flex-grow flex flex-col justify-center mb-8">
                     <h4 className="text-xl font-medium text-gray-700 leading-relaxed">
-                      "{testimonial.quote}"
+                      &quot;{testimonial.quote}&quot;
                     </h4>
                   </div>
 

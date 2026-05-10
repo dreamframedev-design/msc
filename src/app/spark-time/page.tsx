@@ -53,13 +53,13 @@ export default function SparkTime() {
                 MSC Podcast
               </div>
               <h1 className="text-5xl md:text-7xl font-heading font-bold tracking-tight">
-                It's <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F0564A] to-orange-400">Spark Time!</span>
+                It&apos;s <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F0564A] to-orange-400">Spark Time!</span>
               </h1>
               <p className="text-xl text-gray-400 leading-relaxed">
                 Spark Time! is an intimate exploration of the importance of good communication in the biotech industry. Dani and Will dive deep into the strategy behind successful communication through engaging interviews with key players in the biotech ecosystem.
               </p>
               <p className="text-lg text-gray-400 leading-relaxed">
-                They then distill decades of hard-earned knowledge and experience into fundamental tools that others can use to maximize their impact. Dani and Will invite all in the biotech arena to join them in unraveling the secrets of captivating messaging. It's just one way Mighty Spark Makes Science Click.
+                They then distill decades of hard-earned knowledge and experience into fundamental tools that others can use to maximize their impact. Dani and Will invite all in the biotech arena to join them in unraveling the secrets of captivating messaging. It&apos;s just one way Mighty Spark Makes Science Click.
               </p>
               <div className="pt-4">
                 <Button size="lg" className="bg-[#F0564A] hover:bg-[#D94D42] text-white rounded-full px-8" onClick={() => window.open('https://open.spotify.com/show/2BiYBgRCWFoIPa3DHwowPC', '_blank')}>
