@@ -36,13 +36,14 @@ const services = [
     title: "Scientific Illustration",
     description: "Science is complicated. We make it beautiful. Our skilled illustrators and designers craft visuals that not only captivate but are scientifically precise, ensuring your audience clearly understands even the most complex concepts.",
     image: "/images/flowsaber_a_beautiful_scientific_biotech_close_up_molecular_mic_231de8ff-e324-440e-9056-b28133c799dc_edited (1).jpg",
-    icon: "🧬"
+    icon: "🧬",
+    objectPosition: "left"
   },
   {
     id: "pr",
     title: "Strategic Biotech Public Relations",
     description: "You've got a powerful story - now let's get it heard. We amplify the voices of pre-clinical and early-clinical biotech companies with tailored public relations strategies. From press releases to media outreach, we engage the right audiences with your vision and keep them inspired.",
-    image: "/images/hero girl at desk white_edited.jpg",
+    image: "/images/tactical team desk hero.avif",
     icon: "📢"
   },
   {
@@ -56,7 +57,7 @@ const services = [
     id: "marketing",
     title: "Strategic Marketing for Service Providers",
     description: "Effective campaigns captivate attention and increase revenue. MSC designs end-to-end marketing strategies that build brand loyalty and fuel sustainable growth for results you can measure.",
-    image: "/images/yes wall_edited.jpg",
+    image: "/images/hero girl at desk white_edited.jpg",
     icon: "📈"
   },
   {
@@ -70,7 +71,7 @@ const services = [
     id: "seo",
     title: "SEO Strategy & Optimization",
     description: "Our SEO services go beyond keywords, integrating technical expertise with content strategy to boost visibility, and credibility. From foundational optimization to advanced strategies that drive business development, we ensure your site ranks where it matters and attracts the right partners, investors, and customers.",
-    image: "/images/watery molecule (1).png",
+    image: "/images/seo hero new.avif",
     icon: "🔍"
   }
 ];
