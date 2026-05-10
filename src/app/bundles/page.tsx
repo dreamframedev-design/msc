@@ -1,7 +1,19 @@
+"use client";
+
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle2 } from "lucide-react";
+import { 
+  CheckCircle2, 
+  MonitorUp, 
+  Presentation, 
+  Handshake, 
+  Megaphone, 
+  Mic, 
+  Crown, 
+  PieChart, 
+  Rocket 
+} from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function Bundles() {
   const bundles = [
@@ -10,63 +22,71 @@ export default function Bundles() {
       subtitle: "Messaging + Website Refresh",
       description: "Does your website have that 'built by my brother-in-law feel'? If so, this package is for you. Razor sharp messaging combined with stunning visuals will leave no visitor unimpressed.",
       features: ["Messaging Strategy", "Website Refresh", "Visual Overhaul"],
-      popular: false
+      popular: false,
+      icon: MonitorUp
     },
     {
       title: "Ready to Impress",
       subtitle: "Messaging + Deck Refresh",
       description: "Are investors looking at your deck and going 'Meh'. Time to test drive our ready to impress package. Laser focused messaging rolled out into a memorable deck.",
       features: ["Messaging Strategy", "Corporate Deck Refresh", "Visual Overhaul"],
-      popular: false
+      popular: false,
+      icon: Presentation
     },
     {
       title: "Get Deals Done",
       subtitle: "Messaging + Website Refresh + Deck Refresh",
       description: "Ready to get deals done? Then do it right with this package. We will make sure your fresh message is rolled into both your deck and your website. MSC will help you seal the deal.",
       features: ["Messaging Strategy", "Website Refresh", "Corporate Deck Refresh"],
-      popular: false
+      popular: false,
+      icon: Handshake
     },
     {
       title: "Sell More Services",
       subtitle: "Email campaigns + Social + Advertising",
       description: "Want to speak to your target audience? Let's start with the basics and get your message amplified. Warning! Your BD team may be inundated with calls.",
       features: ["Email Campaigns", "Social Media Management", "Advertising Strategy"],
-      popular: false
+      popular: false,
+      icon: Megaphone
     },
     {
       title: "Stop Shouting into the Void",
       subtitle: "Messaging + Website Refresh + Deck Refresh + PR",
       description: "Tired of feeling like the world doesn't care? Let's fix that with our PR package. It's not just splashy headlines, we are your strategic partner in getting PR done right.",
       features: ["Messaging Strategy", "Website Refresh", "Corporate Deck Refresh", "Public Relations"],
-      popular: false
+      popular: false,
+      icon: Mic
     },
     {
       title: "The Ultimate Experience",
       subtitle: "Messaging + Website Refresh + Deck Refresh + PR + Social",
       description: "Are you the type of person who wants it all? Stay focused on what matters most and let us handle all your comms needs. Most PR agencies can't dive deep on the science like we can. Get the MSC advantage.",
       features: ["Messaging Strategy", "Website Refresh", "Corporate Deck Refresh", "Public Relations", "Social Media"],
-      popular: true
+      popular: true,
+      icon: Crown
     },
     {
       title: "Grab More Market Share",
       subtitle: "Email campaigns + Social + Advertising + Website Management + SEO",
       description: "Make sure you are front of mind when consumers shop for your services. Build your brand recognition with this ultimate bundle, and get the revenue increases you dream about. Add a website upgrade to this bundle and receive an additional discount!",
       features: ["Email Campaigns", "Social Media", "Advertising", "Website Management", "SEO Strategy"],
-      popular: false
+      popular: false,
+      icon: PieChart
     },
     {
       title: "From Stealth to Spotlight",
       subtitle: "Brand Kit + Website + SEO + Messaging + Deck + PR + Social",
       description: "Your science has been in stealth mode, but now it's time to step into the spotlight. We'll craft your brand from the ground up, build a polished presence, and ensure your debut commands attention - with the option of keeping your message going strong long after launch.",
       features: ["Brand Kit", "Website Design", "SEO Optimization", "Messaging Strategy", "Corporate Deck", "Launch PR", "Social Media Setup"],
-      popular: false
+      popular: false,
+      icon: Rocket
     }
   ];
 
   return (
     <div className="flex flex-col min-h-screen bg-[#0A0A0A] text-white">
       {/* Header */}
-      <section className="relative pt-40 pb-24 overflow-hidden border-b border-white/10">
+      <section className="relative pt-40 pb-24 overflow-hidden border-b border-white/10 z-20 bg-[#0A0A0A]">
         <div className="absolute inset-0 z-0">
           <Image 
             src="/images/female ceo hero.avif" 
@@ -79,34 +99,76 @@ export default function Bundles() {
           <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-[#F0564A]/10 rounded-full blur-[150px] pointer-events-none" />
         </div>
         <div className="container relative z-10 mx-auto px-4 max-w-4xl text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-sm font-medium text-gray-300 mb-8">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-sm font-medium text-gray-300 mb-8"
+          >
             <span className="w-2 h-2 rounded-full bg-[#F0564A] animate-pulse" />
             Strategic Packages
-          </div>
-          <h1 className="text-5xl md:text-7xl font-heading font-bold mb-8 tracking-tight">
+          </motion.div>
+          <motion.h1 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="text-5xl md:text-7xl font-heading font-bold mb-8 tracking-tight"
+          >
             Service <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F0564A] to-orange-400">Bundles</span>
-          </h1>
-          <p className="text-2xl text-gray-400 mb-8 leading-relaxed font-light">
+          </motion.h1>
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="text-2xl text-gray-400 mb-8 leading-relaxed font-light"
+          >
             Who doesn't love a good deal! Choose from one of our bundles of services or create your own custom package.
-          </p>
-          <div className="inline-block bg-[#111111] border border-white/10 rounded-2xl px-8 py-4 shadow-2xl">
+          </motion.p>
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="inline-block bg-[#111111] border border-white/10 rounded-2xl px-8 py-4 shadow-2xl"
+          >
             <p className="text-xl font-bold text-white tracking-wide">
               More Services = <span className="text-[#F0564A]">Better Deals</span>
             </p>
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* Pricing/Bundles List */}
-      <section className="py-24 relative z-10">
-        <div className="container mx-auto px-4 max-w-5xl space-y-8">
+      {/* Pricing/Bundles List with Parallax Background */}
+      <section className="relative py-32 z-10">
+        {/* Fixed Parallax Background Container */}
+        <div className="absolute inset-0 z-0 overflow-hidden">
+          <div className="sticky top-0 h-screen w-full">
+            <Image 
+              src="/images/flowsaber_a_beautiful_scientific_biotech_close_up_molecular_mic_231de8ff-e324-440e-9056-b28133c799dc_edited (1).jpg" 
+              alt="Molecular Background" 
+              fill 
+              className="object-cover"
+              priority
+            />
+            {/* Gradient Overlay: Dark on left, transparent on right */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0A0A0A] via-[#0A0A0A]/90 to-transparent w-full lg:w-3/4 z-10" />
+            
+            {/* Subtle overall darkening to ensure text readability */}
+            <div className="absolute inset-0 bg-black/40 z-10" />
+          </div>
+        </div>
+
+        <div className="container mx-auto px-4 max-w-5xl space-y-12 relative z-20">
           {bundles.map((bundle, index) => (
-            <div 
+            <motion.div 
               key={index} 
-              className={`group relative bg-[#111111] rounded-[2rem] p-8 md:p-12 overflow-hidden transition-all duration-500 ${
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.7, ease: "easeOut" }}
+              className={`group relative rounded-[2rem] p-8 md:p-12 overflow-hidden transition-all duration-500 ${
                 bundle.popular 
-                  ? 'border border-[#F0564A]/50 shadow-[0_0_40px_rgba(240,86,74,0.1)] hover:shadow-[0_0_60px_rgba(240,86,74,0.2)]' 
-                  : 'border border-white/5 hover:border-white/20 shadow-2xl hover:bg-[#151515]'
+                  ? 'bg-black/40 backdrop-blur-xl border border-[#F0564A]/50 shadow-[0_0_40px_rgba(240,86,74,0.15)] hover:shadow-[0_0_60px_rgba(240,86,74,0.25)]' 
+                  : 'bg-black/40 backdrop-blur-md border border-white/10 hover:border-white/30 shadow-2xl hover:bg-black/60'
               }`}
             >
               {/* Hover Gradient Background */}
@@ -117,25 +179,31 @@ export default function Bundles() {
                 {/* Left Column: Content */}
                 <div className="md:col-span-7 space-y-6">
                   {bundle.popular && (
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F0564A]/10 border border-[#F0564A]/20 text-xs font-bold text-[#F0564A] uppercase tracking-wider">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F0564A]/10 border border-[#F0564A]/20 text-xs font-bold text-[#F0564A] uppercase tracking-wider mb-2">
                       ★ Our Most Popular Package
                     </div>
                   )}
-                  <div>
-                    <h3 className="text-3xl md:text-4xl font-heading font-bold text-white mb-3 group-hover:text-[#F0564A] transition-colors">
+                  
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className={`p-3 rounded-2xl shrink-0 transition-colors duration-300 ${bundle.popular ? 'bg-[#F0564A]/20 text-[#F0564A]' : 'bg-white/10 text-white group-hover:bg-[#F0564A]/20 group-hover:text-[#F0564A]'}`}>
+                      <bundle.icon className="w-8 h-8" />
+                    </div>
+                    <h3 className="text-3xl md:text-4xl font-heading font-bold text-white group-hover:text-[#F0564A] transition-colors">
                       {bundle.title}
                     </h3>
-                    <p className="text-lg font-medium text-gray-400">
-                      {bundle.subtitle}
-                    </p>
                   </div>
+
+                  <p className="text-xl font-medium text-gray-300">
+                    {bundle.subtitle}
+                  </p>
+                  
                   <p className="text-lg text-gray-400 leading-relaxed">
                     {bundle.description}
                   </p>
                 </div>
 
                 {/* Right Column: Features & CTA */}
-                <div className="md:col-span-5 flex flex-col h-full justify-between space-y-8 bg-black/20 p-6 md:p-8 rounded-3xl border border-white/5">
+                <div className="md:col-span-5 flex flex-col h-full justify-between space-y-8 bg-black/50 backdrop-blur-2xl p-6 md:p-8 rounded-3xl border border-white/10 shadow-inner">
                   <div className="space-y-4">
                     <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-6">What's Included</h4>
                     {bundle.features.map((feature, i) => (
@@ -158,11 +226,17 @@ export default function Bundles() {
                 </div>
 
               </div>
-            </div>
+            </motion.div>
           ))}
 
           {/* Custom Quote Card */}
-          <div className="relative bg-gradient-to-br from-[#F0564A] to-orange-600 rounded-[2rem] p-1 md:p-1 overflow-hidden transition-all duration-500 hover:scale-[1.01] shadow-[0_0_40px_rgba(240,86,74,0.2)] mt-16">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.7 }}
+            className="relative bg-gradient-to-br from-[#F0564A] to-orange-600 rounded-[2rem] p-1 md:p-1 overflow-hidden transition-all duration-500 hover:scale-[1.01] shadow-[0_0_40px_rgba(240,86,74,0.2)] mt-24"
+          >
             <div className="bg-[#0A0A0A] rounded-[1.8rem] p-12 md:p-16 text-center relative overflow-hidden h-full flex flex-col items-center justify-center">
               <div className="absolute inset-0 bg-[url('/images/MSC%20LOGO%20BITTERSWEET%20VECTOR%20(1).svg')] opacity-[0.03] bg-repeat bg-[length:100px_100px]" />
               <div className="relative z-10 max-w-3xl mx-auto space-y-8">
@@ -175,7 +249,7 @@ export default function Bundles() {
                 </Button>
               </div>
             </div>
-          </div>
+          </motion.div>
 
         </div>
       </section>
