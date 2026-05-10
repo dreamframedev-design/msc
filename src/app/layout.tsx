@@ -28,9 +28,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${outfit.variable} h-full antialiased`}
+      className={`${inter.variable} ${outfit.variable} antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans bg-background text-foreground">
+      <body className="min-h-screen flex flex-col font-sans bg-background text-foreground">
         <SmoothScroll>
           <Navbar />
           <main className="flex-1">

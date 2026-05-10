@@ -5,9 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, CheckCircle2, AlertCircle, ExternalLink, Paperclip, MessageSquare, PlusCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Clock, CheckCircle2, AlertCircle, ExternalLink, Paperclip, MessageSquare, PlusCircle, Newspaper } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { articles } from "../news/data";
 
 export default function AdminDashboard() {
   return (
@@ -18,30 +20,45 @@ export default function AdminDashboard() {
           <div className="flex items-center gap-4">
             <Link href="/">
               <Image 
-                src="/images/MSC_Logo with blk tagline (1).svg" 
+                src="/images/MSC LOGO BITTERSWEET VECTOR (1).svg" 
                 alt="MSC" 
-                width={120} 
-                height={40} 
-                className="dark:invert"
+                width={32} 
+                height={32} 
               />
             </Link>
             <span className="text-muted-foreground font-medium">|</span>
             <span className="font-heading font-semibold text-primary">Admin Portal</span>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">Admin: Will</span>
+            <span className="text-sm text-muted-foreground">Admin: CEO</span>
             <Link href="/" className={buttonVariants({ variant: "outline", size: "sm" })}>Back to Site</Link>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-heading font-bold">Ticket Management</h1>
-            <p className="text-muted-foreground">Review and manage client website requests.</p>
+        <Tabs defaultValue="tickets" className="w-full">
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h1 className="text-3xl font-heading font-bold">Dashboard</h1>
+              <p className="text-muted-foreground">Manage client requests and website content.</p>
+            </div>
+            <TabsList>
+              <TabsTrigger value="tickets" className="flex items-center gap-2">
+                <MessageSquare className="w-4 h-4" />
+                Client Tickets
+              </TabsTrigger>
+              <TabsTrigger value="news" className="flex items-center gap-2">
+                <Newspaper className="w-4 h-4" />
+                News Articles
+              </TabsTrigger>
+            </TabsList>
           </div>
-          <div className="flex gap-4">
+
+          <TabsContent value="tickets">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold">Ticket Management</h2>
+              <div className="flex gap-4">
             <Select defaultValue="all">
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Filter by Client" />
@@ -187,6 +204,49 @@ export default function AdminDashboard() {
             </Card>
           </div>
         </div>
+          </TabsContent>
+
+          <TabsContent value="news">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold">News & Insights</h2>
+              <Link href="/admin/news/create" className={buttonVariants({ variant: "default" })}>
+                <PlusCircle className="w-4 h-4 mr-2" />
+                Create New Article
+              </Link>
+            </div>
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Read Time</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {articles.map((article) => (
+                      <TableRow key={article.id}>
+                        <TableCell className="font-medium">{article.title}</TableCell>
+                        <TableCell>{article.date}</TableCell>
+                        <TableCell>{article.readTime}</TableCell>
+                        <TableCell className="text-right">
+                          <Link href={`/admin/news/edit/${article.id}`} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                            Edit
+                          </Link>
+                          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                            Delete
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );

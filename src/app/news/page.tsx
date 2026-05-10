@@ -1,47 +1,10 @@
 import Image from "next/image";
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowRight } from "lucide-react";
+import { articles } from "./data";
 
 export default function News() {
-  const articles = [
-    {
-      title: "Why Biotech Companies Need Professional Communications Services in 2025",
-      excerpt: "In 2025, the biotech industry will be more competitive and more communicative than ever before. Scientific innovation is thriving, but...",
-      date: "Mar 22, 2025",
-      readTime: "2 min read"
-    },
-    {
-      title: "Top Biotech Communication Pitfalls (and How Our Services Prevent Them)",
-      excerpt: "The biotech industry is complex, fast-moving, and highly competitive. Yet, many companies struggle with ineffective communication that...",
-      date: "Feb 5, 2025",
-      readTime: "3 min read"
-    },
-    {
-      title: "Key Themes and Trends from JP Morgan Healthcare Conference 2025",
-      excerpt: "This year's conference highlighted several significant themes shaping the healthcare landscape: Artificial Intelligence (AI) Integration...",
-      date: "Feb 5, 2025",
-      readTime: "2 min read"
-    },
-    {
-      title: "Why Biotech CEOs Can't Afford to Ignore LinkedIn Anymore",
-      excerpt: "Let's face it: biotech hasn't exactly been the early adopter when it comes to LinkedIn. While tech founders and business leaders have...",
-      date: "Nov 19, 2024",
-      readTime: "3 min read"
-    },
-    {
-      title: "The Power of Precision: Why Excellent Scientific Illustrations Matter in Biotech Communications",
-      excerpt: "In the fast-paced world of biotech, where innovation happens at the intersection of science and technology, clear communication is...",
-      date: "Oct 14, 2024",
-      readTime: "3 min read"
-    },
-    {
-      title: "Step-By-Step Guide: The Secrets to Nailing Your Biotech Corporate Deck",
-      excerpt: "One thing I hear all the time from CEOs is that they know they need to invest the time to make a really compelling corporate deck, but...",
-      date: "Oct 3, 2024",
-      readTime: "3 min read"
-    }
-  ];
-
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       {/* Header */}
@@ -73,7 +36,7 @@ export default function News() {
         <div className="container mx-auto px-4 max-w-5xl">
           <div className="grid gap-8">
             {articles.map((article, index) => (
-              <a key={index} href="#" className="group block">
+              <Link key={index} href={`/news/${article.slug}`} className="group block">
                 <Card className="border-gray-200 hover:border-[#F0564A]/30 hover:shadow-xl transition-all duration-300 overflow-hidden bg-white">
                   <CardContent className="p-8 md:p-10 flex flex-col md:flex-row gap-8 items-start md:items-center">
                     <div className="flex-grow">
@@ -94,7 +57,7 @@ export default function News() {
                     </div>
                   </CardContent>
                 </Card>
-              </a>
+              </Link>
             ))}
           </div>
         </div>

@@ -1,6 +1,98 @@
 
 export const websites = [
   {
+    "name": "Resolve",
+    "images": [
+      "/images/portfolio/resolve/Screenshot 2026-05-10 142014.png",
+      "/images/portfolio/resolve/Screenshot 2026-05-10 142031.png",
+      "/images/portfolio/resolve/Screenshot 2026-05-10 142040.png",
+      "/images/portfolio/resolve/Screenshot 2026-05-10 142050.png",
+      "/images/portfolio/resolve/Screenshot 2026-05-10 142106.png",
+      "/images/portfolio/resolve/Screenshot 2026-05-10 142113.png",
+      "/images/portfolio/resolve/Screenshot 2026-05-10 142124.png",
+      "/images/portfolio/resolve/Screenshot 2026-05-10 142132.png"
+    ]
+  },
+  {
+    "name": "Medicenna",
+    "logo": "/images/portfolio/medicenna/medicenna new logo.svg",
+    "images": [
+      "/images/portfolio/medicenna/Screenshot 2026-05-10 142956.png",
+      "/images/portfolio/medicenna/Screenshot 2026-05-10 143001.png",
+      "/images/portfolio/medicenna/Screenshot 2026-05-10 143010.png",
+      "/images/portfolio/medicenna/Screenshot 2026-05-10 143021.png",
+      "/images/portfolio/medicenna/Screenshot 2026-05-10 143027.png",
+      "/images/portfolio/medicenna/Screenshot 2026-05-10 143037.png",
+      "/images/portfolio/medicenna/Screenshot 2026-05-10 143056.png",
+      "/images/portfolio/medicenna/Screenshot 2026-05-10 143107.png",
+      "/images/portfolio/medicenna/Screenshot 2026-05-10 143117.png",
+      "/images/portfolio/medicenna/Screenshot 2026-05-10 143145.png"
+    ]
+  },
+  {
+    "name": "Leon",
+    "logo": "/images/portfolio/leon/Leon Master Logo1.svg",
+    "images": [
+      "/images/portfolio/leon/Screenshot 2026-05-10 141605.png",
+      "/images/portfolio/leon/Screenshot 2026-05-10 141633.png",
+      "/images/portfolio/leon/Screenshot 2026-05-10 141734.png",
+      "/images/portfolio/leon/Screenshot 2026-05-10 141749.png",
+      "/images/portfolio/leon/Screenshot 2026-05-10 141852.png",
+      "/images/portfolio/leon/Screenshot 2026-05-10 141910.png"
+    ]
+  },
+  {
+    "name": "Lytix",
+    "logo": "/images/portfolio/lytix/Lytix_logo-01.svg",
+    "images": [
+      "/images/portfolio/lytix/Screenshot 2026-05-10 142731.png",
+      "/images/portfolio/lytix/Screenshot 2026-05-10 142737.png",
+      "/images/portfolio/lytix/Screenshot 2026-05-10 142742.png",
+      "/images/portfolio/lytix/Screenshot 2026-05-10 142748.png",
+      "/images/portfolio/lytix/Screenshot 2026-05-10 142757.png",
+      "/images/portfolio/lytix/Screenshot 2026-05-10 142804.png",
+      "/images/portfolio/lytix/Screenshot 2026-05-10 142810.png",
+      "/images/portfolio/lytix/Screenshot 2026-05-10 142827.png",
+      "/images/portfolio/lytix/Screenshot 2026-05-10 142839.png",
+      "/images/portfolio/lytix/Screenshot 2026-05-10 142843.png",
+      "/images/portfolio/lytix/Screenshot 2026-05-10 142849.png",
+      "/images/portfolio/lytix/Screenshot 2026-05-10 142854.png",
+      "/images/portfolio/lytix/Screenshot 2026-05-10 142902.png",
+      "/images/portfolio/lytix/Screenshot 2026-05-10 142920.png"
+    ]
+  },
+  {
+    "name": "PBL Assay Science",
+    "logo": "/images/portfolio/pbl/pbl icon_pbl logo.svg",
+    "icon": "/images/portfolio/pbl/pbl icon_pbl logo.svg",
+    "images": [
+      "/images/portfolio/pbl/Screenshot 2026-05-10 142358.png",
+      "/images/portfolio/pbl/Screenshot 2026-05-10 142405.png",
+      "/images/portfolio/pbl/Screenshot 2026-05-10 142414.png",
+      "/images/portfolio/pbl/Screenshot 2026-05-10 142420.png",
+      "/images/portfolio/pbl/Screenshot 2026-05-10 142426.png",
+      "/images/portfolio/pbl/Screenshot 2026-05-10 142514.png",
+      "/images/portfolio/pbl/Screenshot 2026-05-10 142602.png",
+      "/images/portfolio/pbl/Screenshot 2026-05-10 142612.png",
+      "/images/portfolio/pbl/Screenshot 2026-05-10 142621.png",
+      "/images/portfolio/pbl/Screenshot 2026-05-10 142630.png",
+      "/images/portfolio/pbl/Screenshot 2026-05-10 142641.png"
+    ]
+  },
+  {
+    "name": "CellTaxis",
+    "logo": "/images/portfolio/celltaxis/celltaxis final logo_final logo.svg",
+    "images": [
+      "/images/portfolio/celltaxis/Screenshot 2026-05-10 142203.png",
+      "/images/portfolio/celltaxis/Screenshot 2026-05-10 142215.png",
+      "/images/portfolio/celltaxis/Screenshot 2026-05-10 142228.png",
+      "/images/portfolio/celltaxis/Screenshot 2026-05-10 142243.png",
+      "/images/portfolio/celltaxis/Screenshot 2026-05-10 142255.png",
+      "/images/portfolio/celltaxis/Screenshot 2026-05-10 142305.png",
+      "/images/portfolio/celltaxis/Screenshot 2026-05-10 142320.png"
+    ]
+  },
+  {
     "name": "Poseidon",
     "logo": "/portoflio client logos/poseidon logos-18 (2).svg",
     "icon": "/portoflio client logos/poseidon logo favicon-28 (1).svg",

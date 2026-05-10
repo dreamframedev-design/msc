@@ -1,0 +1,6 @@
+feat: overhaul portfolio with advanced components, client videos, and news CMS
+
+- Add new Showcase components (CFDVisualizer, VideoShowcase, WebsitesShowcase, etc.)
+- Integrate client videos and new portfolio assets
+- Implement dynamic news articles and admin CMS structure
+- Refine layout, styling, and animations across the site
