@@ -57,7 +57,7 @@ export default function Bundles() {
     {
       title: "From Stealth to Spotlight",
       subtitle: "Brand Kit + Website + SEO + Messaging + Deck + PR + Social",
-      description: "Your science has been in stealth mode, but now it's time to step into the spotlight. We'll craft your brand from the ground up, build a polished presence, and ensure your debut commands attention—with the option of keeping your message going strong long after launch.",
+      description: "Your science has been in stealth mode, but now it's time to step into the spotlight. We'll craft your brand from the ground up, build a polished presence, and ensure your debut commands attention - with the option of keeping your message going strong long after launch.",
       features: ["Brand Kit", "Website Design", "SEO Optimization", "Messaging Strategy", "Corporate Deck", "Launch PR", "Social Media Setup"],
       popular: false
     }

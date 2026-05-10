@@ -14,12 +14,12 @@ export default function Services() {
     },
     {
       title: "Biotech Pitch Decks with Punch",
-      description: "Let&apos;s be honest—VCs and pharma partners see a lot of pitch decks. You want yours to stand out, and we make sure it does. Using your differentiated corporate narrative as a foundation, we build decks that leave no audience behind. We simplify complex science into visuals that connect, and with our brand expertise, your pitch will be memorable for all the right reasons.",
+      description: "Let&apos;s be honest - VCs and pharma partners see a lot of pitch decks. You want yours to stand out, and we make sure it does. Using your differentiated corporate narrative as a foundation, we build decks that leave no audience behind. We simplify complex science into visuals that connect, and with our brand expertise, your pitch will be memorable for all the right reasons.",
       icon: "📊"
     },
     {
       title: "Custom Websites",
-      description: "Your website is often the first impression investors and partners get of your company. It needs to do more than look good—it needs to tell your story. We create user experiences that are captivating, memorable, and engaging so your audience keeps coming back for more. Think of it as the ultimate stage for your biotech innovation.",
+      description: "Your website is often the first impression investors and partners get of your company. It needs to do more than look good - it needs to tell your story. We create user experiences that are captivating, memorable, and engaging so your audience keeps coming back for more. Think of it as the ultimate stage for your biotech innovation.",
       icon: "💻"
     },
     {
@@ -29,7 +29,7 @@ export default function Services() {
     },
     {
       title: "Strategic Biotech Public Relations",
-      description: "You've got a powerful story—now let's get it heard. We amplify the voices of pre-clinical and early-clinical biotech companies with tailored public relations strategies. From press releases to media outreach, we engage the right audiences with your vision and keep them inspired.",
+      description: "You've got a powerful story - now let's get it heard. We amplify the voices of pre-clinical and early-clinical biotech companies with tailored public relations strategies. From press releases to media outreach, we engage the right audiences with your vision and keep them inspired.",
       icon: "📢"
     },
     {

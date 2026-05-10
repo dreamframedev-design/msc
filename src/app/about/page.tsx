@@ -12,7 +12,7 @@ export default function About() {
     {
       name: "Will Riedl",
       role: "Co-Founder + Scientific Director",
-      bio: "Will passionately believes that the data is only half the story—and how you tell it is the other half. With a background in both academia and industry, he knows how to connect science with its audience. His mission is to help biotech companies communicate their value with confidence and clarity, making sure their message lands every time. Will earned his PhD from The University of Chicago and his BS from The University of Illinois.",
+      bio: "Will passionately believes that the data is only half the story - and how you tell it is the other half. With a background in both academia and industry, he knows how to connect science with its audience. His mission is to help biotech companies communicate their value with confidence and clarity, making sure their message lands every time. Will earned his PhD from The University of Chicago and his BS from The University of Illinois.",
       image: "/images/will new headshot web.jpg"
     },
     {

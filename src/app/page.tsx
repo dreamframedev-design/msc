@@ -134,7 +134,7 @@ export default function Home() {
                 <span className="text-[#F0564A]">We make sure it clicks.</span>
               </h3>
               <p className="text-lg text-gray-700 leading-relaxed">
-                We&apos;re not just storytellers—we&apos;re catalysts for your success. We transform complex science into compelling corporate messaging that leave investors wanting more. Whether it&apos;s a corporate deck that commands attention, a custom website that draws viewers into your scientific story, or scientific illustrations that make your message crystal clear, we deliver clarity, precision, and impact. And we don&apos;t stop there—we make sure your message resonates across social and media channels with consistent, powerful communication.
+                We&apos;re not just storytellers - we&apos;re catalysts for your success. We transform complex science into compelling corporate messaging that leave investors wanting more. Whether it&apos;s a corporate deck that commands attention, a custom website that draws viewers into your scientific story, or scientific illustrations that make your message crystal clear, we deliver clarity, precision, and impact. And we don&apos;t stop there - we make sure your message resonates across social and media channels with consistent, powerful communication.
               </p>
             </div>
             <motion.div 
