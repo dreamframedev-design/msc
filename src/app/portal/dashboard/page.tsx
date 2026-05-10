@@ -107,9 +107,9 @@ export default function PortalDashboard() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-white flex">
+    <div className="min-h-screen bg-[#0A0A0A] text-white flex pt-24">
       {/* Sidebar */}
-      <aside className="w-64 bg-[#111111] border-r border-white/10 flex flex-col hidden md:flex">
+      <aside className="w-64 bg-[#111111] border-r border-white/10 flex flex-col hidden md:flex h-[calc(100vh-6rem)] fixed left-0 top-24">
         <div className="p-6 border-b border-white/10">
           <div className="flex items-center gap-3">
             <Image 
@@ -162,9 +162,9 @@ export default function PortalDashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col h-screen overflow-hidden">
+      <main className="flex-1 flex flex-col min-h-[calc(100vh-6rem)] ml-0 md:ml-64">
         {/* Top Header */}
-        <header className="h-20 border-b border-white/10 bg-[#111111]/50 backdrop-blur-md flex items-center justify-between px-8">
+        <header className="h-20 border-b border-white/10 bg-[#111111]/50 backdrop-blur-md flex items-center justify-between px-8 sticky top-24 z-40">
           <h1 className="text-2xl font-heading font-bold capitalize">
             {activeTab === "tickets" ? "Support Tickets" : activeTab === "files" ? "File Vault" : "Settings"}
           </h1>
