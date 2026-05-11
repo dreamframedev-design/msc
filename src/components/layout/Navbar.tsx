@@ -13,10 +13,6 @@ export function Navbar() {
   const [isHovered, setIsHovered] = useState(false);
   const pathname = usePathname();
 
-  if (pathname?.startsWith('/portal/dashboard')) {
-    return null;
-  }
-
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
@@ -24,6 +20,10 @@ export function Navbar() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  if (pathname?.startsWith('/portal/dashboard')) {
+    return null;
+  }
 
   const isActive = isScrolled || isHovered;
 
