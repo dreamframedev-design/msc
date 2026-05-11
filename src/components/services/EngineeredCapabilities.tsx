@@ -582,7 +582,7 @@ const CAPABILITIES: Capability[] = [
     title: "Interactive Data Visualization",
     eyebrow: "01 · Live Data, Live Story",
     description:
-      "Turn assay readouts, clinical endpoints, and biomarker traces into beautiful, interactive charts that move with your narrative. Custom-built animations, premium typography, branded color systems — not the generic Highcharts your competitors use.",
+      "Turn assay readouts, clinical endpoints, and biomarker traces into beautiful, interactive charts that move with your narrative. Custom-built animations, premium typography, branded color systems. Not the generic Highcharts your competitors use.",
     Icon: BarChart3,
     accent: "#F0564A",
     Showcase: DataPulseShowcase,
@@ -592,7 +592,7 @@ const CAPABILITIES: Capability[] = [
     title: "WebGL & Scientific Simulation",
     eyebrow: "02 · Visualizations That Move",
     description:
-      "From CFD particle simulations of microfluidic devices to animated molecular fields, DNA helices, and orbital ligand-binding scenes — we engineer Canvas and WebGL backdrops that capture the energy of your science. Performant on mobile, rendered in real time.",
+      "From CFD particle simulations of microfluidic devices to animated molecular fields, DNA helices, and orbital ligand-binding scenes, we engineer Canvas and WebGL backdrops that capture the energy of your science. Performant on mobile, rendered in real time.",
     Icon: Atom,
     accent: "#5BCBD7",
     Showcase: ParticleNetworkShowcase,
@@ -602,7 +602,7 @@ const CAPABILITIES: Capability[] = [
     title: "Pipeline & Program Visualization",
     eyebrow: "03 · Your Pipeline, In Motion",
     description:
-      "Show stakeholders exactly where each program stands with custom-built, animated pipeline graphics. Continuous-flow liquid metaphors, phase-tracking horizontal bars, and interactive program drill-downs — designed to make complex portfolios click instantly.",
+      "Show stakeholders exactly where each program stands with custom-built, animated pipeline graphics. Continuous-flow liquid metaphors, phase-tracking horizontal bars, and interactive program drill-downs, designed to make complex portfolios click instantly.",
     Icon: GitBranch,
     accent: "#F08435",
     Showcase: PipelineShowcase,
@@ -612,7 +612,7 @@ const CAPABILITIES: Capability[] = [
     title: "Custom Portals & Dashboards",
     eyebrow: "04 · Software, Not Just Sites",
     description:
-      "Client portals, investor-relations dashboards, real-time data widgets, internal admin tools — we ship secure full-stack applications that extend your brand far beyond a static homepage. From file vaults to live ticker integrations, we build it.",
+      "Client portals, investor-relations dashboards, real-time data widgets, internal admin tools. We ship secure full-stack applications that extend your brand far beyond a static homepage. From file vaults to live ticker integrations, we build it.",
     Icon: LayoutDashboard,
     accent: "#FAAC40",
     Showcase: DashboardShowcase,
@@ -785,7 +785,7 @@ export function EngineeredCapabilities() {
               <span className="text-aurora">A platform.</span>
             </h2>
             <p className="text-base sm:text-lg md:text-xl text-gray-400 leading-relaxed">
-              Our team includes full-stack engineers, data-visualization specialists, and motion designers. When the brief calls for it, we ship product — not just pages. Scroll through to see the engineered capabilities behind our portfolio&apos;s most ambitious work.
+              Our team includes full-stack engineers, data-visualization specialists, and motion designers. When the brief calls for it, we ship product, not just pages. Scroll through to see the engineered capabilities behind our portfolio&apos;s most ambitious work.
             </p>
           </motion.div>
         </div>

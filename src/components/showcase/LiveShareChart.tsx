@@ -1,164 +1,255 @@
 "use client";
 
-import React from 'react';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer
-} from 'recharts';
+import { useRef } from "react";
+import { motion, useScroll, useTransform, type MotionValue } from "framer-motion";
+import { TrendingUp, Activity } from "lucide-react";
 
 const MOCK_DATA = [
-  { date: '2. Jun', price: 8.2 },
-  { date: '16. Jun', price: 8.5 },
-  { date: '30. Jun', price: 9.1 },
-  { date: '14. Jul', price: 8.8 },
-  { date: '28. Jul', price: 8.9 },
-  { date: '11. Aug', price: 8.7 },
-  { date: '25. Aug', price: 8.2 },
-  { date: '8. Sep', price: 7.9 },
-  { date: '22. Sep', price: 7.8 },
-  { date: '6. Oct', price: 8.1 },
-  { date: '20. Oct', price: 8.5 },
-  { date: '3. Nov', price: 10.2 },
-  { date: '17. Nov', price: 10.8 },
-  { date: '1. Dec', price: 9.5 },
-  { date: '15. Dec', price: 9.7 },
-  { date: '29. Dec', price: 9.4 },
-  { date: '12. Jan', price: 9.2 },
-  { date: '26. Jan', price: 9.1 },
-  { date: '9. Feb', price: 9.3 },
-  { date: '23. Feb', price: 9.2 },
-  { date: '9. Mar', price: 10.1 },
-  { date: '23. Mar', price: 9.9 },
-  { date: '6. Apr', price: 10.3 },
-  { date: '20. Apr', price: 10.1 },
-  { date: '4. May', price: 10.85 },
+  { date: "Jun", price: 8.2 }, { date: "", price: 8.5 },
+  { date: "Jul", price: 9.1 }, { date: "", price: 8.8 },
+  { date: "Aug", price: 8.9 }, { date: "", price: 8.7 },
+  { date: "Sep", price: 8.2 }, { date: "", price: 7.9 },
+  { date: "Oct", price: 7.8 }, { date: "", price: 8.1 },
+  { date: "Nov", price: 8.5 }, { date: "", price: 10.2 },
+  { date: "Dec", price: 10.8 }, { date: "", price: 9.5 },
+  { date: "Jan", price: 9.7 }, { date: "", price: 9.4 },
+  { date: "Feb", price: 9.2 }, { date: "", price: 9.1 },
+  { date: "Mar", price: 9.3 }, { date: "", price: 9.2 },
+  { date: "Apr", price: 10.1 }, { date: "", price: 9.9 },
+  { date: "May", price: 10.3 }, { date: "", price: 10.85 },
 ];
 
-export default function LiveShareChart() {
+const W = 800;
+const H = 280;
+const PAD_L = 32;
+const PAD_R = 56;
+const PAD_T = 16;
+const PAD_B = 28;
+const PLOT_W = W - PAD_L - PAD_R;
+const PLOT_H = H - PAD_T - PAD_B;
+const PLOT_TOP = PAD_T;
+const PLOT_BOTTOM = PAD_T + PLOT_H;
+
+const MIN_Y = 7.5;
+const MAX_Y = 11.2;
+const yFor = (v: number) => PLOT_TOP + PLOT_H * (1 - (v - MIN_Y) / (MAX_Y - MIN_Y));
+const xFor = (i: number) => PAD_L + (i / (MOCK_DATA.length - 1)) * PLOT_W;
+
+const linePath = MOCK_DATA.reduce(
+  (acc, p, i) => acc + (i === 0 ? `M ${xFor(i)} ${yFor(p.price)}` : ` L ${xFor(i)} ${yFor(p.price)}`),
+  ""
+);
+const areaPath = `${linePath} L ${xFor(MOCK_DATA.length - 1)} ${PLOT_BOTTOM} L ${xFor(0)} ${PLOT_BOTTOM} Z`;
+
+const STATS = [
+  { label: "Ticker", value: "BIOTX" },
+  { label: "ISIN", value: "US0010405780" },
+  { label: "Market", value: "NASDAQ" },
+  { label: "Sector", value: "Biotech" },
+  { label: "Shares", value: "76.9M" },
+  { label: "Mkt Cap", value: "$834.4M" },
+];
+
+function GridLine({ value, enter, delay = 0 }: { value: number; enter: MotionValue<number>; delay?: number }) {
+  const y = yFor(value);
+  const opacity = useTransform(enter, [delay, delay + 0.2], [0, 1], { clamp: true });
   return (
-    <div className="w-full h-full flex flex-col gap-6">
-      {/* Share Information Cards */}
-      <div className="bg-white rounded-3xl p-4 md:p-8 shadow-sm border border-slate-200">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-8 h-8 rounded-full bg-[#F0564A]/10 flex items-center justify-center text-[#F0564A]">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+    <>
+      <motion.line
+        x1={PAD_L}
+        x2={W - PAD_R}
+        y1={y}
+        y2={y}
+        stroke="#e2e8f0"
+        strokeDasharray="3 5"
+        style={{ opacity }}
+      />
+      <motion.text
+        x={W - PAD_R + 8}
+        y={y + 4}
+        fill="#94a3b8"
+        fontSize="11"
+        fontWeight="700"
+        fontFamily="ui-monospace, monospace"
+        style={{ opacity }}
+      >
+        {value.toFixed(1)}
+      </motion.text>
+    </>
+  );
+}
+
+export default function LiveShareChart() {
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
+  const enter = useTransform(scrollYProgress, [0.08, 0.45], [0, 1], { clamp: true });
+  const lineProgress = useTransform(enter, [0.2, 0.9], [0, 1], { clamp: true });
+  const areaOpacity = useTransform(enter, [0.4, 0.85], [0, 1], { clamp: true });
+
+  const lastPoint = MOCK_DATA[MOCK_DATA.length - 1];
+  const dotOpacity = useTransform(enter, [0.8, 1], [0, 1], { clamp: true });
+
+  return (
+    <div ref={ref} className="w-full bg-white rounded-3xl sm:rounded-[2rem] border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
+      {/* ============ HEADER STRIP ============ */}
+      <div className="px-5 sm:px-7 py-4 sm:py-5 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="relative flex w-1.5 h-1.5">
+              <span className="absolute inline-flex w-full h-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+              <span className="relative inline-flex w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            </span>
+            <span className="text-[10px] font-mono font-bold uppercase tracking-[0.22em] text-[#5BCBD7]">
+              ▣ NASDAQ · LIVE
+            </span>
           </div>
-          <h3 className="text-xl font-bold text-slate-900">Share Information</h3>
+          <h3 className="text-xl sm:text-2xl font-heading font-bold text-gray-900 tracking-tight">
+            BIOTX Therapeutics Inc
+          </h3>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Ticker</p>
-            <p className="text-sm font-bold text-slate-900">BIOTX</p>
+        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.18em]">Powered by INFRONT</span>
+      </div>
+
+      {/* ============ PRICE + KPI STRIP ============ */}
+      <div className="px-5 sm:px-7 py-5 sm:py-6 border-b border-gray-100">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-5 md:gap-7 items-baseline">
+          {/* Price */}
+          <div className="md:col-span-5">
+            <div className="flex items-baseline gap-2 mb-1">
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">USD</span>
+              <span className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 tracking-tight tabular-nums">
+                10.85
+              </span>
+              <span className="inline-flex items-center gap-1 text-sm font-bold text-emerald-600 ml-1">
+                <TrendingUp className="w-4 h-4" /> +2.36%
+              </span>
+            </div>
+            <p className="text-[10px] text-gray-400 font-mono font-bold uppercase tracking-wider">
+              2026-05-10 · 09:30 ET
+            </p>
           </div>
-          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">ISIN</p>
-            <p className="text-sm font-bold text-slate-900">US0010405780</p>
-          </div>
-          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Market</p>
-            <p className="text-sm font-bold text-slate-900">NASDAQ</p>
-          </div>
-          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Shares Issued</p>
-            <p className="text-sm font-bold text-slate-900">76,900,005</p>
-          </div>
-          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Sector</p>
-            <p className="text-sm font-bold text-slate-900">Biotech</p>
-          </div>
-          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Currency</p>
-            <p className="text-sm font-bold text-slate-900">USD</p>
+
+          {/* Mini KPIs */}
+          <div className="md:col-span-7 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            {[
+              { label: "Change", value: "+$0.25", color: "text-emerald-600" },
+              { label: "High / Low", value: "10.95 / 10.60", color: "text-gray-900" },
+              { label: "Volume", value: "16,984", color: "text-gray-900" },
+              { label: "Turnover", value: "$183K", color: "text-gray-900" },
+            ].map((k) => (
+              <div key={k.label}>
+                <p className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                  {k.label}
+                </p>
+                <p className={`text-sm font-bold tabular-nums font-mono ${k.color}`}>{k.value}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Live Chart Section */}
-      <div className="bg-white rounded-3xl p-4 md:p-8 shadow-sm border border-slate-200">
-        <div className="flex justify-between items-center mb-8 border-b border-slate-100 pb-4">
-          <h3 className="text-lg font-bold text-slate-900">Live Share Chart & Data</h3>
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Powered by INFRONT</span>
-        </div>
+      {/* ============ CHART ============ */}
+      <div className="relative px-3 sm:px-5 py-4 sm:py-6">
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#F0564A" stopOpacity="0.35" />
+              <stop offset="100%" stopColor="#F0564A" stopOpacity="0" />
+            </linearGradient>
+            <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#F08435" />
+              <stop offset="100%" stopColor="#F0564A" />
+            </linearGradient>
+          </defs>
 
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
-          <div>
-            <h2 className="text-2xl font-light text-slate-600 mb-1">BIOTX THERAPEUTICS INC</h2>
-            <p className="text-xs font-bold text-slate-400 mb-4">BIOTX</p>
-            <div className="flex items-baseline gap-3">
-              <span className="text-sm font-bold text-slate-500">USD</span>
-              <span className="text-5xl font-light text-slate-900 tracking-tight">10.85</span>
-            </div>
-            <p className="text-xs text-slate-400 mt-2 flex items-center gap-1">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              2026-05-10 09:30 (America/New_York)
-            </p>
+          {/* Y axis grid */}
+          {[8, 9, 10, 11].map((v, i) => (
+            <GridLine key={v} value={v} enter={enter} delay={0.1 + i * 0.03} />
+          ))}
+
+          {/* X axis tick labels */}
+          {MOCK_DATA.map((p, i) =>
+            p.date ? (
+              <text
+                key={i}
+                x={xFor(i)}
+                y={H - 8}
+                fill="#94a3b8"
+                fontSize="10"
+                fontWeight="700"
+                textAnchor="middle"
+                fontFamily="ui-monospace, monospace"
+              >
+                {p.date}
+              </text>
+            ) : null
+          )}
+
+          {/* Area fill */}
+          <motion.path d={areaPath} fill="url(#areaGrad)" style={{ opacity: areaOpacity }} />
+
+          {/* Line */}
+          <motion.path
+            d={linePath}
+            fill="none"
+            stroke="url(#lineGrad)"
+            strokeWidth={2.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{
+              pathLength: lineProgress,
+              filter: "drop-shadow(0 2px 6px rgba(240,86,74,0.35))",
+            }}
+          />
+
+          {/* End dot + label */}
+          <motion.g style={{ opacity: dotOpacity }}>
+            <circle cx={xFor(MOCK_DATA.length - 1)} cy={yFor(lastPoint.price)} r={11} fill="#F0564A" opacity="0.18">
+              <animate attributeName="r" values="9;14;9" dur="2.5s" repeatCount="indefinite" />
+              <animate attributeName="opacity" values="0.18;0;0.18" dur="2.5s" repeatCount="indefinite" />
+            </circle>
+            <circle
+              cx={xFor(MOCK_DATA.length - 1)}
+              cy={yFor(lastPoint.price)}
+              r={4.5}
+              fill="#F0564A"
+              stroke="#ffffff"
+              strokeWidth={2}
+              style={{ filter: "drop-shadow(0 0 8px #F0564A)" }}
+            />
+            {/* Floating callout */}
+            <rect
+              x={xFor(MOCK_DATA.length - 1) - 60}
+              y={yFor(lastPoint.price) - 36}
+              width="52"
+              height="22"
+              rx="11"
+              fill="#F0564A"
+              filter="drop-shadow(0 6px 16px rgba(240,86,74,0.4))"
+            />
+            <text
+              x={xFor(MOCK_DATA.length - 1) - 34}
+              y={yFor(lastPoint.price) - 21}
+              fill="white"
+              fontSize="10"
+              fontWeight="900"
+              textAnchor="middle"
+              fontFamily="ui-monospace, monospace"
+            >
+              $10.85
+            </text>
+          </motion.g>
+        </svg>
+      </div>
+
+      {/* ============ FOOTER STATS STRIP ============ */}
+      <div className="px-5 sm:px-7 py-3 sm:py-4 border-t border-gray-100 grid grid-cols-3 sm:grid-cols-6 gap-3 bg-gray-50/40">
+        {STATS.map((s) => (
+          <div key={s.label}>
+            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">{s.label}</p>
+            <p className="text-xs font-bold text-gray-900 tabular-nums truncate">{s.value}</p>
           </div>
-
-          <div className="grid grid-cols-2 gap-x-12 gap-y-6 w-full md:w-auto">
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Change %</p>
-              <p className="text-sm font-bold text-emerald-500">0.25 (2.36%)</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">High / Low</p>
-              <p className="text-sm font-bold text-slate-900">10.95 / 10.60</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Turnover</p>
-              <p className="text-sm font-bold text-slate-900">183,046.45</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Volume</p>
-              <p className="text-sm font-bold text-slate-900">16,984</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Market Cap</p>
-              <p className="text-sm font-bold text-slate-900">834.37 M</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="w-full h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={MOCK_DATA} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis 
-                dataKey="date" 
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: 10, fill: '#94a3b8' }}
-                dy={10}
-              />
-              <YAxis 
-                domain={['auto', 'auto']}
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: 10, fill: '#94a3b8' }}
-                orientation="right"
-                dx={10}
-              />
-              <Tooltip 
-                contentStyle={{ borderRadius: '0.5rem', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', fontSize: '12px', fontWeight: 'bold' }}
-                itemStyle={{ color: '#F0564A' }}
-                allowEscapeViewBox={{ x: false, y: true }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="price" 
-                stroke="#F0564A" 
-                strokeWidth={2}
-                dot={false}
-                activeDot={{ r: 6, fill: '#F0564A', stroke: '#fff', strokeWidth: 2 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+        ))}
       </div>
     </div>
   );

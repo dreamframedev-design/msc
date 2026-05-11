@@ -1,22 +1,22 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { 
-  Trash2, 
-  Plus, 
-  Minus, 
-  ShieldCheck, 
-  Truck, 
-  Info,
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Trash2,
+  Plus,
+  Minus,
+  ShieldCheck,
+  Truck,
   ArrowRight,
   Snowflake,
   Package,
-  AlertCircle
-} from 'lucide-react';
+  AlertCircle,
+  TestTube,
+  FlaskConical,
+  Beaker,
+} from "lucide-react";
 
-// Type definitions
 interface CartItem {
   id: number;
   catalogId: string;
@@ -26,280 +26,272 @@ interface CartItem {
   quantity: number;
   storage: string;
   size: string;
-  image: string;
+  Icon: typeof TestTube;
+  accent: string;
 }
 
-// Mock data for the scientific cart items
 const initialCartItems: CartItem[] = [
   {
     id: 1,
-    catalogId: '11100-1',
-    name: 'Human IFN Alpha A (2a)',
-    category: 'Interferon Proteins',
-    price: 455.00,
+    catalogId: "11100-1",
+    name: "Human IFN Alpha A (2a)",
+    category: "Interferon Proteins",
+    price: 455.0,
     quantity: 1,
-    storage: '-70°C or below',
-    size: '100 µg',
-    image: '/images/macromolecule.webp'
+    storage: "-70°C",
+    size: "100 µg",
+    Icon: TestTube,
+    accent: "#F0564A",
   },
   {
     id: 2,
-    catalogId: '41100-1',
-    name: 'Human IFN Alpha ELISA Kit',
-    category: 'Assay Kits',
-    price: 625.00,
+    catalogId: "41100-1",
+    name: "Human IFN Alpha ELISA Kit",
+    category: "Assay Kits",
+    price: 625.0,
     quantity: 2,
-    storage: '2-8°C',
-    size: '96 wells',
-    image: '/images/macromolecule.webp'
+    storage: "2-8°C",
+    size: "96 wells",
+    Icon: FlaskConical,
+    accent: "#5BCBD7",
   },
   {
     id: 3,
-    catalogId: '21100-2',
-    name: 'Anti-Human IFN Alpha Antibody',
-    category: 'Monoclonal Antibodies',
-    price: 385.00,
+    catalogId: "21100-2",
+    name: "Anti-Human IFN Alpha Antibody",
+    category: "Monoclonal Antibodies",
+    price: 385.0,
     quantity: 1,
-    storage: '-20°C',
-    size: '100 µg',
-    image: '/images/macromolecule.webp'
-  }
+    storage: "-20°C",
+    size: "100 µg",
+    Icon: Beaker,
+    accent: "#F08435",
+  },
 ];
 
 export default function ShoppingCart() {
   const [cartItems, setCartItems] = useState<CartItem[]>(initialCartItems);
-  const [removingId, setRemovingId] = useState<number | null>(null);
 
-  // Calculate totals
-  const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-  const coldChainShipping = 45.00;
-  const estimatedTotal = subtotal + coldChainShipping;
+  const subtotal = cartItems.reduce((acc, i) => acc + i.price * i.quantity, 0);
+  const coldChainShipping = 45.0;
+  const total = subtotal + coldChainShipping;
+  const totalQty = cartItems.reduce((a, i) => a + i.quantity, 0);
 
-  // Update quantity
-  const updateQuantity = (id: number, delta: number) => {
-    setCartItems(items => 
-      items.map(item => {
-        if (item.id === id) {
-          const newQty = Math.max(1, item.quantity + delta);
-          return { ...item, quantity: newQty };
-        }
-        return item;
-      })
+  const updateQty = (id: number, delta: number) => {
+    setCartItems((items) =>
+      items.map((i) => (i.id === id ? { ...i, quantity: Math.max(1, i.quantity + delta) } : i))
     );
   };
 
-  // Remove item with animation
   const removeItem = (id: number) => {
-    setRemovingId(id);
-    setTimeout(() => {
-      setCartItems(items => items.filter(item => item.id !== id));
-      setRemovingId(null);
-    }, 300);
+    setCartItems((items) => items.filter((i) => i.id !== id));
   };
 
-  // Empty cart state
   if (cartItems.length === 0) {
     return (
-      <div className="bg-white py-12 rounded-3xl border border-slate-100 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="text-center py-20">
-            <div className="w-24 h-24 mx-auto mb-8 bg-slate-50 rounded-3xl flex items-center justify-center">
-              <Package className="w-12 h-12 text-slate-300" />
-            </div>
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#F0564A] mb-3">Your Cart</p>
-            <h1 className="text-4xl md:text-5xl font-bold text-slate-900 tracking-tight mb-4">Your cart is empty</h1>
-            <p className="text-slate-500 mb-8 max-w-md mx-auto">
-              Explore our catalog of high-precision scientific reagents and add products to your cart.
-            </p>
-            <button 
-              onClick={() => setCartItems(initialCartItems)}
-              className="inline-flex items-center gap-3 bg-slate-900 text-white px-8 py-4 rounded-2xl text-xs font-black uppercase tracking-[0.15em] hover:bg-[#F0564A] transition-all shadow-lg shadow-slate-900/20 group"
-            >
-              Reset Demo
-              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-            </button>
-          </div>
+      <div className="bg-white rounded-3xl border border-gray-100 p-12 text-center">
+        <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-gray-50 flex items-center justify-center">
+          <Package className="w-7 h-7 text-gray-300" />
         </div>
+        <p className="text-eyebrow text-[#F0564A] mb-2">Your Cart</p>
+        <h3 className="text-2xl font-bold text-gray-900 mb-3">Cart is empty</h3>
+        <button
+          onClick={() => setCartItems(initialCartItems)}
+          className="inline-flex items-center gap-2 bg-gray-900 hover:bg-[#F0564A] text-white px-6 py-3 rounded-full text-xs font-bold uppercase tracking-[0.15em] transition-colors"
+        >
+          Reset Demo
+          <ArrowRight className="w-4 h-4" />
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="bg-white py-12 rounded-3xl shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 lg:px-8">
-        
-        {/* Header Section */}
-        <div className="mb-12">
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#F0564A] mb-3">Your Selection</p>
-          <h1 className="text-4xl md:text-5xl font-bold text-slate-900 tracking-tight">Shopping Cart</h1>
-          <p className="text-slate-500 mt-3">{cartItems.length} {cartItems.length === 1 ? 'item' : 'items'} in your precision order</p>
+    <div className="bg-white rounded-3xl border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
+      {/* ============ HEADER STRIP ============ */}
+      <div className="px-5 sm:px-7 py-4 sm:py-5 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#F0564A] animate-pulse" />
+            <span className="text-[10px] font-mono font-bold uppercase tracking-[0.22em] text-[#5BCBD7]">
+              ▣ PRECISION ORDER · LIVE
+            </span>
+          </div>
+          <h3 className="text-xl sm:text-2xl font-heading font-bold text-gray-900 tracking-tight">
+            Cart <span className="text-gray-400 font-light">/ {totalQty} items</span>
+          </h3>
         </div>
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200">
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+          <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Secure Checkout</span>
+        </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-          
-          {/* LEFT COLUMN: Cart Items (7/12) */}
-          <div className="lg:col-span-7 space-y-6">
-            {cartItems.map((item) => (
-              <div 
-                key={item.id} 
-                className={`group relative flex flex-col sm:flex-row gap-6 lg:gap-8 p-6 lg:p-8 rounded-3xl border border-slate-100 bg-white hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-500 ${
-                  removingId === item.id ? 'opacity-0 scale-95 -translate-x-4' : ''
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 lg:gap-px bg-gray-100/60">
+        {/* ============ ITEMS COLUMN ============ */}
+        <div className="lg:col-span-7 bg-white">
+          <AnimatePresence initial={false}>
+            {cartItems.map((item, idx) => (
+              <motion.div
+                key={item.id}
+                layout
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -30, height: 0 }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                className={`group relative flex items-center gap-3 sm:gap-4 px-5 sm:px-7 py-4 sm:py-5 ${
+                  idx !== cartItems.length - 1 ? "border-b border-gray-100" : ""
                 }`}
               >
-                {/* Product Image Box */}
-                <div className="w-full sm:w-32 lg:w-40 h-32 lg:h-40 bg-slate-50 rounded-2xl flex items-center justify-center overflow-hidden transition-transform duration-500 group-hover:scale-[1.02] flex-shrink-0">
-                  <div className="w-20 h-20 lg:w-24 lg:h-24 bg-slate-200 rounded-full animate-pulse" /> {/* Placeholder for image */}
+                {/* Icon tile */}
+                <div
+                  className="shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center"
+                  style={{
+                    background: `${item.accent}12`,
+                    color: item.accent,
+                    boxShadow: `inset 0 0 0 1px ${item.accent}28`,
+                  }}
+                >
+                  <item.Icon className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
 
-                {/* Product Info */}
-                <div className="flex-1 flex flex-col min-w-0">
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">
-                    <div className="min-w-0">
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">
-                        {item.category} <span className="text-[#F0564A]">• CAT #{item.catalogId}</span>
-                      </p>
-                      <h3 className="text-lg lg:text-xl font-bold text-slate-900 leading-tight group-hover:text-[#F0564A] transition-colors">
-                        {item.name}
-                      </h3>
-                    </div>
-                    <p className="text-xl lg:text-2xl font-bold text-slate-900 whitespace-nowrap">
-                      ${(item.price * item.quantity).toFixed(2)}
-                    </p>
-                  </div>
-
-                  {/* Product Meta Tags */}
-                  <div className="flex flex-wrap items-center gap-2 mb-4 lg:mb-6">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 text-[10px] font-bold text-slate-500 border border-slate-100">
-                      <Snowflake className="w-3 h-3 text-cyan-500" />
-                      {item.storage}
-                    </span>
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 text-[10px] font-bold text-slate-500 border border-slate-100">
-                      <Package className="w-3 h-3 text-slate-400" />
-                      {item.size}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-medium">
-                      ${item.price.toFixed(2)} / unit
-                    </span>
-                  </div>
-
-                  {/* Controls Row */}
-                  <div className="mt-auto flex flex-wrap items-center justify-between gap-4">
-                    {/* Quantity Stepper */}
-                    <div className="flex items-center bg-slate-50 rounded-xl p-1 border border-slate-100">
-                      <button 
-                        onClick={() => updateQuantity(item.id, -1)}
-                        className="p-2.5 hover:bg-white hover:shadow-sm rounded-lg transition-all text-slate-400 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={item.quantity <= 1}
-                        aria-label="Decrease quantity"
-                      >
-                        <Minus className="w-4 h-4" />
-                      </button>
-                      <span className="px-5 text-sm font-black text-slate-900 min-w-[3rem] text-center">
-                        {item.quantity}
-                      </span>
-                      <button 
-                        onClick={() => updateQuantity(item.id, 1)}
-                        className="p-2.5 hover:bg-white hover:shadow-sm rounded-lg transition-all text-slate-400 hover:text-slate-900"
-                        aria-label="Increase quantity"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    </div>
-                    
-                    {/* Remove Button */}
-                    <button 
-                      onClick={() => removeItem(item.id)}
-                      className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-300 hover:text-red-500 transition-colors py-2"
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span
+                      className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.14em]"
+                      style={{ color: item.accent }}
                     >
-                      <Trash2 className="w-4 h-4" />
-                      Remove
-                    </button>
+                      {item.category}
+                    </span>
+                    <span className="text-gray-300 text-[10px]">·</span>
+                    <span className="text-[9px] sm:text-[10px] font-mono font-bold text-gray-400 uppercase tracking-wider">
+                      #{item.catalogId}
+                    </span>
+                  </div>
+                  <h4 className="text-sm sm:text-base font-bold text-gray-900 leading-tight truncate group-hover:text-[#F0564A] transition-colors">
+                    {item.name}
+                  </h4>
+                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                    <span className="inline-flex items-center gap-1 text-[10px] text-gray-500 font-medium">
+                      <Snowflake className="w-3 h-3 text-cyan-500" /> {item.storage}
+                    </span>
+                    <span className="text-gray-300 text-[10px]">·</span>
+                    <span className="text-[10px] text-gray-500 font-medium">{item.size}</span>
+                    <span className="text-gray-300 text-[10px]">·</span>
+                    <span className="text-[10px] font-mono text-gray-400">${item.price.toFixed(2)}/unit</span>
                   </div>
                 </div>
-              </div>
+
+                {/* Stepper */}
+                <div className="hidden sm:flex items-center gap-0 bg-gray-50 rounded-full border border-gray-100 px-1 py-1">
+                  <button
+                    onClick={() => updateQty(item.id, -1)}
+                    disabled={item.quantity <= 1}
+                    className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:bg-white hover:text-gray-900 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    aria-label="Decrease"
+                  >
+                    <Minus className="w-3.5 h-3.5" />
+                  </button>
+                  <span className="w-7 text-center text-xs font-bold font-mono text-gray-900">{item.quantity}</span>
+                  <button
+                    onClick={() => updateQty(item.id, 1)}
+                    className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:bg-white hover:text-gray-900 transition-colors"
+                    aria-label="Increase"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {/* Price */}
+                <div className="text-right shrink-0">
+                  <p className="text-sm sm:text-base font-bold text-gray-900 font-mono tabular-nums">
+                    ${(item.price * item.quantity).toFixed(2)}
+                  </p>
+                  <button
+                    onClick={() => removeItem(item.id)}
+                    className="mt-0.5 inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-gray-300 hover:text-red-500 uppercase tracking-wider transition-colors"
+                    aria-label="Remove"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    <span className="hidden sm:inline">Remove</span>
+                  </button>
+                </div>
+
+                {/* Mobile stepper row */}
+                <div className="sm:hidden absolute right-5 -bottom-3 flex items-center gap-0 bg-white rounded-full border border-gray-200 shadow-sm px-1 py-1">
+                  <button
+                    onClick={() => updateQty(item.id, -1)}
+                    disabled={item.quantity <= 1}
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-gray-400 disabled:opacity-30"
+                  >
+                    <Minus className="w-3 h-3" />
+                  </button>
+                  <span className="w-6 text-center text-[11px] font-bold font-mono text-gray-900">{item.quantity}</span>
+                  <button
+                    onClick={() => updateQty(item.id, 1)}
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-gray-400"
+                  >
+                    <Plus className="w-3 h-3" />
+                  </button>
+                </div>
+              </motion.div>
             ))}
-          </div>
+          </AnimatePresence>
+        </div>
 
-          {/* RIGHT COLUMN: Summary Card (5/12) */}
-          <div className="lg:col-span-5 lg:sticky lg:top-32">
-            <div className="rounded-3xl border border-slate-100 bg-white p-6 lg:p-8 shadow-2xl shadow-slate-200/50">
-              <h2 className="text-xl font-bold text-slate-900 mb-6 lg:mb-8">Order Summary</h2>
-              
-              {/* Line Items */}
-              <div className="space-y-4 mb-6 lg:mb-8">
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Subtotal ({cartItems.reduce((a, i) => a + i.quantity, 0)} items)</span>
-                  <span className="font-bold text-slate-900">${subtotal.toFixed(2)}</span>
-                </div>
-                
-                <div className="flex justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <span className="text-slate-500">Cold Chain Shipping</span>
-                    <Truck className="w-3.5 h-3.5 text-cyan-500" />
-                  </div>
-                  <span className="font-bold text-slate-900">${coldChainShipping.toFixed(2)}</span>
-                </div>
+        {/* ============ SUMMARY COLUMN ============ */}
+        <div className="lg:col-span-5 bg-gradient-to-b from-gray-50/60 to-white p-5 sm:p-7">
+          <div className="text-eyebrow text-[#F0564A] mb-4">Order Summary</div>
 
-                {/* Shipping Note */}
-                <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50/50 border border-amber-100">
-                  <Info className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-                  <p className="text-[10px] text-amber-700 leading-relaxed">
-                    Temperature-sensitive materials require specialized cold chain logistics for safe transport.
-                  </p>
-                </div>
-
-                {/* Divider & Total */}
-                <div className="pt-4 border-t border-slate-100 flex justify-between items-baseline">
-                  <span className="text-lg font-bold text-slate-900">Estimated Total</span>
-                  <span className="text-2xl lg:text-3xl font-black text-slate-900">${estimatedTotal.toFixed(2)}</span>
-                </div>
-              </div>
-
-              {/* Checkout Button */}
-              <button 
-                className="w-full flex items-center justify-center gap-3 bg-slate-900 text-white py-4 lg:py-5 rounded-2xl text-xs font-black uppercase tracking-[0.15em] hover:bg-[#F0564A] transition-all shadow-lg shadow-slate-900/20 mb-4 lg:mb-6 group"
-              >
-                Proceed to Checkout
-                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-              </button>
-
-              {/* Request Quote Alternative */}
-              <button className="w-full flex items-center justify-center gap-2 bg-slate-50 text-slate-900 py-3.5 rounded-xl text-[11px] font-bold uppercase tracking-[0.1em] hover:bg-slate-100 transition-all border border-slate-100 mb-6">
-                Request a Quote Instead
-              </button>
-
-              {/* Trust Indicators */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 border border-slate-100">
-                  <ShieldCheck className="w-5 h-5 text-cyan-600 flex-shrink-0" />
-                  <p className="text-[10px] font-bold text-slate-500 leading-snug uppercase tracking-tight">
-                    Secure encrypted checkout via Stripe
-                  </p>
-                </div>
-                
-                <p className="text-[9px] text-center text-slate-400 leading-relaxed uppercase tracking-[0.1em] px-4">
-                  Tax and final shipping calculated at checkout based on delivery laboratory location.
-                </p>
-              </div>
+          <div className="space-y-3 mb-5">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500">Subtotal</span>
+              <span className="font-bold text-gray-900 font-mono tabular-nums">${subtotal.toFixed(2)}</span>
             </div>
-
-            {/* Need Help Card */}
-            <div className="mt-6 p-5 rounded-2xl border border-slate-100 bg-slate-50/50">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-[#F0564A] flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-xs font-bold text-slate-900 mb-1">Need assistance?</p>
-                  <p className="text-[11px] text-slate-500 leading-relaxed mb-2">
-                    Our scientists can help with product selection and technical questions.
-                  </p>
-                  <span className="text-[10px] font-bold text-[#F0564A] hover:text-[#D94D42] uppercase tracking-[0.1em] transition-colors cursor-pointer">
-                    Contact Us →
-                  </span>
-                </div>
-              </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500 inline-flex items-center gap-1.5">
+                Cold Chain <Truck className="w-3.5 h-3.5 text-cyan-500" />
+              </span>
+              <span className="font-bold text-gray-900 font-mono tabular-nums">${coldChainShipping.toFixed(2)}</span>
             </div>
           </div>
 
+          {/* Cold chain note (compact) */}
+          <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-amber-50/60 border border-amber-100 mb-5">
+            <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+            <p className="text-[10px] text-amber-700 leading-snug">
+              Temperature-sensitive products ship via specialized cold-chain logistics.
+            </p>
+          </div>
+
+          {/* Total */}
+          <div className="flex items-baseline justify-between pt-4 border-t border-gray-200">
+            <span className="text-xs font-bold text-gray-700 uppercase tracking-[0.15em]">Estimated total</span>
+            <span className="text-2xl sm:text-3xl font-bold text-gray-900 font-mono tabular-nums">
+              ${total.toFixed(2)}
+            </span>
+          </div>
+
+          {/* CTAs */}
+          <button className="group mt-5 w-full inline-flex items-center justify-center gap-2 bg-[#F0564A] hover:bg-[#D94D42] text-white py-3.5 rounded-full text-xs font-bold uppercase tracking-[0.15em] transition-all shadow-[0_4px_14px_rgba(240,86,74,0.35)] hover:shadow-[0_6px_24px_rgba(240,86,74,0.5)]">
+            Proceed to Checkout
+            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+          </button>
+          <button className="mt-2 w-full text-center text-[11px] font-bold text-gray-500 hover:text-gray-900 uppercase tracking-[0.12em] py-2 transition-colors">
+            Request a Quote Instead
+          </button>
+
+          {/* Need help — inline, compact */}
+          <div className="mt-5 pt-4 border-t border-gray-100 flex items-start gap-2">
+            <AlertCircle className="w-3.5 h-3.5 text-[#F0564A] shrink-0 mt-0.5" />
+            <p className="text-[11px] text-gray-500 leading-relaxed">
+              <span className="font-bold text-gray-900">Need help?</span> Our scientists can advise on product selection.{" "}
+              <span className="font-bold text-[#F0564A] hover:text-[#D94D42] cursor-pointer transition-colors">
+                Contact us →
+              </span>
+            </p>
+          </div>
         </div>
       </div>
     </div>

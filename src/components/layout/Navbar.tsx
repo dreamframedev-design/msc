@@ -35,7 +35,7 @@ export function Navbar() {
   const isActive = isScrolled || isHovered || isMobileMenuOpen;
 
   // Determine if we are on a page with a dark hero section and haven't scrolled yet
-  const isDarkHero = pathname === '/services' || pathname === '/bundles' || pathname === '/spark-time' || pathname === '/portal' || pathname?.startsWith('/news/');
+  const isDarkHero = pathname === '/services' || pathname === '/bundles' || pathname === '/spark-time' || pathname === '/portal' || pathname === '/about' || pathname === '/news' || pathname?.startsWith('/news/');
   const isDarkTheme = isDarkHero && !isActive;
 
   const linkColor = isDarkTheme ? "text-white/85 hover:text-white" : "text-gray-600 hover:text-[#F0564A]";

@@ -1,222 +1,390 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useRef } from 'react';
-import {
-  ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, 
-  Tooltip, ResponsiveContainer, ReferenceLine, Cell
-} from 'recharts';
+import { useRef } from "react";
+import { motion, useScroll, useTransform, type MotionValue } from "framer-motion";
 
-/**
- * MASTER MAPPING FUNCTION
- * Replicates the "Broken Axis" look from the screenshot.
- * Maps values 0-1 to 0-60% of chart height.
- * Maps values 1-3 to 60-100% of chart height.
- */
-const mapY = (val: number) => {
-  if (val <= 1) return val * 0.75; // Zoom in on the 0-1 range
-  return 0.75 + (val - 1) * 0.125; // Compress the 1-3 range
-};
+/* =============================================================
+   PLASMA IL-1β BIOMARKER  ·  scroll-linked custom SVG scatter
+   Story: Placebo → Low Dose → High Dose
+   High variance collapses to tight, low-mean cluster.
+   ============================================================= */
 
-// Randomized data to not match client
-const PLASMA_DATA = [
-  // Matrix Alpha (Target Mean: 0.20)
-  { realVal: 0.08, x: 0.94 }, { realVal: 0.15, x: 0.97 }, 
-  { realVal: 0.22, x: 1.00 }, { realVal: 0.24, x: 1.03 }, 
-  { realVal: 0.62, x: 1.00 }, 
+type Point = { cohort: number; value: number; isOutlier?: boolean };
 
-  // Matrix Beta (Target Mean: 0.09)
-  { realVal: 0.06, x: 1.96 }, { realVal: 0.12, x: 2.00 }, { realVal: 0.14, x: 2.04 },
-  { realVal: 1.95, x: 2.00 }, { realVal: 2.65, x: 2.00 }, 
+const COHORTS = [
+  { id: 0, label: "Placebo", color: "#94a3b8", mean: 0.78, x: 1 },
+  { id: 1, label: "Low Dose", color: "#5BCBD7", mean: 0.32, x: 2 },
+  { id: 2, label: "High Dose", color: "#F0564A", mean: 0.18, x: 3 },
+];
 
-  // Matrix Gamma (Target Mean: 0.07)
-  { realVal: 0.05, x: 2.95 }, { realVal: 0.09, x: 2.98 }, { realVal: 0.11, x: 3.02 }, 
-  { realVal: 0.14, x: 3.05 }, { realVal: 0.18, x: 3.00 },
-].map(d => ({ ...d, value: mapY(d.realVal) }));
+// Tight, story-friendly data: placebo scattered & high, doses tighter & lower
+const POINTS: Point[] = [
+  // Placebo — wide spread, high mean
+  { cohort: 0, value: 0.55 }, { cohort: 0, value: 0.62 }, { cohort: 0, value: 0.78 },
+  { cohort: 0, value: 0.85 }, { cohort: 0, value: 0.91 }, { cohort: 0, value: 1.42, isOutlier: true },
+  { cohort: 0, value: 0.74 }, { cohort: 0, value: 0.69 },
+  // Low Dose — moderate, tighter
+  { cohort: 1, value: 0.22 }, { cohort: 1, value: 0.31 }, { cohort: 1, value: 0.35 },
+  { cohort: 1, value: 0.38 }, { cohort: 1, value: 0.28 }, { cohort: 1, value: 0.42 },
+  { cohort: 1, value: 0.26 }, { cohort: 1, value: 0.34 },
+  // High Dose — tight cluster, low values
+  { cohort: 2, value: 0.12 }, { cohort: 2, value: 0.16 }, { cohort: 2, value: 0.21 },
+  { cohort: 2, value: 0.19 }, { cohort: 2, value: 0.14 }, { cohort: 2, value: 0.22 },
+  { cohort: 2, value: 0.17 }, { cohort: 2, value: 0.20 },
+];
 
-const MEANS = [
-  { x: 1, realVal: 0.23 },
-  { x: 2, realVal: 0.12 },
-  { x: 3, realVal: 0.11 },
-].map(m => ({ ...m, value: mapY(m.realVal) }));
+const W = 600;
+const H = 400;
+const PAD_L = 64;
+const PAD_R = 32;
+const PAD_T = 56;
+const PAD_B = 80;
+const PLOT_W = W - PAD_L - PAD_R;
+const PLOT_H = H - PAD_T - PAD_B;
+const PLOT_TOP = PAD_T;
+const PLOT_BOTTOM = PAD_T + PLOT_H;
+const MAX_Y = 1.5;
 
-const CUSTOM_TOOLTIP = ({ active, payload }: any) => {
-  if (active && payload && payload.length) {
-    const data = payload[0].payload;
-    const matrixName = data.x < 1.5 ? 'Matrix Alpha' : data.x < 2.5 ? 'Matrix Beta' : 'Matrix Gamma';
-    return (
-      <div className="bg-white p-4 md:p-5 border border-slate-100 shadow-2xl rounded-2xl min-w-[200px] max-w-[85vw] md:min-w-[280px] md:max-w-[320px] relative overflow-hidden whitespace-normal z-50">
-        <div className="absolute top-0 left-0 w-1 h-full bg-[#F0564A]"></div>
-        <p className="text-[10px] md:text-xs font-black uppercase tracking-widest text-slate-400 mb-2">{matrixName}</p>
-        <div className="flex justify-between items-baseline mb-1 gap-4">
-          <span className="text-xs md:text-sm font-bold text-slate-600">Concentration:</span>
-          <span className="text-xl md:text-2xl font-black text-[#F0564A]">{data.realVal.toFixed(3)} <span className="text-[10px] md:text-xs text-slate-400 font-bold">pg/mL</span></span>
-        </div>
-        <div className="flex justify-between items-baseline mb-3 gap-4">
-          <span className="text-xs md:text-sm font-bold text-slate-600">Variance:</span>
-          <span className="text-xs md:text-sm font-bold text-slate-400">±{(data.realVal * 0.05).toFixed(3)}</span>
-        </div>
-        <div className="bg-slate-50 p-3 md:p-4 rounded-xl border border-slate-100">
-          <p className="text-xs md:text-sm text-slate-600 leading-relaxed font-medium">
-            {data.realVal > 1.5 
-              ? "🎯 Outlier detected. We highlight these data points to show investors the broad dynamic range of the assay." 
-              : "Consistent baseline clustering demonstrates the high precision and reproducibility of the platform."}
-          </p>
-        </div>
-      </div>
-    );
-  }
-  return null;
-};
+// Center X for each cohort column
+const cohortX = (i: number) => PAD_L + (PLOT_W / (COHORTS.length * 2)) * (2 * i + 1);
 
-export default function PlasmaIL1BetaGraph() {
-  const [isVisible, setIsVisible] = useState(false);
-  const [animationProgress, setAnimationProgress] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
+// Deterministic horizontal jitter per point so they don't overlap perfectly
+function jitterFor(i: number) {
+  return (Math.sin(i * 12.9898) * 43758.5453) % 1 * 30 - 15;
+}
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          
-          // Animate the reference lines sliding up over 1.5 seconds
-          let start = performance.now();
-          const duration = 1500;
-          
-          const animate = (time: number) => {
-            const elapsed = time - start;
-            const progress = Math.min(elapsed / duration, 1);
-            // easeOutCubic
-            const easeProgress = 1 - Math.pow(1 - progress, 3);
-            setAnimationProgress(easeProgress);
-            
-            if (progress < 1) {
-              requestAnimationFrame(animate);
-            }
-          };
-          
-          requestAnimationFrame(animate);
-          observer.unobserve(entry.target);
-        }
-      },
-      { threshold: 0.2 }
-    );
+function ScatterDot({
+  point,
+  index,
+  enter,
+  exit,
+}: {
+  point: Point & { i: number };
+  index: number;
+  enter: MotionValue<number>;
+  exit: MotionValue<number>;
+}) {
+  const stagger = (point.cohort * 0.15) + (index % 8) * 0.03;
+  const localEnter = useTransform(enter, [stagger, stagger + 0.4], [0, 1], { clamp: true });
 
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
+  const cohort = COHORTS[point.cohort];
+  const cx = cohortX(point.cohort) + jitterFor(point.i);
+  const targetY = PLOT_TOP + PLOT_H * (1 - point.value / MAX_Y);
 
-    return () => {
-      if (containerRef.current) {
-        observer.unobserve(containerRef.current);
-      }
-    };
-  }, []);
+  // Dots fall in from above
+  const cy = useTransform(localEnter, (v) => PLOT_TOP - 20 + (targetY - (PLOT_TOP - 20)) * v);
+  const opacity = useTransform([localEnter, exit] as MotionValue[], (latest) => {
+    const [e, x] = latest as number[];
+    return e * (1 - x);
+  });
+
+  // Exit scatter — dots fly outward
+  const ang = (point.i * 137.5) % 360;
+  const rad = (ang * Math.PI) / 180;
+  const dx = Math.cos(rad) * 50;
+  const dy = Math.sin(rad) * 50;
+  const exitX = useTransform(exit, [0, 1], [0, dx]);
+  const exitY = useTransform(exit, [0, 1], [0, dy]);
 
   return (
-    <div ref={containerRef} className="w-full h-full flex flex-col p-4 md:p-8 bg-white rounded-[2.5rem] shadow-inner border border-slate-100/50 relative group">
-      
-      <div className="flex flex-col sm:flex-row justify-between items-start mb-6 md:mb-8 gap-4">
+    <motion.g style={{ opacity, x: exitX, y: exitY }}>
+      {/* Outer halo for outliers */}
+      {point.isOutlier && (
+        <motion.circle
+          cx={cx}
+          cy={cy}
+          r={10}
+          fill={cohort.color}
+          style={{ opacity: useTransform(localEnter, [0.5, 1], [0, 0.25], { clamp: true }) }}
+        />
+      )}
+      <motion.circle
+        cx={cx}
+        cy={cy}
+        r={point.isOutlier ? 5.5 : 4.5}
+        fill={cohort.color}
+        stroke="#ffffff"
+        strokeWidth={1.5}
+        style={{ filter: point.isOutlier ? `drop-shadow(0 0 6px ${cohort.color})` : "none" }}
+      />
+    </motion.g>
+  );
+}
+
+function MeanLine({
+  cohort,
+  enter,
+}: {
+  cohort: (typeof COHORTS)[number];
+  enter: MotionValue<number>;
+}) {
+  const stagger = 0.4 + cohort.id * 0.1;
+  const localEnter = useTransform(enter, [stagger, stagger + 0.3], [0, 1], { clamp: true });
+  const cx = cohortX(cohort.id);
+  const meanY = PLOT_TOP + PLOT_H * (1 - cohort.mean / MAX_Y);
+  const halfW = 36;
+  const left = useTransform(localEnter, (v) => cx - halfW * v);
+  const right = useTransform(localEnter, (v) => cx + halfW * v);
+
+  return (
+    <>
+      <motion.line
+        x1={left}
+        x2={right}
+        y1={meanY}
+        y2={meanY}
+        stroke={cohort.color}
+        strokeWidth={3}
+        strokeLinecap="round"
+        style={{ filter: `drop-shadow(0 0 6px ${cohort.color})` }}
+      />
+      {/* Mean value label */}
+      <motion.text
+        x={cx + 50}
+        y={meanY + 4}
+        fill={cohort.color}
+        fontSize="10"
+        fontWeight="900"
+        fontFamily="ui-monospace, monospace"
+        style={{ opacity: useTransform(localEnter, [0.6, 1], [0, 1], { clamp: true }) }}
+      >
+        x̄ {cohort.mean.toFixed(2)}
+      </motion.text>
+    </>
+  );
+}
+
+function GridLine({
+  value,
+  enter,
+  delay = 0,
+}: {
+  value: number;
+  enter: MotionValue<number>;
+  delay?: number;
+}) {
+  const y = PLOT_TOP + PLOT_H * (1 - value / MAX_Y);
+  const opacity = useTransform(enter, [delay, delay + 0.2], [0, 1], { clamp: true });
+  return (
+    <>
+      <motion.line
+        x1={PAD_L}
+        x2={W - PAD_R}
+        y1={y}
+        y2={y}
+        stroke="#e2e8f0"
+        strokeDasharray="3 5"
+        style={{ opacity }}
+      />
+      <motion.text
+        x={PAD_L - 10}
+        y={y + 4}
+        fill="#94a3b8"
+        fontSize="10"
+        fontWeight="700"
+        textAnchor="end"
+        fontFamily="ui-monospace, monospace"
+        style={{ opacity }}
+      >
+        {value.toFixed(1)}
+      </motion.text>
+    </>
+  );
+}
+
+export default function PlasmaIL1BetaGraph() {
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+  const enter = useTransform(scrollYProgress, [0.08, 0.4], [0, 1], { clamp: true });
+  const exit = useTransform(scrollYProgress, [0.62, 0.92], [0, 1], { clamp: true });
+  const blurAmt = useTransform(exit, [0, 1], [0, 6]);
+  const filterStr = useTransform(blurAmt, (v) => `blur(${v}px)`);
+  const opacity = useTransform(exit, [0, 1], [1, 0]);
+
+  // P-value callout pops in late
+  const pValueOpacity = useTransform(enter, [0.75, 1], [0, 1], { clamp: true });
+  const pValueY = useTransform(enter, [0.75, 1], [10, 0], { clamp: true });
+
+  // Y axis title
+  const yAxisOpacity = useTransform(enter, [0.1, 0.3], [0, 1], { clamp: true });
+
+  // Normal range zone (0 to 0.25)
+  const normalRangeY = PLOT_TOP + PLOT_H * (1 - 0.25 / MAX_Y);
+  const normalRangeH = PLOT_BOTTOM - normalRangeY;
+  const zoneOpacity = useTransform(enter, [0.2, 0.45], [0, 0.5], { clamp: true });
+
+  // Indexed points (with stable index for jitter calc)
+  const indexedPoints = POINTS.map((p, i) => ({ ...p, i }));
+
+  return (
+    <div ref={ref} className="w-full h-full flex flex-col">
+      {/* HUD HEADER */}
+      <div className="flex items-center justify-between mb-4 sm:mb-6 flex-wrap gap-3">
         <div>
-          <div className="flex flex-wrap items-center gap-2 md:gap-3">
-            <h4 className="text-lg md:text-xl font-bold text-slate-900 tracking-tight">Multiplex Cytokine Expression</h4>
-            {/* "Hover Me" Indicator */}
-            <div className="flex items-center gap-1.5 bg-[#F0564A]/10 text-[#F0564A] px-2 py-1 md:px-3 md:py-1.5 rounded-full opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
-              <svg className="w-3 h-3 md:w-4 md:h-4 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
-              <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">Tap Insights</span>
-            </div>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#5BCBD7] animate-pulse" />
+            <span className="text-[10px] font-mono font-bold uppercase tracking-[0.22em] text-[#F0564A]">
+              ▣ PLASMA IL-1β · DAY 28
+            </span>
           </div>
-          <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-[#F0564A] mt-1 md:mt-2">Biomarker Profile Variance</p>
+          <h4 className="text-lg sm:text-xl md:text-2xl font-heading font-bold text-gray-900 tracking-tight">
+            Variance collapses
+          </h4>
         </div>
-        <div className="bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100 hidden sm:block">
-          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Platform</span>
-          <div className="text-[10px] font-bold text-slate-900">High-Sensitivity Array</div>
+        <div className="inline-flex items-center gap-3 px-3 py-1.5 rounded-full bg-gray-50 border border-gray-100">
+          <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+            HS Array
+          </span>
+          <span className="w-px h-3 bg-gray-200" />
+          <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">n=24</span>
         </div>
       </div>
 
-      <div className="flex-1 w-full min-h-[250px] md:min-h-[300px] pb-4">
-        <ResponsiveContainer width="100%" height={300}>
-          <ScatterChart margin={{ top: 20, right: 30, bottom: 30, left: 40 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-            
-            <XAxis 
-              type="number" 
-              dataKey="x" 
-              ticks={[1, 2, 3]}
-              tickFormatter={(v) => v === 1 ? 'Matrix Alpha' : v === 2 ? 'Matrix Beta' : 'Matrix Gamma'}
-              domain={[0.5, 3.5]}
-              axisLine={{ stroke: '#cbd5e1', strokeWidth: 2 }}
-              tickLine={false}
-              fontSize={10}
-              fontWeight={900}
-              stroke="#94a3b8"
-              label={{ value: 'Matrix Type', position: 'bottom', offset: 20, fill: '#64748b', fontSize: 10, fontWeight: 900, letterSpacing: '0.1em' }}
-            />
+      <motion.div className="relative flex-1 min-h-[280px]" style={{ filter: filterStr, opacity }}>
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-full" preserveAspectRatio="xMidYMid meet">
+          {/* Y axis title */}
+          <motion.text
+            x={20}
+            y={PLOT_TOP + PLOT_H / 2}
+            fill="#475569"
+            fontSize="11"
+            fontWeight="800"
+            textAnchor="middle"
+            transform={`rotate(-90, 20, ${PLOT_TOP + PLOT_H / 2})`}
+            letterSpacing="1.5"
+            style={{ opacity: yAxisOpacity }}
+          >
+            IL-1β (pg/mL)
+          </motion.text>
 
-            <YAxis 
-              type="number" 
-              dataKey="value" 
-              domain={[0, 1.1]} // Boundary of our mapped space
-              ticks={[0, mapY(0.25), mapY(0.5), mapY(0.75), mapY(2), mapY(3)]}
-              tickFormatter={(v) => {
-                 if (v === 0) return '0.00';
-                 if (v === mapY(0.25)) return '0.25';
-                 if (v === mapY(0.5)) return '0.50';
-                 if (v === mapY(0.75)) return '0.75';
-                 if (v === mapY(2)) return '2';
-                 if (v === mapY(3)) return '3';
-                 return '';
-              }}
-              axisLine={{ stroke: '#cbd5e1', strokeWidth: 2 }}
-              tickLine={false}
-              fontSize={10}
-              fontWeight={900}
-              stroke="#94a3b8"
-              label={{ value: 'Analyte Concentration (pg/mL)', angle: -90, position: 'insideLeft', offset: -20, fill: '#64748b', fontSize: 10, fontWeight: 900 }}
-            />
-            
-            <Tooltip 
-              content={<CUSTOM_TOOLTIP />} 
-              cursor={{ strokeDasharray: '3 3', stroke: '#e2e8f0' }} 
-              allowEscapeViewBox={{ x: false, y: true }}
-              wrapperStyle={{ zIndex: 100 }}
-            />
-            
-            {/* FIXED MEAN LINES: Animated sliding up */}
-            {MEANS.map((mean, idx) => (
-              <ReferenceLine 
-                key={idx}
-                y={mean.value * animationProgress} 
-                stroke="#F0564A" 
-                strokeWidth={3}
-                segment={[{ x: mean.x - 0.25, y: mean.value * animationProgress }, { x: mean.x + 0.25, y: mean.value * animationProgress }]}
-              />
-            ))}
+          {/* Normal-range zone */}
+          <motion.rect
+            x={PAD_L}
+            y={normalRangeY}
+            width={PLOT_W}
+            height={normalRangeH}
+            fill="#5BCBD7"
+            style={{ opacity: useTransform(zoneOpacity, (v) => v * 0.18) }}
+          />
+          <motion.text
+            x={W - PAD_R - 8}
+            y={normalRangeY + 14}
+            fill="#5BCBD7"
+            fontSize="9"
+            fontWeight="900"
+            textAnchor="end"
+            letterSpacing="1.2"
+            style={{ opacity: zoneOpacity }}
+          >
+            NORMAL RANGE
+          </motion.text>
 
-            {isVisible && (
-              <Scatter data={PLASMA_DATA} isAnimationActive={true} animationDuration={1500}>
-                {PLASMA_DATA.map((entry, index) => (
-                  <Cell 
-                    key={`cell-${index}`} 
-                    fill="#0f172a" 
-                    stroke="#fff" 
-                    strokeWidth={2} 
-                    r={6} 
-                    className="drop-shadow-sm hover:fill-[#F0564A] transition-colors duration-300 cursor-pointer"
-                  />
-                ))}
-              </Scatter>
-            )}
-          </ScatterChart>
-        </ResponsiveContainer>
-      </div>
+          {/* Grid */}
+          {[0, 0.5, 1.0, 1.5].map((v, i) => (
+            <GridLine key={v} value={v} enter={enter} delay={0.1 + i * 0.03} />
+          ))}
 
-      <div className="mt-6 pt-6 border-t border-slate-50 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-           <div className="w-4 h-1 bg-[#F0564A]"></div>
-           <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Mean Value</span>
+          {/* Baseline axis */}
+          <line
+            x1={PAD_L}
+            x2={W - PAD_R}
+            y1={PLOT_BOTTOM}
+            y2={PLOT_BOTTOM}
+            stroke="#94a3b8"
+            strokeWidth={1.5}
+          />
+
+          {/* Scatter points */}
+          {indexedPoints.map((p) => (
+            <ScatterDot key={p.i} point={p} index={p.i} enter={enter} exit={exit} />
+          ))}
+
+          {/* Mean lines */}
+          {COHORTS.map((c) => (
+            <MeanLine key={c.id} cohort={c} enter={enter} />
+          ))}
+
+          {/* X-axis labels — cohorts */}
+          {COHORTS.map((c) => {
+            const x = cohortX(c.id);
+            return (
+              <g key={c.id}>
+                <text
+                  x={x}
+                  y={H - PAD_B + 24}
+                  fill="#0f172a"
+                  fontSize="12"
+                  fontWeight="800"
+                  textAnchor="middle"
+                >
+                  {c.label}
+                </text>
+                <line
+                  x1={x - 18}
+                  x2={x + 18}
+                  y1={H - PAD_B + 32}
+                  y2={H - PAD_B + 32}
+                  stroke={c.color}
+                  strokeWidth={2}
+                />
+              </g>
+            );
+          })}
+
+          {/* P-VALUE CALLOUT */}
+          <motion.g style={{ opacity: pValueOpacity, y: pValueY }}>
+            <rect
+              x={cohortX(2) - 64}
+              y={PLOT_TOP + 8}
+              width="128"
+              height="28"
+              rx="14"
+              fill="#F0564A"
+              filter="drop-shadow(0 6px 20px rgba(240,86,74,0.4))"
+            />
+            <text
+              x={cohortX(2)}
+              y={PLOT_TOP + 26}
+              fill="white"
+              fontSize="11"
+              fontWeight="900"
+              textAnchor="middle"
+              letterSpacing="1"
+            >
+              ★ p &lt; 0.001
+            </text>
+          </motion.g>
+
+          {/* Comparison arrow Placebo → High Dose */}
+          <motion.g style={{ opacity: useTransform(enter, [0.6, 0.85], [0, 1], { clamp: true }) }}>
+            <path
+              d={`M ${cohortX(0)} ${PLOT_TOP + 24} Q ${(cohortX(0) + cohortX(2)) / 2} ${PLOT_TOP - 6} ${cohortX(2) - 60} ${PLOT_TOP + 24}`}
+              fill="none"
+              stroke="#0f172a"
+              strokeWidth="1.2"
+              strokeDasharray="3 4"
+              opacity="0.4"
+            />
+          </motion.g>
+        </svg>
+      </motion.div>
+
+      {/* Footer / legend */}
+      <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-3">
+          {COHORTS.map((c) => (
+            <div key={c.id} className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full" style={{ background: c.color }} />
+              <span className="text-[9px] sm:text-[10px] font-bold text-gray-500 uppercase tracking-[0.1em]">
+                {c.label}
+              </span>
+            </div>
+          ))}
         </div>
-        <p className="text-[10px] italic text-slate-400 font-medium">Comparison of detection levels across matrices</p>
+        <p className="text-[10px] italic text-gray-400 font-medium">High-Sensitivity Multiplex Array</p>
       </div>
     </div>
   );

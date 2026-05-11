@@ -28,7 +28,7 @@ export const articles = [
       "• Cohesive voice across web, print, and presentations",
       "• Clarity that helps others advocate for your work"
     ],
-    imageUrl: "/images/news hero.avif"
+    imageUrl: "/images/storyboard hero_edited.jpg"
   },
   {
     id: "top-biotech-communication-pitfalls-and-how-our-services-prevent-them",
@@ -55,7 +55,7 @@ export const articles = [
       "We provide a fully integrated digital marketing strategy that aligns all aspects of your biotech brand’s online presence. From website design to SEO to paid advertising, we ensure every element works together cohesively to reinforce your company’s value and goals. By taking a comprehensive approach, we maximize visibility, engagement, and paid ads, we help biotech companies connect with investors, partners, and customers more effectively.",
       "Are you ready to take your biotech communication strategy to the next level? Let’s build a strategy that drives results!"
     ],
-    imageUrl: "/images/news hero.avif"
+    imageUrl: "/images/laptop mockup hero_edited.jpg"
   },
   {
     id: "key-themes-and-trends-from-jp-morgan-healthcare-conference-2025",
@@ -88,7 +88,7 @@ export const articles = [
       "Policy Engagement: Active participation in policy discussions will be crucial to navigate the evolving regulatory landscape.",
       "The JP Morgan Healthcare Conference 2025 underscored the industry's resilience and adaptability. As we move forward, embracing innovation and strategic collaboration will be key to advancing healthcare globally."
     ],
-    imageUrl: "/images/news hero.avif"
+    imageUrl: "/images/symposium poster1.jpg"
   },
   {
     id: "why-biotech-ceos-cant-afford-to-ignore-linkedin-anymore",
@@ -117,7 +117,7 @@ export const articles = [
       "• Leverage Your Team: Encourage your team to be active on LinkedIn as well. Employee advocacy amplifies your company’s reach exponentially.",
       "The bottom line? LinkedIn is no longer optional for biotech CEOs. It’s a strategic imperative. Embrace the platform, share your story, and watch your influence - and your company - grow."
     ],
-    imageUrl: "/images/news hero.avif"
+    imageUrl: "/images/hero girl at desk white_edited.jpg"
   },
   {
     id: "the-power-of-precision-why-excellent-scientific-illustrations-matter-in-biotech-communications",
@@ -142,7 +142,7 @@ export const articles = [
       "At Mighty Spark Communications, we understand that scientific illustrations are a critical component of your corporate narrative. Our team of expert illustrators and designers works closely with your scientists to create visuals that are not only scientifically accurate but also visually compelling and strategically aligned with your messaging.",
       "Don’t let poor visuals obscure your groundbreaking science. Invest in the power of precision and let your illustrations speak volumes about the quality of your work."
     ],
-    imageUrl: "/images/news hero.avif"
+    imageUrl: "/images/flowsaber_a_beautiful_scientific_biotech_close_up_molecular_mic_231de8ff-e324-440e-9056-b28133c799dc_edited (1).jpg"
   },
   {
     id: "step-by-step-guide-the-secrets-to-nailing-your-biotech-corporate-deck",
@@ -175,6 +175,6 @@ export const articles = [
       "A great story can be ruined by terrible design. Your deck should be visually appealing, professional, and easy to read. Use plenty of white space, consistent branding, and high-quality graphics. A polished deck signals a polished company.",
       "Creating a winning corporate deck is a strategic exercise. It requires stepping back from the day-to-day science and looking at your company through the eyes of an investor. By following these steps, you can build a deck that not only explains your science but compels action."
     ],
-    imageUrl: "/images/news hero.avif"
+    imageUrl: "/images/presentor hero_edited.jpg"
   }
 ];
