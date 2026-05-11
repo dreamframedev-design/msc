@@ -179,13 +179,26 @@ export default function PortalDashboard() {
     <div className={`min-h-screen flex relative ${isDark ? 'text-white' : 'text-gray-900'}`}>
       {/* Fixed Background Image */}
       <div className="fixed inset-0 z-0">
-        <Image 
-          src="/images/flowsaber_minimal_simple_opening_photorealistic_cinematic_shot__42eeffda-30d1-41a4-8f73-c49a4ac32608.png"
-          alt="Portal Background"
-          fill
-          className="object-cover"
-          priority
-        />
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab === "tickets" ? "tickets-bg" : "default-bg"}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1 }}
+            className="absolute inset-0"
+          >
+            <Image 
+              src={activeTab === "tickets" 
+                ? "/images/flowsaber_a_beautiful_scientific_biotech_close_up_molecular_mic_231de8ff-e324-440e-9056-b28133c799dc_edited (1).jpg" 
+                : "/images/flowsaber_minimal_simple_opening_photorealistic_cinematic_shot__42eeffda-30d1-41a4-8f73-c49a4ac32608.png"}
+              alt="Portal Background"
+              fill
+              className="object-cover"
+              priority
+            />
+          </motion.div>
+        </AnimatePresence>
         {/* Gradient Overlay for readability */}
         <div className={`absolute inset-0 ${isDark ? 'bg-black/80' : 'bg-white/80'} backdrop-blur-[2px] transition-colors duration-500`} />
       </div>
