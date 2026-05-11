@@ -176,16 +176,16 @@ export default function PortalDashboard() {
   const isDark = theme === "dark";
 
   return (
-    <div className={`min-h-screen flex relative ${isDark ? 'text-white' : 'text-gray-900'}`}>
+    <div className={`min-h-screen flex relative ${isDark ? 'text-white bg-black' : 'text-gray-900 bg-gray-900'}`}>
       {/* Fixed Background Image */}
-      <div className="fixed inset-0 z-0">
-        <AnimatePresence mode="wait">
+      <div className="fixed inset-0 z-0 bg-black">
+        <AnimatePresence>
           <motion.div
             key={activeTab === "tickets" ? "tickets-bg" : "default-bg"}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 1 }}
+            transition={{ duration: 0.5 }}
             className="absolute inset-0"
           >
             <Image 
