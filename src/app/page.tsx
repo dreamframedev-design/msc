@@ -154,12 +154,27 @@ export default function Home() {
       <section className="py-32 relative overflow-hidden">
         {/* Background Layer */}
         <div className="absolute inset-0 z-0">
-          <Image 
-            src="/images/flowsaber_a_beautiful_scientific_biotech_close_up_molecular_mic_231de8ff-e324-440e-9056-b28133c799dc_edited (1).jpg" 
-            alt="Services Background" 
-            fill 
-            className="object-cover"
-          />
+          <motion.div 
+            animate={{ 
+              scale: [1, 1.05, 1],
+              rotate: [0, 1, -1, 0],
+              x: ["0%", "-1%", "1%", "0%"],
+              y: ["0%", "1%", "-1%", "0%"]
+            }}
+            transition={{ 
+              duration: 25, 
+              repeat: Infinity, 
+              ease: "linear" 
+            }}
+            className="absolute inset-0 w-[105%] h-[105%] -left-[2.5%] -top-[2.5%]"
+          >
+            <Image 
+              src="/images/flowsaber_a_beautiful_scientific_biotech_close_up_molecular_mic_231de8ff-e324-440e-9056-b28133c799dc_edited (1).jpg" 
+              alt="Services Background" 
+              fill 
+              className="object-cover"
+            />
+          </motion.div>
           <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/80 to-transparent w-full lg:w-2/3" />
         </div>
         
