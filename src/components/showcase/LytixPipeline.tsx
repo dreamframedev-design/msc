@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { ArrowRight, ExternalLink, ChevronDown } from "lucide-react";
+import { useRef, useState } from "react";
+import { motion, useScroll, useTransform, type MotionValue } from "framer-motion";
+import { ExternalLink, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Pipeline data with popout content
@@ -86,13 +85,22 @@ const PIPELINE_DATA = [
 export default function LytixPipeline() {
   const [selectedItem, setSelectedItem] = useState(PIPELINE_DATA[0]);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Scroll-linked progression — bars fill as the user scrolls into the table
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+  const enter = useTransform(scrollYProgress, [0.1, 0.5], [0, 1], { clamp: true });
+  const exit = useTransform(scrollYProgress, [0.7, 0.95], [0, 1], { clamp: true });
 
   const getProgressWidth = (progress: number) => {
-    return Math.max(0, Math.min(4, progress)) / 4 * 100;
+    return (Math.max(0, Math.min(4, progress)) / 4) * 100;
   };
 
   return (
-    <div className="bg-slate-50 w-full h-full">
+    <div ref={ref} className="bg-slate-50 w-full h-full">
       <div className="relative z-[2]">
         
         {/* Pipeline Interactive Section */}
@@ -194,6 +202,8 @@ export default function LytixPipeline() {
                     onLeave={() => setHoveredId(null)}
                     onClick={() => setSelectedItem(item)}
                     getProgressWidth={getProgressWidth}
+                    enter={enter}
+                    exit={exit}
                   />
                 ))}
 
@@ -223,6 +233,8 @@ export default function LytixPipeline() {
                     onLeave={() => setHoveredId(null)}
                     onClick={() => setSelectedItem(item)}
                     getProgressWidth={getProgressWidth}
+                    enter={enter}
+                    exit={exit}
                   />
                 ))}
               </div>
@@ -244,6 +256,8 @@ function PipelineRow({
   onClick,
   getProgressWidth,
   animationIndex = 0,
+  enter,
+  exit,
 }: {
   item: typeof PIPELINE_DATA[0];
   isSelected: boolean;
@@ -253,9 +267,25 @@ function PipelineRow({
   onClick: () => void;
   getProgressWidth: (p: number) => number;
   animationIndex?: number;
+  enter: MotionValue<number>;
+  exit: MotionValue<number>;
 }) {
+  // Scroll-linked stagger
+  const stagger = animationIndex * 0.08;
+  const localEnter = useTransform(enter, [stagger, stagger + 0.55], [0, 1], { clamp: true });
+  const targetW = getProgressWidth(item.progress);
+  const widthPct = useTransform([localEnter, exit] as MotionValue[], (latest) => {
+    const [e, x] = latest as number[];
+    return `${targetW * e * (1 - x * 0.6)}%`;
+  });
+  const rowOpacity = useTransform([localEnter, exit] as MotionValue[], (latest) => {
+    const [e, x] = latest as number[];
+    return Math.min(1, e * 1.5) * (1 - x);
+  });
+  const rowX = useTransform(exit, [0, 1], [0, -20]);
+
   return (
-    <div className="border-b border-slate-200">
+    <motion.div className="border-b border-slate-200" style={{ opacity: rowOpacity, x: rowX }}>
       {/* Main Row Content */}
       <div
         className={cn(
@@ -315,16 +345,20 @@ function PipelineRow({
               <span className="border-r-2 border-white" />
               <span />
             </div>
-            {/* Progress fill with shine */}
-            <div
-              className="pipeline-bar-fill absolute left-0 top-0 bottom-0 rounded-full bg-gradient-to-r from-[#F0564A] via-[#F0564A] to-orange-400 z-0 overflow-hidden"
-              style={{
-                width: `${getProgressWidth(item.progress)}%`,
-                animationDelay: `${animationIndex * 0.2}s`
-              }}
+            {/* Scroll-linked progress fill */}
+            <motion.div
+              className="absolute left-0 top-0 bottom-0 rounded-full bg-gradient-to-r from-[#F0564A] via-[#F0564A] to-orange-400 z-0 overflow-hidden shadow-[0_0_12px_rgba(240,86,74,0.5)]"
+              style={{ width: widthPct, transformOrigin: "left center" }}
             >
-              <span className="pipeline-shine" style={{ animationDelay: `${1.5 + animationIndex * 0.2}s` }} />
-            </div>
+              {/* Shimmer pass */}
+              <motion.span
+                className="absolute top-0 bottom-0 w-1/3 bg-gradient-to-r from-transparent via-white/45 to-transparent skew-x-[-20deg]"
+                animate={{ x: ["-100%", "320%"] }}
+                transition={{ duration: 2.8, delay: 1 + animationIndex * 0.2, repeat: Infinity, repeatDelay: 1.5, ease: "easeInOut" }}
+              />
+              {/* Leading edge dot */}
+              <span className="absolute right-0 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.95)]" />
+            </motion.div>
           </div>
         </div>
 
@@ -376,6 +410,6 @@ function PipelineRow({
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

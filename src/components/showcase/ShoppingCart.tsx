@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useRef, useState } from "react";
+import { motion, useScroll, useTransform, useMotionValue, useMotionValueEvent, type MotionValue, AnimatePresence } from "framer-motion";
 import {
   Trash2,
   Plus,
@@ -70,12 +70,50 @@ const initialCartItems: CartItem[] = [
 ];
 
 export default function ShoppingCart() {
+  const ref = useRef<HTMLDivElement>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>(initialCartItems);
 
-  const subtotal = cartItems.reduce((acc, i) => acc + i.price * i.quantity, 0);
-  const coldChainShipping = 45.0;
+  // Scroll-linked storytelling: items populate progressively, total ticks up, checkout glows
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+  const enter = useTransform(scrollYProgress, [0.08, 0.5], [0, 1], { clamp: true });
+
+  // How many items are "visible" (populated) based on scroll progress.
+  // 0–0.25 → 1 item, 0.25–0.5 → 2 items, 0.5–0.75 → 3 items, etc.
+  const visibleCount = useMotionValue(0);
+  const [vc, setVc] = useState(0);
+  useMotionValueEvent(enter, "change", (v) => {
+    const step = 1 / initialCartItems.length;
+    const count = Math.min(initialCartItems.length, Math.floor(v / step) + 1);
+    const clamped = v < 0.02 ? 0 : count;
+    visibleCount.set(clamped);
+    setVc(clamped);
+  });
+
+  // Visible items based on scroll progress
+  const visibleItems = cartItems.slice(0, vc);
+  const subtotal = visibleItems.reduce((acc, i) => acc + i.price * i.quantity, 0);
+  const coldChainShipping = vc > 0 ? 45.0 : 0;
   const total = subtotal + coldChainShipping;
-  const totalQty = cartItems.reduce((a, i) => a + i.quantity, 0);
+  const totalQty = visibleItems.reduce((a, i) => a + i.quantity, 0);
+
+  // Smooth animated total
+  const animatedTotal = useTransform(enter, (v) => {
+    const allVisibleTotal = cartItems.reduce((a, i) => a + i.price * i.quantity, 0) + 45;
+    const eased = Math.min(1, v * 1.3);
+    return (allVisibleTotal * eased).toFixed(2);
+  });
+  const animatedSubtotal = useTransform(enter, (v) => {
+    const allSubtotal = cartItems.reduce((a, i) => a + i.price * i.quantity, 0);
+    const eased = Math.min(1, v * 1.3);
+    return (allSubtotal * eased).toFixed(2);
+  });
+  const animatedShipping = useTransform<number, string>(enter, (v) => (v > 0.05 ? "45.00" : "0.00"));
+
+  // Checkout button glow ramps up at the end of the scroll
+  const checkoutGlow = useTransform(enter, [0.75, 1], [0, 1], { clamp: true });
 
   const updateQty = (id: number, delta: number) => {
     setCartItems((items) =>
@@ -87,7 +125,8 @@ export default function ShoppingCart() {
     setCartItems((items) => items.filter((i) => i.id !== id));
   };
 
-  if (cartItems.length === 0) {
+  // Only show empty-state when the user manually removed everything (not at scroll-start)
+  if (cartItems.length === 0 && vc > 0) {
     return (
       <div className="bg-white rounded-3xl border border-gray-100 p-12 text-center">
         <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-gray-50 flex items-center justify-center">
@@ -107,7 +146,7 @@ export default function ShoppingCart() {
   }
 
   return (
-    <div className="bg-white rounded-3xl border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
+    <div ref={ref} className="bg-white rounded-3xl border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
       {/* ============ HEADER STRIP ============ */}
       <div className="px-5 sm:px-7 py-4 sm:py-5 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
         <div>
@@ -131,7 +170,7 @@ export default function ShoppingCart() {
         {/* ============ ITEMS COLUMN ============ */}
         <div className="lg:col-span-7 bg-white">
           <AnimatePresence initial={false}>
-            {cartItems.map((item, idx) => (
+            {visibleItems.map((item, idx) => (
               <motion.div
                 key={item.id}
                 layout
@@ -140,7 +179,7 @@ export default function ShoppingCart() {
                 exit={{ opacity: 0, x: -30, height: 0 }}
                 transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                 className={`group relative flex items-center gap-3 sm:gap-4 px-5 sm:px-7 py-4 sm:py-5 ${
-                  idx !== cartItems.length - 1 ? "border-b border-gray-100" : ""
+                  idx !== visibleItems.length - 1 ? "border-b border-gray-100" : ""
                 }`}
               >
                 {/* Icon tile */}
@@ -247,13 +286,17 @@ export default function ShoppingCart() {
           <div className="space-y-3 mb-5">
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Subtotal</span>
-              <span className="font-bold text-gray-900 font-mono tabular-nums">${subtotal.toFixed(2)}</span>
+              <span className="font-bold text-gray-900 font-mono tabular-nums">
+                $<motion.span>{animatedSubtotal}</motion.span>
+              </span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-500 inline-flex items-center gap-1.5">
                 Cold Chain <Truck className="w-3.5 h-3.5 text-cyan-500" />
               </span>
-              <span className="font-bold text-gray-900 font-mono tabular-nums">${coldChainShipping.toFixed(2)}</span>
+              <span className="font-bold text-gray-900 font-mono tabular-nums">
+                $<motion.span>{animatedShipping}</motion.span>
+              </span>
             </div>
           </div>
 
@@ -265,19 +308,38 @@ export default function ShoppingCart() {
             </p>
           </div>
 
-          {/* Total */}
+          {/* Total — ticks up with scroll */}
           <div className="flex items-baseline justify-between pt-4 border-t border-gray-200">
             <span className="text-xs font-bold text-gray-700 uppercase tracking-[0.15em]">Estimated total</span>
             <span className="text-2xl sm:text-3xl font-bold text-gray-900 font-mono tabular-nums">
-              ${total.toFixed(2)}
+              $<motion.span>{animatedTotal}</motion.span>
             </span>
           </div>
 
-          {/* CTAs */}
-          <button className="group mt-5 w-full inline-flex items-center justify-center gap-2 bg-[#F0564A] hover:bg-[#D94D42] text-white py-3.5 rounded-full text-xs font-bold uppercase tracking-[0.15em] transition-all shadow-[0_4px_14px_rgba(240,86,74,0.35)] hover:shadow-[0_6px_24px_rgba(240,86,74,0.5)]">
-            Proceed to Checkout
-            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-          </button>
+          {/* Checkout button — glows when scroll completes */}
+          <motion.button
+            className="group relative mt-5 w-full inline-flex items-center justify-center gap-2 bg-[#F0564A] hover:bg-[#D94D42] text-white py-3.5 rounded-full text-xs font-bold uppercase tracking-[0.15em] transition-colors overflow-hidden"
+            style={{
+              boxShadow: useTransform(
+                checkoutGlow,
+                [0, 1],
+                ["0 4px 14px rgba(240,86,74,0.35)", "0 0 0 3px rgba(240,86,74,0.4), 0 8px 32px rgba(240,86,74,0.65)"]
+              ),
+              scale: useTransform(checkoutGlow, [0, 1], [1, 1.02]),
+            }}
+          >
+            {/* Shimmer pass when fully highlighted */}
+            <motion.span
+              className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/35 to-transparent skew-x-[-20deg]"
+              style={{
+                opacity: checkoutGlow,
+              }}
+              animate={{ x: ["-150%", "350%"] }}
+              transition={{ duration: 2.2, repeat: Infinity, repeatDelay: 1, ease: "easeInOut" }}
+            />
+            <span className="relative">Proceed to Checkout</span>
+            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1 relative" />
+          </motion.button>
           <button className="mt-2 w-full text-center text-[11px] font-bold text-gray-500 hover:text-gray-900 uppercase tracking-[0.12em] py-2 transition-colors">
             Request a Quote Instead
           </button>

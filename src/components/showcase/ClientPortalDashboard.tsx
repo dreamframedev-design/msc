@@ -1,15 +1,16 @@
 "use client";
 
-import React, { useState } from 'react';
-import { 
-  LayoutDashboard, 
-  FileText, 
-  Users, 
-  Settings, 
-  Bell, 
-  Search, 
-  TrendingUp, 
-  Activity, 
+import React, { useRef, useState } from 'react';
+import { motion, useScroll, useTransform, type MotionValue } from 'framer-motion';
+import {
+  LayoutDashboard,
+  FileText,
+  Users,
+  Settings,
+  Bell,
+  Search,
+  TrendingUp,
+  Activity,
   Clock,
   CheckCircle2,
   Download,
@@ -18,8 +19,31 @@ import {
   FolderOpen
 } from 'lucide-react';
 
+// Scroll-linked animated number — counts up as the user scrolls into the dashboard
+function ScrollCounter({ to, suffix = "", enter }: { to: number; suffix?: string; enter: MotionValue<number> }) {
+  const display = useTransform(enter, (v) => {
+    const eased = Math.min(1, v * 1.4);
+    const val = to * eased;
+    return Number.isInteger(to) ? Math.round(val).toLocaleString() : val.toFixed(1);
+  });
+  return (
+    <span className="inline-flex items-baseline">
+      <motion.span>{display}</motion.span>
+      {suffix && <span>{suffix}</span>}
+    </span>
+  );
+}
+
 export default function ClientPortalDashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Scroll progress drives the dashboard counters + progress bar
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+  const enter = useTransform(scrollYProgress, [0.1, 0.5], [0, 1], { clamp: true });
 
   const renderContent = () => {
     switch (activeTab) {
@@ -199,41 +223,84 @@ export default function ClientPortalDashboard() {
               </button>
             </div>
 
-            {/* Stats Row */}
+            {/* Stats Row — counters tied to scroll progress */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                <div className="flex justify-between items-start mb-4">
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
+                <motion.div
+                  className="absolute -top-6 -right-6 w-24 h-24 rounded-full"
+                  style={{
+                    background: "radial-gradient(circle, rgba(59,130,246,0.18), transparent 70%)",
+                    filter: "blur(20px)",
+                    opacity: useTransform(enter, [0.2, 0.6], [0, 1], { clamp: true }),
+                  }}
+                />
+                <div className="flex justify-between items-start mb-4 relative">
                   <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
                     <Users className="w-6 h-6" />
                   </div>
-                  <span className="flex items-center gap-1 text-xs font-bold text-emerald-500 bg-emerald-50 px-2 py-1 rounded-md">
-                    <TrendingUp className="w-3 h-3" /> +12%
-                  </span>
+                  <motion.span
+                    className="flex items-center gap-1 text-xs font-bold text-emerald-500 bg-emerald-50 px-2 py-1 rounded-md"
+                    style={{ opacity: useTransform(enter, [0.55, 0.85], [0, 1], { clamp: true }) }}
+                  >
+                    <TrendingUp className="w-3 h-3" /> +<ScrollCounter to={12} suffix="%" enter={useTransform(enter, [0.55, 0.95], [0, 1], { clamp: true })} />
+                  </motion.span>
                 </div>
-                <p className="text-3xl font-bold text-slate-900 mb-1">248</p>
+                <p className="text-3xl font-bold text-slate-900 mb-1 tabular-nums">
+                  <ScrollCounter to={248} enter={enter} />
+                </p>
                 <p className="text-sm text-slate-500 font-medium">Active Enrolled Patients</p>
               </div>
 
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                <div className="flex justify-between items-start mb-4">
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
+                <motion.div
+                  className="absolute -top-6 -right-6 w-24 h-24 rounded-full"
+                  style={{
+                    background: "radial-gradient(circle, rgba(16,185,129,0.18), transparent 70%)",
+                    filter: "blur(20px)",
+                    opacity: useTransform(enter, [0.3, 0.7], [0, 1], { clamp: true }),
+                  }}
+                />
+                <div className="flex justify-between items-start mb-4 relative">
                   <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
                     <CheckCircle2 className="w-6 h-6" />
                   </div>
                 </div>
-                <p className="text-3xl font-bold text-slate-900 mb-1">89%</p>
+                <p className="text-3xl font-bold text-slate-900 mb-1 tabular-nums">
+                  <ScrollCounter to={89} suffix="%" enter={useTransform(enter, [0.1, 0.6], [0, 1], { clamp: true })} />
+                </p>
                 <p className="text-sm text-slate-500 font-medium">Protocol Compliance Rate</p>
+                {/* Animated progress bar tied to scroll */}
+                <div className="mt-3 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full bg-emerald-500 rounded-full"
+                    style={{ width: useTransform(enter, [0.1, 0.6], ["0%", "89%"], { clamp: true }) }}
+                  />
+                </div>
               </div>
 
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                <div className="flex justify-between items-start mb-4">
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
+                <motion.div
+                  className="absolute -top-6 -right-6 w-24 h-24 rounded-full"
+                  style={{
+                    background: "radial-gradient(circle, rgba(249,115,22,0.18), transparent 70%)",
+                    filter: "blur(20px)",
+                    opacity: useTransform(enter, [0.4, 0.8], [0, 1], { clamp: true }),
+                  }}
+                />
+                <div className="flex justify-between items-start mb-4 relative">
                   <div className="p-3 bg-orange-50 text-orange-600 rounded-xl">
                     <Clock className="w-6 h-6" />
                   </div>
-                  <span className="flex items-center gap-1 text-xs font-bold text-red-500 bg-red-50 px-2 py-1 rounded-md">
-                    3 Action Required
-                  </span>
+                  <motion.span
+                    className="flex items-center gap-1 text-xs font-bold text-red-500 bg-red-50 px-2 py-1 rounded-md"
+                    style={{ opacity: useTransform(enter, [0.65, 0.9], [0, 1], { clamp: true }) }}
+                  >
+                    <ScrollCounter to={3} enter={useTransform(enter, [0.65, 0.95], [0, 1], { clamp: true })} /> Action Required
+                  </motion.span>
                 </div>
-                <p className="text-3xl font-bold text-slate-900 mb-1">14</p>
+                <p className="text-3xl font-bold text-slate-900 mb-1 tabular-nums">
+                  <ScrollCounter to={14} enter={enter} />
+                </p>
                 <p className="text-sm text-slate-500 font-medium">Pending SAE Reports</p>
               </div>
             </div>
@@ -289,7 +356,7 @@ export default function ClientPortalDashboard() {
   };
 
   return (
-    <div className="w-full h-[600px] bg-slate-50 rounded-[2.5rem] shadow-inner border border-slate-200 overflow-hidden flex font-sans relative">
+    <div ref={ref} className="w-full h-[600px] bg-slate-50 rounded-[2.5rem] shadow-inner border border-slate-200 overflow-hidden flex font-sans relative">
       
       {/* Sidebar */}
       <aside className="w-64 text-white flex flex-col hidden md:flex relative overflow-hidden">
