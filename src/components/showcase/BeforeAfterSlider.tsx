@@ -82,7 +82,16 @@ export function BeforeAfterSlider({
         updatePosition(e.touches[0].clientX);
       }}
     >
-      {/* BEFORE — sits underneath, full width, slightly desaturated */}
+      {/*
+        LAYOUT LOGIC:
+        - BEFORE image lives on the LEFT side
+        - AFTER image lives on the RIGHT side
+        - Divider sits at `position` (0–100)
+        - AFTER overlays everything; we clip the LEFT `position%` of AFTER away,
+          so AFTER only shows from divider → right edge.
+      */}
+
+      {/* BEFORE — underlying layer (visible left of the divider) */}
       <div className="absolute inset-0">
         <Image
           src={before}
@@ -93,10 +102,10 @@ export function BeforeAfterSlider({
         />
       </div>
 
-      {/* AFTER — clipped to the position */}
+      {/* AFTER — clipped FROM THE LEFT, so it only shows on the right side */}
       <div
         className="absolute inset-0 overflow-hidden"
-        style={{ clipPath: `inset(0 ${100 - position}% 0 0)` }}
+        style={{ clipPath: `inset(0 0 0 ${position}%)` }}
       >
         <Image
           src={after}
@@ -107,16 +116,16 @@ export function BeforeAfterSlider({
         />
       </div>
 
-      {/* Labels — gated on slider position so they don't overlap */}
+      {/* Labels — gated so we never show "BEFORE" over the AFTER side and vice versa */}
       <div
         className="absolute top-4 left-4 inline-flex items-center px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md text-white/90 text-[10px] sm:text-xs font-bold uppercase tracking-[0.18em] z-20 transition-opacity duration-200"
-        style={{ opacity: position < 92 ? 1 : 0, pointerEvents: position < 92 ? "auto" : "none" }}
+        style={{ opacity: position > 8 ? 1 : 0, pointerEvents: position > 8 ? "auto" : "none" }}
       >
         Before
       </div>
       <div
         className="absolute top-4 right-4 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F0564A] text-white text-[10px] sm:text-xs font-bold uppercase tracking-[0.18em] z-20 shadow-lg transition-opacity duration-200"
-        style={{ opacity: position > 8 ? 1 : 0, pointerEvents: position > 8 ? "auto" : "none" }}
+        style={{ opacity: position < 92 ? 1 : 0, pointerEvents: position < 92 ? "auto" : "none" }}
       >
         <Sparkles className="w-3 h-3" />
         After
