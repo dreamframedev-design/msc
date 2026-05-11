@@ -483,9 +483,9 @@ export default function PortalDashboard() {
           {/* TICKETS TAB */}
           {activeTab === "tickets" && (
             <div className="max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="bg-[#111111] border border-white/10 rounded-3xl overflow-hidden">
-                <div className="p-6 border-b border-white/10 flex items-center justify-between bg-black/20">
-                  <h3 className="text-lg font-bold">Active Requests</h3>
+              <div className={`${isDark ? 'bg-[#111111] border-white/10' : 'bg-white border-gray-200'} border rounded-3xl overflow-hidden shadow-xl`}>
+                <div className={`p-6 border-b flex items-center justify-between ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50/50'}`}>
+                  <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Active Requests</h3>
                   <div className="flex gap-2">
                     <Button size="sm" className={`border bg-transparent ${isDark ? 'border-white/10 text-gray-300 hover:bg-white/5' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>Filter</Button>
                     <Button size="sm" className={`border bg-transparent ${isDark ? 'border-white/10 text-gray-300 hover:bg-white/5' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>Sort</Button>
@@ -494,7 +494,7 @@ export default function PortalDashboard() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="border-b border-white/5 text-xs uppercase tracking-wider text-gray-500 bg-black/40">
+                      <tr className={`border-b text-xs uppercase tracking-wider ${isDark ? 'border-white/5 text-gray-500 bg-black/40' : 'border-gray-200 text-gray-500 bg-gray-50'}`}>
                         <th className="p-4 font-medium">Ticket ID</th>
                         <th className="p-4 font-medium">Subject</th>
                         <th className="p-4 font-medium">Status</th>
@@ -503,24 +503,24 @@ export default function PortalDashboard() {
                         <th className="p-4 font-medium text-right">Action</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5">
+                    <tbody className={`divide-y ${isDark ? 'divide-white/5' : 'divide-gray-100'}`}>
                       {mockTickets.map((ticket, i) => (
-                        <tr key={i} className="hover:bg-white/5 transition-colors group">
-                          <td className="p-4 text-sm text-gray-400 font-mono">{ticket.id}</td>
-                          <td className="p-4 text-sm font-medium text-white">{ticket.subject}</td>
+                        <tr key={i} className={`transition-colors group ${isDark ? 'hover:bg-white/5' : 'hover:bg-gray-50'}`}>
+                          <td className={`p-4 text-sm font-mono ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{ticket.id}</td>
+                          <td className={`p-4 text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{ticket.subject}</td>
                           <td className="p-4">
                             <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${getStatusColor(ticket.status)}`}>
                               {ticket.status}
                             </span>
                           </td>
                           <td className="p-4">
-                            <span className={`text-sm ${ticket.priority === 'Urgent' ? 'text-red-400' : ticket.priority === 'High' ? 'text-orange-400' : 'text-gray-400'}`}>
+                            <span className={`text-sm ${ticket.priority === 'Urgent' ? 'text-red-500' : ticket.priority === 'High' ? 'text-orange-500' : isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                               {ticket.priority}
                             </span>
                           </td>
-                          <td className="p-4 text-sm text-gray-500">{ticket.date}</td>
+                          <td className={`p-4 text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>{ticket.date}</td>
                           <td className="p-4 text-right">
-                            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button variant="ghost" size="sm" className={`${isDark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'} opacity-0 group-hover:opacity-100 transition-opacity`}>
                               View Details <ArrowUpRight className="w-4 h-4 ml-1" />
                             </Button>
                           </td>
@@ -538,63 +538,63 @@ export default function PortalDashboard() {
             <div className="max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 {/* Placeholder Folders */}
-                <div className="bg-[#111111] border border-white/10 rounded-3xl p-6 hover:border-[#F0564A]/50 transition-colors cursor-pointer group shadow-lg">
+                <div className={`${isDark ? 'bg-[#111111] border-white/10' : 'bg-white border-gray-200'} border rounded-3xl p-6 hover:border-[#F0564A]/50 transition-colors cursor-pointer group shadow-lg`}>
                   <div className="flex items-center justify-between mb-4">
-                    <div className="p-4 bg-blue-500/10 text-blue-400 rounded-2xl">
+                    <div className="p-4 bg-blue-500/10 text-blue-500 rounded-2xl">
                       <FolderOpen className="w-8 h-8" />
                     </div>
                   </div>
-                  <h3 className="font-bold text-xl mb-1 group-hover:text-[#F0564A] transition-colors">Brand Assets</h3>
-                  <p className="text-sm text-gray-500">Logos, Fonts, Colors</p>
+                  <h3 className={`font-bold text-xl mb-1 group-hover:text-[#F0564A] transition-colors ${isDark ? 'text-white' : 'text-gray-900'}`}>Brand Assets</h3>
+                  <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Logos, Fonts, Colors</p>
                 </div>
-                <div className="bg-[#111111] border border-white/10 rounded-3xl p-6 hover:border-[#F0564A]/50 transition-colors cursor-pointer group shadow-lg">
+                <div className={`${isDark ? 'bg-[#111111] border-white/10' : 'bg-white border-gray-200'} border rounded-3xl p-6 hover:border-[#F0564A]/50 transition-colors cursor-pointer group shadow-lg`}>
                   <div className="flex items-center justify-between mb-4">
-                    <div className="p-4 bg-green-500/10 text-green-400 rounded-2xl">
+                    <div className="p-4 bg-green-500/10 text-green-500 rounded-2xl">
                       <FolderOpen className="w-8 h-8" />
                     </div>
                   </div>
-                  <h3 className="font-bold text-xl mb-1 group-hover:text-[#F0564A] transition-colors">Pitch Decks</h3>
-                  <p className="text-sm text-gray-500">Final PDF & PPTX</p>
+                  <h3 className={`font-bold text-xl mb-1 group-hover:text-[#F0564A] transition-colors ${isDark ? 'text-white' : 'text-gray-900'}`}>Pitch Decks</h3>
+                  <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Final PDF & PPTX</p>
                 </div>
-                <div className="bg-[#111111] border border-white/10 rounded-3xl p-6 hover:border-[#F0564A]/50 transition-colors cursor-pointer group shadow-lg">
+                <div className={`${isDark ? 'bg-[#111111] border-white/10' : 'bg-white border-gray-200'} border rounded-3xl p-6 hover:border-[#F0564A]/50 transition-colors cursor-pointer group shadow-lg`}>
                   <div className="flex items-center justify-between mb-4">
-                    <div className="p-4 bg-purple-500/10 text-purple-400 rounded-2xl">
+                    <div className="p-4 bg-purple-500/10 text-purple-500 rounded-2xl">
                       <FolderOpen className="w-8 h-8" />
                     </div>
                   </div>
-                  <h3 className="font-bold text-xl mb-1 group-hover:text-[#F0564A] transition-colors">Uploads</h3>
-                  <p className="text-sm text-gray-500">Files you sent us</p>
+                  <h3 className={`font-bold text-xl mb-1 group-hover:text-[#F0564A] transition-colors ${isDark ? 'text-white' : 'text-gray-900'}`}>Uploads</h3>
+                  <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Files you sent us</p>
                 </div>
               </div>
 
-              <h3 className="text-2xl font-bold mb-6">Your Files</h3>
-              <div className="bg-[#111111] border border-white/10 rounded-3xl overflow-hidden shadow-xl">
+              <h3 className={`text-2xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>Your Files</h3>
+              <div className={`${isDark ? 'bg-[#111111] border-white/10' : 'bg-white border-gray-200'} border rounded-3xl overflow-hidden shadow-xl`}>
                 {files.length === 0 ? (
                   <div className="p-16 text-center">
-                    <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <FileText className="w-10 h-10 text-gray-500" />
+                    <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 ${isDark ? 'bg-white/5' : 'bg-gray-100'}`}>
+                      <FileText className={`w-10 h-10 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
                     </div>
-                    <h3 className="text-2xl font-bold mb-3">Your Vault is Empty</h3>
-                    <p className="text-gray-400 mb-8 max-w-md mx-auto text-lg">Upload documents, images, or videos securely. Both you and the MSC team can access files stored here.</p>
+                    <h3 className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>Your Vault is Empty</h3>
+                    <p className={`mb-8 max-w-md mx-auto text-lg ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Upload documents, images, or videos securely. Both you and the MSC team can access files stored here.</p>
                     <Button 
                       onClick={() => fileInputRef.current?.click()}
                       size="lg"
-                      className="bg-white text-black hover:bg-gray-200 rounded-full px-8 font-bold"
+                      className={`${isDark ? 'bg-white text-black hover:bg-gray-200' : 'bg-gray-900 text-white hover:bg-gray-800'} rounded-full px-8 font-bold`}
                     >
                       Upload First File
                     </Button>
                   </div>
                 ) : (
-                  <div className="divide-y divide-white/5">
+                  <div className={`divide-y ${isDark ? 'divide-white/5' : 'divide-gray-100'}`}>
                     {files.map((file, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-6 hover:bg-white/5 transition-colors group">
+                      <div key={idx} className={`flex items-center justify-between p-6 transition-colors group ${isDark ? 'hover:bg-white/5' : 'hover:bg-gray-50'}`}>
                         <div className="flex items-center gap-5">
-                          <div className="p-3 bg-white/5 rounded-xl text-gray-400 group-hover:text-[#F0564A] group-hover:bg-[#F0564A]/10 transition-colors">
+                          <div className={`p-3 rounded-xl transition-colors ${isDark ? 'bg-white/5 text-gray-400 group-hover:text-[#F0564A] group-hover:bg-[#F0564A]/10' : 'bg-gray-100 text-gray-500 group-hover:text-[#F0564A] group-hover:bg-[#F0564A]/10'}`}>
                             <FileText className="w-6 h-6" />
                           </div>
                           <div>
-                            <p className="font-bold text-white text-lg">{file.name}</p>
-                            <p className="text-sm text-gray-500 flex items-center gap-2 mt-1">
+                            <p className={`font-bold text-lg ${isDark ? 'text-white' : 'text-gray-900'}`}>{file.name}</p>
+                            <p className={`text-sm flex items-center gap-2 mt-1 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
                               <span>{(file.metadata.size / 1024 / 1024).toFixed(2)} MB</span>
                               <span>•</span>
                               <span className="flex items-center"><Clock className="w-3 h-3 mr-1"/> {new Date(file.created_at).toLocaleDateString()}</span>
@@ -629,25 +629,25 @@ export default function PortalDashboard() {
           {/* BILLING TAB (Mock) */}
           {activeTab === "billing" && (
             <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="bg-[#111111] border border-white/10 rounded-3xl p-8 mb-8 flex items-center justify-between">
+              <div className={`${isDark ? 'bg-[#111111] border-white/10' : 'bg-white border-gray-200'} border rounded-3xl p-8 mb-8 flex items-center justify-between`}>
                 <div>
-                  <h3 className="text-xl font-bold mb-1">Current Balance</h3>
-                  <p className="text-gray-400">Next invoice due on June 1, 2026</p>
+                  <h3 className={`text-xl font-bold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>Current Balance</h3>
+                  <p className={isDark ? 'text-gray-400' : 'text-gray-500'}>Next invoice due on June 1, 2026</p>
                 </div>
                 <div className="text-right">
-                  <h2 className="text-4xl font-bold text-white">$0.00</h2>
-                  <p className="text-sm text-green-400 font-medium mt-1 flex items-center justify-end"><CheckCircle2 className="w-4 h-4 mr-1"/> All paid up</p>
+                  <h2 className={`text-4xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>$0.00</h2>
+                  <p className="text-sm text-green-500 font-medium mt-1 flex items-center justify-end"><CheckCircle2 className="w-4 h-4 mr-1"/> All paid up</p>
                 </div>
               </div>
 
-              <h3 className="text-xl font-bold mb-4">Invoice History</h3>
-              <div className="bg-[#111111] border border-white/10 rounded-3xl overflow-hidden">
+              <h3 className={`text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Invoice History</h3>
+              <div className={`${isDark ? 'bg-[#111111] border-white/10' : 'bg-white border-gray-200'} border rounded-3xl overflow-hidden`}>
                 <div className="p-16 text-center">
-                  <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <FileText className="w-8 h-8 text-gray-500" />
+                  <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${isDark ? 'bg-white/5' : 'bg-gray-100'}`}>
+                    <FileText className={`w-8 h-8 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">No Invoices Yet</h3>
-                  <p className="text-gray-400">Your future invoices and payment history will appear here.</p>
+                  <h3 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>No Invoices Yet</h3>
+                  <p className={isDark ? 'text-gray-400' : 'text-gray-500'}>Your future invoices and payment history will appear here.</p>
                 </div>
               </div>
             </div>
@@ -656,31 +656,31 @@ export default function PortalDashboard() {
           {/* SETTINGS TAB */}
           {activeTab === "settings" && (
             <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-               <div className="bg-[#111111] border border-white/10 rounded-3xl p-8 shadow-xl">
-                <div className="flex items-center gap-4 mb-8 pb-8 border-b border-white/10">
+               <div className={`${isDark ? 'bg-[#111111] border-white/10' : 'bg-white border-gray-200'} border rounded-3xl p-8 shadow-xl`}>
+                <div className={`flex items-center gap-4 mb-8 pb-8 border-b ${isDark ? 'border-white/10' : 'border-gray-200'}`}>
                   <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#F0564A] to-orange-500 flex items-center justify-center text-3xl font-bold text-white shadow-lg">
                     {user.email?.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold text-white">Client Profile</h3>
-                    <p className="text-gray-400">Manage your account settings and preferences.</p>
+                    <h3 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Client Profile</h3>
+                    <p className={isDark ? 'text-gray-400' : 'text-gray-500'}>Manage your account settings and preferences.</p>
                   </div>
                 </div>
 
                 <div className="space-y-8">
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-400">Email Address</label>
-                      <input type="text" disabled value={user.email} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-gray-300 cursor-not-allowed focus:outline-none" />
+                      <label className={`block text-sm font-medium ${isDark ? 'text-gray-400' : 'text-gray-700'}`}>Email Address</label>
+                      <input type="text" disabled value={user.email} className={`w-full border rounded-xl px-4 py-3 cursor-not-allowed focus:outline-none ${isDark ? 'bg-black/50 border-white/10 text-gray-300' : 'bg-gray-50 border-gray-200 text-gray-500'}`} />
                     </div>
                     <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-400">Company Name</label>
-                      <input type="text" placeholder="Enter company name" className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#F0564A] transition-colors" />
+                      <label className={`block text-sm font-medium ${isDark ? 'text-gray-400' : 'text-gray-700'}`}>Company Name</label>
+                      <input type="text" placeholder="Enter company name" className={`w-full border rounded-xl px-4 py-3 focus:outline-none focus:border-[#F0564A] transition-colors ${isDark ? 'bg-black/50 border-white/10 text-white' : 'bg-white border-gray-200 text-gray-900'}`} />
                     </div>
                   </div>
 
                   <div className={`pt-6 border-t ${isDark ? 'border-white/10' : 'border-gray-200'}`}>
-                    <h4 className="text-lg font-bold mb-4">Security</h4>
+                    <h4 className={`text-lg font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Security</h4>
                     <Button className={`border rounded-full px-6 bg-transparent ${isDark ? 'border-white/20 text-white hover:bg-white/10' : 'border-gray-200 text-gray-900 hover:bg-gray-50'}`}>
                       Change Password
                     </Button>
