@@ -25,7 +25,9 @@ import {
   ArrowUpRight,
   Clock,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Sun,
+  Moon
 } from "lucide-react";
 import Image from "next/image";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -54,6 +56,7 @@ export default function PortalDashboard() {
   const [user, setUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [isLoading, setIsLoading] = useState(true);
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
   
   // Storage State
   const [files, setFiles] = useState<any[]>([]);
@@ -151,6 +154,14 @@ export default function PortalDashboard() {
   if (!user) return null;
 
   const getStatusColor = (status: string) => {
+    if (theme === "light") {
+      switch(status) {
+        case "In Progress": return "text-yellow-600 bg-yellow-100 border-yellow-200";
+        case "Review": return "text-blue-600 bg-blue-100 border-blue-200";
+        case "Completed": return "text-green-600 bg-green-100 border-green-200";
+        default: return "text-gray-600 bg-gray-100 border-gray-200";
+      }
+    }
     switch(status) {
       case "In Progress": return "text-yellow-400 bg-yellow-400/10 border-yellow-400/20";
       case "Review": return "text-blue-400 bg-blue-400/10 border-blue-400/20";
@@ -159,69 +170,91 @@ export default function PortalDashboard() {
     }
   };
 
+  const isDark = theme === "dark";
+
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-white flex pt-24">
+    <div className={`min-h-screen flex pt-24 ${isDark ? 'bg-[#0A0A0A] text-white' : 'bg-gray-50 text-gray-900'}`}>
       {/* Sidebar */}
-      <aside className="w-64 bg-[#111111] border-r border-white/10 flex flex-col hidden md:flex h-[calc(100vh-6rem)] fixed left-0 top-24 z-30">
-        <div className="p-6 border-b border-white/10">
+      <aside className={`w-64 border-r flex flex-col hidden md:flex h-[calc(100vh-6rem)] fixed left-0 top-24 z-30 ${isDark ? 'bg-[#111111] border-white/10' : 'bg-white border-gray-200'}`}>
+        <div className={`p-6 border-b ${isDark ? 'border-white/10' : 'border-gray-200'}`}>
           <div className="flex items-center gap-3">
             <Image 
-              src="/images/MSC LOGO BITTERSWEET VECTOR (1).svg" 
+              src={isDark ? "/images/MSC LOGO BITTERSWEET VECTOR (1).svg" : "/images/MSC_Logo with blk tagline (1).svg"} 
               alt="MSC Logo" 
-              width={32} 
-              height={32} 
+              width={isDark ? 32 : 120} 
+              height={isDark ? 32 : 40} 
               className="object-contain"
             />
-            <span className="font-heading font-bold text-xl tracking-tight">Client Portal</span>
+            {isDark && <span className="font-heading font-bold text-xl tracking-tight">Client Portal</span>}
           </div>
         </div>
 
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           <button 
             onClick={() => setActiveTab("overview")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeTab === "overview" ? "bg-[#F0564A]/10 text-[#F0564A]" : "text-gray-400 hover:bg-white/5 hover:text-white"}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+              activeTab === "overview" 
+                ? "bg-[#F0564A]/10 text-[#F0564A]" 
+                : isDark ? "text-gray-400 hover:bg-white/5 hover:text-white" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+            }`}
           >
             <LayoutDashboard className="w-5 h-5" />
             <span className="font-medium">Overview</span>
           </button>
           <button 
             onClick={() => setActiveTab("tickets")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeTab === "tickets" ? "bg-[#F0564A]/10 text-[#F0564A]" : "text-gray-400 hover:bg-white/5 hover:text-white"}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+              activeTab === "tickets" 
+                ? "bg-[#F0564A]/10 text-[#F0564A]" 
+                : isDark ? "text-gray-400 hover:bg-white/5 hover:text-white" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+            }`}
           >
             <Ticket className="w-5 h-5" />
             <span className="font-medium">Support Tickets</span>
           </button>
           <button 
             onClick={() => setActiveTab("files")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeTab === "files" ? "bg-[#F0564A]/10 text-[#F0564A]" : "text-gray-400 hover:bg-white/5 hover:text-white"}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+              activeTab === "files" 
+                ? "bg-[#F0564A]/10 text-[#F0564A]" 
+                : isDark ? "text-gray-400 hover:bg-white/5 hover:text-white" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+            }`}
           >
             <FolderOpen className="w-5 h-5" />
             <span className="font-medium">File Vault</span>
           </button>
           <button 
             onClick={() => setActiveTab("billing")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeTab === "billing" ? "bg-[#F0564A]/10 text-[#F0564A]" : "text-gray-400 hover:bg-white/5 hover:text-white"}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+              activeTab === "billing" 
+                ? "bg-[#F0564A]/10 text-[#F0564A]" 
+                : isDark ? "text-gray-400 hover:bg-white/5 hover:text-white" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+            }`}
           >
             <CreditCard className="w-5 h-5" />
             <span className="font-medium">Billing & Invoices</span>
           </button>
           <button 
             onClick={() => setActiveTab("settings")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeTab === "settings" ? "bg-[#F0564A]/10 text-[#F0564A]" : "text-gray-400 hover:bg-white/5 hover:text-white"}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+              activeTab === "settings" 
+                ? "bg-[#F0564A]/10 text-[#F0564A]" 
+                : isDark ? "text-gray-400 hover:bg-white/5 hover:text-white" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+            }`}
           >
             <Settings className="w-5 h-5" />
             <span className="font-medium">Settings</span>
           </button>
         </nav>
 
-        <div className="p-4 border-t border-white/10">
-          <div className="px-4 py-3 mb-2 bg-white/5 rounded-xl border border-white/10">
-            <p className="text-xs text-gray-400 uppercase tracking-wider font-bold mb-1">Logged in as</p>
-            <p className="text-sm text-white truncate">{user.email}</p>
+        <div className={`p-4 border-t ${isDark ? 'border-white/10' : 'border-gray-200'}`}>
+          <div className={`px-4 py-3 mb-2 rounded-xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'}`}>
+            <p className={`text-xs uppercase tracking-wider font-bold mb-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Logged in as</p>
+            <p className={`text-sm truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{user.email}</p>
           </div>
           <button 
             onClick={handleSignOut}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-red-500/10 hover:text-red-500 transition-colors"
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${isDark ? 'text-gray-400 hover:bg-red-500/10 hover:text-red-500' : 'text-gray-600 hover:bg-red-50 hover:text-red-600'}`}
           >
             <LogOut className="w-5 h-5" />
             <span className="font-medium">Sign Out</span>
@@ -232,19 +265,29 @@ export default function PortalDashboard() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-h-[calc(100vh-6rem)] ml-0 md:ml-64 relative">
         {/* Top Header */}
-        <header className="h-20 border-b border-white/10 bg-[#0A0A0A]/80 backdrop-blur-xl flex items-center justify-between px-8 sticky top-24 z-40">
+        <header className={`h-20 border-b flex items-center justify-between px-8 sticky top-24 z-40 backdrop-blur-xl ${isDark ? 'bg-[#0A0A0A]/80 border-white/10' : 'bg-white/80 border-gray-200'}`}>
           <h1 className="text-2xl font-heading font-bold capitalize">
             {activeTab === "overview" ? "Dashboard Overview" : activeTab === "tickets" ? "Support Tickets" : activeTab === "files" ? "File Vault" : activeTab}
           </h1>
           
           <div className="flex items-center gap-4">
             {/* Global Search Mock */}
-            <div className="hidden lg:flex items-center bg-[#111111] border border-white/10 rounded-full px-4 py-2">
-              <Search className="w-4 h-4 text-gray-500 mr-2" />
-              <input type="text" placeholder="Search..." className="bg-transparent border-none outline-none text-sm text-white placeholder:text-gray-500 w-48" />
+            <div className={`hidden lg:flex items-center border rounded-full px-4 py-2 ${isDark ? 'bg-[#111111] border-white/10' : 'bg-gray-100 border-gray-200'}`}>
+              <Search className={`w-4 h-4 mr-2 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
+              <input type="text" placeholder="Search..." className={`bg-transparent border-none outline-none text-sm w-48 ${isDark ? 'text-white placeholder:text-gray-500' : 'text-gray-900 placeholder:text-gray-400'}`} />
             </div>
 
-            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white rounded-full">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setTheme(isDark ? "light" : "dark")}
+              className={`rounded-full ${isDark ? 'text-gray-400 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
+              title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
+            >
+              {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </Button>
+
+            <Button variant="ghost" size="icon" className={`rounded-full ${isDark ? 'text-gray-400 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}>
               <Bell className="w-5 h-5" />
             </Button>
 
@@ -416,7 +459,7 @@ export default function PortalDashboard() {
                       </div>
                     </div>
                   </div>
-                  <Button variant="outline" className="w-full mt-6 border-white/10 text-gray-300 hover:bg-white/5 hover:text-white">
+                  <Button variant="outline" className="w-full mt-6 border-white/10 text-white hover:bg-white/10 hover:text-white">
                     View All Activity
                   </Button>
                 </div>

@@ -39,7 +39,7 @@ export function Footer() {
   };
 
   return (
-    <footer className="relative bg-gray-50 text-gray-600 border-t border-gray-200 pt-20 pb-10 overflow-hidden">
+    <footer className="relative bg-gray-50 text-gray-600 border-t border-gray-200 pt-20 pb-10 overflow-hidden z-20">
       <div className="absolute inset-0 z-0">
         <Image 
           src="/images/flowsaber_a_minimal_abstract_translucent_chemical_pattern_desig_a6ae47e5-6f5f-4a06-8865-ca10fd46f28a.png" 

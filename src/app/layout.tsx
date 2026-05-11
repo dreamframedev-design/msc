@@ -36,6 +36,7 @@ export default function RootLayout({
           <main className="flex-1">
             {children}
           </main>
+          {/* Footer is rendered conditionally based on route inside the Footer component itself or we can do it here */}
           <Footer />
         </SmoothScroll>
       </body>
