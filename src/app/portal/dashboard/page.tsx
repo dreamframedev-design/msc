@@ -178,7 +178,7 @@ export default function PortalDashboard() {
   return (
     <div className={`min-h-screen flex ${isDark ? 'bg-[#0A0A0A] text-white' : 'bg-gray-50 text-gray-900'}`}>
       {/* Sidebar */}
-      <aside className={`w-64 border-r flex flex-col hidden md:flex h-screen fixed left-0 top-0 z-30 ${isDark ? 'bg-[#111111] border-white/10' : 'bg-white border-gray-200'}`}>
+      <aside className={`w-64 border-r flex flex-col hidden md:flex h-screen fixed left-0 top-0 z-50 ${isDark ? 'bg-[#111111] border-white/10' : 'bg-white border-gray-200'}`}>
         <div className={`p-6 border-b ${isDark ? 'border-white/10' : 'border-gray-200'}`}>
           <div className="flex items-center gap-3">
             <Image 
@@ -270,7 +270,7 @@ export default function PortalDashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-h-screen ml-0 md:ml-64 relative">
+      <main className="flex-1 flex flex-col min-h-screen ml-0 md:ml-64 relative z-40">
         {/* Top Header */}
         <header className={`h-20 border-b flex items-center justify-between px-8 sticky top-0 z-40 backdrop-blur-xl ${isDark ? 'bg-[#0A0A0A]/80 border-white/10' : 'bg-white/80 border-gray-200'}`}>
           <h1 className="text-2xl font-heading font-bold capitalize">
