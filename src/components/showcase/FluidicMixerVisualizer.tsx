@@ -307,16 +307,22 @@ export default function FluidicMixerVisualizer() {
 
             {/* ============ FLOATING CONTROL PANEL (desktop overlay only) ============ */}
             <div
-              className={`hidden sm:block absolute top-5 left-5 w-[260px] md:w-[280px] rounded-2xl border bg-black/55 backdrop-blur-2xl shadow-2xl transition-all ${
+              className={`hidden sm:block absolute top-5 left-5 w-[300px] md:w-[320px] rounded-2xl border bg-black/60 backdrop-blur-2xl shadow-2xl transition-all ${
                 controlsOpen ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2 pointer-events-none"
               }`}
-              style={{ borderColor: "rgba(255,255,255,0.08)" }}
+              style={{ borderColor: "rgba(255,255,255,0.1)" }}
             >
-              <div className="p-5 space-y-5">
-                <div className="flex items-center gap-2 pb-3 border-b border-white/[0.06]">
-                  <Settings2 className="w-3.5 h-3.5 text-[#5BCBD7]" />
-                  <span className="text-[10px] font-mono font-bold uppercase tracking-[0.22em] text-white/80">
-                    Parameters
+              <div className="p-6 space-y-6">
+                <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+                  <div className="flex items-center gap-2">
+                    <Settings2 className="w-3.5 h-3.5 text-[#5BCBD7]" />
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-[0.22em] text-white/80">
+                      Parameters
+                    </span>
+                  </div>
+                  <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-[#F0564A]/90 inline-flex items-center gap-1">
+                    <span className="w-1 h-1 rounded-full bg-[#F0564A] animate-pulse" />
+                    Drag me
                   </span>
                 </div>
                 <Slider label="Flow Rate" unit="mL/min" accent="#F0564A" min={10} max={100} value={flowRate} onChange={setFlowRate} />
@@ -391,27 +397,42 @@ function Slider({
   value: number;
   onChange: (n: number) => void;
 }) {
+  const fillPct = ((value - min) / (max - min)) * 100;
   return (
     <div>
-      <div className="flex justify-between items-center mb-2">
-        <label className="text-[10px] font-bold text-white/60 uppercase tracking-[0.16em]">
+      <div className="flex justify-between items-baseline mb-2.5">
+        <label
+          className="text-[11px] font-bold text-white/80 uppercase tracking-[0.18em] flex items-center gap-1.5"
+        >
+          <span className="w-1 h-1 rounded-full" style={{ background: accent }} />
           {label}
         </label>
-        <span className="text-xs font-mono font-bold" style={{ color: accent }}>
+        <span
+          className="text-base font-mono font-black tabular-nums"
+          style={{ color: accent, textShadow: `0 0 14px ${accent}66` }}
+        >
           {value}
-          {unit}
+          <span className="text-[10px] opacity-70 ml-0.5">{unit}</span>
         </span>
       </div>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full h-1 bg-white/[0.06] rounded-lg appearance-none cursor-pointer"
-        style={{ accentColor: accent }}
-      />
+      <div className="px-1 py-1">
+        <input
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+          className="fancy-slider"
+          aria-label={label}
+          style={
+            {
+              "--slider-accent": accent,
+              "--slider-fill": `${fillPct}%`,
+            } as React.CSSProperties
+          }
+        />
+      </div>
     </div>
   );
 }

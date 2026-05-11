@@ -2,7 +2,47 @@
 
 import { useRef } from "react";
 import { motion, useScroll, useTransform, type MotionValue } from "framer-motion";
-import { TrendingUp, Activity } from "lucide-react";
+import { TrendingUp } from "lucide-react";
+
+/* Scroll-linked counter — ticks up from 0 to `to` as `enter` motion value moves 0→1.
+   Format function lets caller control decimal places, currency, etc. */
+function ScrollNumber({
+  to,
+  enter,
+  format = (v) => v.toFixed(0),
+}: {
+  to: number;
+  enter: MotionValue<number>;
+  format?: (v: number) => string;
+}) {
+  const display = useTransform(enter, (v) => format(to * Math.min(1, v * 1.3)));
+  return <motion.span>{display}</motion.span>;
+}
+
+/* KPI cell with staggered fade-in + scroll-linked content via render prop */
+function KpiCell({
+  label,
+  enter,
+  color,
+  stagger,
+  children,
+}: {
+  label: string;
+  enter: MotionValue<number>;
+  color: string;
+  stagger: number;
+  children: (cellEnter: MotionValue<number>) => React.ReactNode;
+}) {
+  const cellEnter = useTransform(enter, [stagger, stagger + 0.55], [0, 1], { clamp: true });
+  const opacity = useTransform(cellEnter, [0, 0.3], [0, 1], { clamp: true });
+  const y = useTransform(cellEnter, [0, 0.3], [6, 0], { clamp: true });
+  return (
+    <motion.div style={{ opacity, y }}>
+      <p className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{label}</p>
+      <p className={`text-sm font-bold tabular-nums font-mono ${color}`}>{children(cellEnter)}</p>
+    </motion.div>
+  );
+}
 
 const MOCK_DATA = [
   { date: "Jun", price: 8.2 }, { date: "", price: 8.5 },
@@ -110,40 +150,46 @@ export default function LiveShareChart() {
         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.18em]">Powered by INFRONT</span>
       </div>
 
-      {/* ============ PRICE + KPI STRIP ============ */}
+      {/* ============ PRICE + KPI STRIP — all numbers tick up with scroll ============ */}
       <div className="px-5 sm:px-7 py-5 sm:py-6 border-b border-gray-100">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-5 md:gap-7 items-baseline">
           {/* Price */}
           <div className="md:col-span-5">
-            <div className="flex items-baseline gap-2 mb-1">
+            <div className="flex items-baseline gap-2 mb-1 flex-wrap">
               <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">USD</span>
               <span className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 tracking-tight tabular-nums">
-                10.85
+                <ScrollNumber to={10.85} enter={enter} format={(v) => v.toFixed(2)} />
               </span>
-              <span className="inline-flex items-center gap-1 text-sm font-bold text-emerald-600 ml-1">
-                <TrendingUp className="w-4 h-4" /> +2.36%
-              </span>
+              <motion.span
+                className="inline-flex items-center gap-1 text-sm font-bold text-emerald-600 ml-1"
+                style={{ opacity: useTransform(enter, [0.55, 0.85], [0, 1], { clamp: true }) }}
+              >
+                <TrendingUp className="w-4 h-4" /> +<ScrollNumber to={2.36} enter={useTransform(enter, [0.55, 1], [0, 1], { clamp: true })} format={(v) => v.toFixed(2)} />%
+              </motion.span>
             </div>
             <p className="text-[10px] text-gray-400 font-mono font-bold uppercase tracking-wider">
               2026-05-10 · 09:30 ET
             </p>
           </div>
 
-          {/* Mini KPIs */}
+          {/* Mini KPIs — staggered scroll-linked counters */}
           <div className="md:col-span-7 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-            {[
-              { label: "Change", value: "+$0.25", color: "text-emerald-600" },
-              { label: "High / Low", value: "10.95 / 10.60", color: "text-gray-900" },
-              { label: "Volume", value: "16,984", color: "text-gray-900" },
-              { label: "Turnover", value: "$183K", color: "text-gray-900" },
-            ].map((k) => (
-              <div key={k.label}>
-                <p className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-                  {k.label}
-                </p>
-                <p className={`text-sm font-bold tabular-nums font-mono ${k.color}`}>{k.value}</p>
-              </div>
-            ))}
+            <KpiCell label="Change" enter={enter} color="text-emerald-600" stagger={0.1}>
+              {(e) => <>+$<ScrollNumber to={0.25} enter={e} format={(v) => v.toFixed(2)} /></>}
+            </KpiCell>
+            <KpiCell label="High / Low" enter={enter} color="text-gray-900" stagger={0.2}>
+              {(e) => (
+                <>
+                  <ScrollNumber to={10.95} enter={e} format={(v) => v.toFixed(2)} /> / <ScrollNumber to={10.6} enter={e} format={(v) => v.toFixed(2)} />
+                </>
+              )}
+            </KpiCell>
+            <KpiCell label="Volume" enter={enter} color="text-gray-900" stagger={0.3}>
+              {(e) => <ScrollNumber to={16984} enter={e} format={(v) => Math.round(v).toLocaleString()} />}
+            </KpiCell>
+            <KpiCell label="Turnover" enter={enter} color="text-gray-900" stagger={0.4}>
+              {(e) => <>$<ScrollNumber to={183} enter={e} format={(v) => Math.round(v).toString()} />K</>}
+            </KpiCell>
           </div>
         </div>
       </div>

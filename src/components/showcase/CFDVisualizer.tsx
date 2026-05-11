@@ -241,37 +241,71 @@ export default function CFDVisualizer() {
             </div>
           </div>
 
-          {/* Controls */}
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <label className="text-xs font-bold text-slate-300 uppercase tracking-widest">Inlet Velocity</label>
-              <span className="text-sm font-mono text-cyan-400">{inletVelocity.toFixed(1)} m/s</span>
-            </div>
-            <input 
-              type="range" 
-              min="0.5" 
-              max="5.0" 
-              step="0.1" 
-              value={inletVelocity}
-              onChange={(e) => setInletVelocity(Number(e.target.value))}
-              className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400"
-            />
+          {/* "Drag me" hint */}
+          <div className="flex items-center justify-between -mt-2 mb-1">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-[0.22em] text-white/60">Live Parameters</span>
+            <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-cyan-400 inline-flex items-center gap-1">
+              <span className="w-1 h-1 rounded-full bg-cyan-400 animate-pulse" />
+              Drag me
+            </span>
           </div>
 
+          {/* Inlet Velocity */}
           <div>
-            <div className="flex justify-between items-center mb-4">
-              <label className="text-xs font-bold text-slate-300 uppercase tracking-widest">Fluid Viscosity</label>
-              <span className="text-sm font-mono text-[#F0564A]">{fluidViscosity.toFixed(2)} cP</span>
+            <div className="flex justify-between items-baseline mb-2.5">
+              <label className="text-[11px] font-bold text-white/80 uppercase tracking-[0.18em] flex items-center gap-1.5">
+                <span className="w-1 h-1 rounded-full bg-cyan-400" />
+                Inlet Velocity
+              </label>
+              <span className="text-base font-mono font-black tabular-nums text-cyan-400" style={{ textShadow: "0 0 14px rgba(34,211,238,0.4)" }}>
+                {inletVelocity.toFixed(1)}<span className="text-[10px] opacity-70 ml-0.5">m/s</span>
+              </span>
             </div>
-            <input 
-              type="range" 
-              min="0.1" 
-              max="3.0" 
-              step="0.1" 
-              value={fluidViscosity}
-              onChange={(e) => setFluidViscosity(Number(e.target.value))}
-              className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-[#F0564A]"
-            />
+            <div className="px-1 py-1">
+              <input
+                type="range"
+                min="0.5"
+                max="5.0"
+                step="0.1"
+                value={inletVelocity}
+                onChange={(e) => setInletVelocity(Number(e.target.value))}
+                className="fancy-slider"
+                aria-label="Inlet Velocity"
+                style={{
+                  "--slider-accent": "#22d3ee",
+                  "--slider-fill": `${((inletVelocity - 0.5) / (5.0 - 0.5)) * 100}%`,
+                } as React.CSSProperties}
+              />
+            </div>
+          </div>
+
+          {/* Fluid Viscosity */}
+          <div>
+            <div className="flex justify-between items-baseline mb-2.5">
+              <label className="text-[11px] font-bold text-white/80 uppercase tracking-[0.18em] flex items-center gap-1.5">
+                <span className="w-1 h-1 rounded-full bg-[#F0564A]" />
+                Fluid Viscosity
+              </label>
+              <span className="text-base font-mono font-black tabular-nums text-[#F0564A]" style={{ textShadow: "0 0 14px rgba(240,86,74,0.4)" }}>
+                {fluidViscosity.toFixed(2)}<span className="text-[10px] opacity-70 ml-0.5">cP</span>
+              </span>
+            </div>
+            <div className="px-1 py-1">
+              <input
+                type="range"
+                min="0.1"
+                max="3.0"
+                step="0.1"
+                value={fluidViscosity}
+                onChange={(e) => setFluidViscosity(Number(e.target.value))}
+                className="fancy-slider"
+                aria-label="Fluid Viscosity"
+                style={{
+                  "--slider-accent": "#F0564A",
+                  "--slider-fill": `${((fluidViscosity - 0.1) / (3.0 - 0.1)) * 100}%`,
+                } as React.CSSProperties}
+              />
+            </div>
           </div>
           
           {/* Render Mode Tabs */}
