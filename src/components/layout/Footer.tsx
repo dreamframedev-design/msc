@@ -4,8 +4,15 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 
+import { usePathname } from "next/navigation";
+
 export function Footer() {
+  const pathname = usePathname();
   const mscText = "MSC";
+  
+  if (pathname?.startsWith('/portal')) {
+    return null;
+  }
   
   const container = {
     hidden: { opacity: 0 },

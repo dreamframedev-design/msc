@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Mock Data for Analytics
 const mockChartData = [
@@ -192,58 +193,58 @@ export default function PortalDashboard() {
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           <button 
             onClick={() => setActiveTab("overview")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+            className={`group w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
               activeTab === "overview" 
                 ? "bg-[#F0564A]/10 text-[#F0564A]" 
                 : isDark ? "text-gray-400 hover:bg-white/5 hover:text-white" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
             }`}
           >
-            <LayoutDashboard className="w-5 h-5" />
-            <span className="font-medium">Overview</span>
+            <LayoutDashboard className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            <span className="font-medium group-hover:translate-x-1 transition-transform">Overview</span>
           </button>
           <button 
             onClick={() => setActiveTab("tickets")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+            className={`group w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
               activeTab === "tickets" 
                 ? "bg-[#F0564A]/10 text-[#F0564A]" 
                 : isDark ? "text-gray-400 hover:bg-white/5 hover:text-white" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
             }`}
           >
-            <Ticket className="w-5 h-5" />
-            <span className="font-medium">Support Tickets</span>
+            <Ticket className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            <span className="font-medium group-hover:translate-x-1 transition-transform">Support Tickets</span>
           </button>
           <button 
             onClick={() => setActiveTab("files")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+            className={`group w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
               activeTab === "files" 
                 ? "bg-[#F0564A]/10 text-[#F0564A]" 
                 : isDark ? "text-gray-400 hover:bg-white/5 hover:text-white" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
             }`}
           >
-            <FolderOpen className="w-5 h-5" />
-            <span className="font-medium">File Vault</span>
+            <FolderOpen className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            <span className="font-medium group-hover:translate-x-1 transition-transform">File Vault</span>
           </button>
           <button 
             onClick={() => setActiveTab("billing")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+            className={`group w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
               activeTab === "billing" 
                 ? "bg-[#F0564A]/10 text-[#F0564A]" 
                 : isDark ? "text-gray-400 hover:bg-white/5 hover:text-white" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
             }`}
           >
-            <CreditCard className="w-5 h-5" />
-            <span className="font-medium">Billing & Invoices</span>
+            <CreditCard className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            <span className="font-medium group-hover:translate-x-1 transition-transform">Billing & Invoices</span>
           </button>
           <button 
             onClick={() => setActiveTab("settings")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+            className={`group w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
               activeTab === "settings" 
                 ? "bg-[#F0564A]/10 text-[#F0564A]" 
                 : isDark ? "text-gray-400 hover:bg-white/5 hover:text-white" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
             }`}
           >
-            <Settings className="w-5 h-5" />
-            <span className="font-medium">Settings</span>
+            <Settings className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            <span className="font-medium group-hover:translate-x-1 transition-transform">Settings</span>
           </button>
         </nav>
 
@@ -254,9 +255,9 @@ export default function PortalDashboard() {
           </div>
           <button 
             onClick={handleSignOut}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${isDark ? 'text-gray-400 hover:bg-red-500/10 hover:text-red-500' : 'text-gray-600 hover:bg-red-50 hover:text-red-600'}`}
+            className={`group w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${isDark ? 'text-gray-400 hover:bg-red-500/10 hover:text-red-500' : 'text-gray-600 hover:bg-red-50 hover:text-red-600'}`}
           >
-            <LogOut className="w-5 h-5" />
+            <LogOut className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
             <span className="font-medium">Sign Out</span>
           </button>
         </div>
@@ -292,7 +293,7 @@ export default function PortalDashboard() {
             </Button>
 
             {activeTab === "tickets" && (
-              <Button className="bg-[#F0564A] hover:bg-[#D94D42] text-white rounded-full px-6 shadow-[0_0_15px_rgba(240,86,74,0.3)]">
+              <Button className="bg-[#F0564A] hover:bg-[#D94D42] text-white rounded-full px-6 shadow-[0_0_15px_rgba(240,86,74,0.3)] hover:shadow-[0_0_25px_rgba(240,86,74,0.5)] transition-all hover:scale-105">
                 <Plus className="w-4 h-4 mr-2" />
                 New Ticket
               </Button>
@@ -308,7 +309,7 @@ export default function PortalDashboard() {
                 <Button 
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploading}
-                  className="bg-[#F0564A] hover:bg-[#D94D42] text-white rounded-full px-6 shadow-[0_0_15px_rgba(240,86,74,0.3)]"
+                  className="bg-[#F0564A] hover:bg-[#D94D42] text-white rounded-full px-6 shadow-[0_0_15px_rgba(240,86,74,0.3)] hover:shadow-[0_0_25px_rgba(240,86,74,0.5)] transition-all hover:scale-105"
                 >
                   {isUploading ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -327,73 +328,74 @@ export default function PortalDashboard() {
           
           {/* OVERVIEW TAB */}
           {activeTab === "overview" && (
-            <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="max-w-7xl mx-auto space-y-8"
+            >
               {/* Welcome Banner */}
-              <div className="bg-gradient-to-r from-[#111111] to-[#1a1a1a] border border-white/10 rounded-3xl p-8 relative overflow-hidden">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className={`bg-gradient-to-r ${isDark ? 'from-[#111111] to-[#1a1a1a] border-white/10' : 'from-white to-gray-50 border-gray-200'} border rounded-3xl p-8 relative overflow-hidden shadow-xl`}
+              >
                 <div className="absolute top-0 right-0 w-64 h-64 bg-[#F0564A]/10 rounded-full blur-[80px] pointer-events-none" />
-                <h2 className="text-3xl font-heading font-bold mb-2">Welcome back, Client! 👋</h2>
-                <p className="text-gray-400 max-w-2xl">Here is what's happening with your brand ecosystem today. Your website traffic is up, and our team is currently reviewing your Q3 pitch deck revisions.</p>
-              </div>
+                <h2 className="text-3xl font-heading font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">Welcome back, Client! 👋</h2>
+                <p className={`max-w-2xl ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Here is what's happening with your brand ecosystem today. Your website traffic is up, and our team is currently reviewing your Q3 pitch deck revisions.</p>
+              </motion.div>
 
               {/* KPI Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-[#111111] border border-white/10 rounded-2xl p-6 hover:border-white/20 transition-colors">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="p-3 bg-blue-500/10 text-blue-400 rounded-xl">
-                      <Activity className="w-6 h-6" />
+                {[
+                  { title: "Website Traffic", value: "12,450", icon: Activity, color: "blue", trend: "+24%" },
+                  { title: "Active Leads", value: "342", icon: Users, color: "purple", trend: "+12%" },
+                  { title: "Open Tickets", value: "2", icon: Ticket, color: "yellow" },
+                  { title: "Vault Storage", value: "1.2", suffix: " / 50 GB", icon: FolderOpen, color: "green" }
+                ].map((kpi, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}
+                    whileHover={{ y: -5, scale: 1.02 }}
+                    className={`${isDark ? 'bg-[#111111] border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.05)]' : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-[0_0_30px_rgba(0,0,0,0.05)]'} border rounded-2xl p-6 transition-all duration-300 relative overflow-hidden group`}
+                  >
+                    <div className={`absolute inset-0 bg-gradient-to-br from-${kpi.color}-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+                    <div className="flex justify-between items-start mb-4 relative z-10">
+                      <div className={`p-3 bg-${kpi.color}-500/10 text-${kpi.color}-500 rounded-xl`}>
+                        <kpi.icon className="w-6 h-6" />
+                      </div>
+                      {kpi.trend && (
+                        <span className="flex items-center text-xs font-bold text-green-500 bg-green-500/10 px-2 py-1 rounded-full">
+                          <TrendingUp className="w-3 h-3 mr-1" /> {kpi.trend}
+                        </span>
+                      )}
                     </div>
-                    <span className="flex items-center text-xs font-bold text-green-400 bg-green-400/10 px-2 py-1 rounded-full">
-                      <TrendingUp className="w-3 h-3 mr-1" /> +24%
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-400 font-medium mb-1">Website Traffic</p>
-                  <h3 className="text-3xl font-bold">12,450</h3>
-                </div>
-
-                <div className="bg-[#111111] border border-white/10 rounded-2xl p-6 hover:border-white/20 transition-colors">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="p-3 bg-purple-500/10 text-purple-400 rounded-xl">
-                      <Users className="w-6 h-6" />
-                    </div>
-                    <span className="flex items-center text-xs font-bold text-green-400 bg-green-400/10 px-2 py-1 rounded-full">
-                      <TrendingUp className="w-3 h-3 mr-1" /> +12%
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-400 font-medium mb-1">Active Leads</p>
-                  <h3 className="text-3xl font-bold">342</h3>
-                </div>
-
-                <div className="bg-[#111111] border border-white/10 rounded-2xl p-6 hover:border-white/20 transition-colors">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="p-3 bg-yellow-500/10 text-yellow-400 rounded-xl">
-                      <Ticket className="w-6 h-6" />
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-400 font-medium mb-1">Open Tickets</p>
-                  <h3 className="text-3xl font-bold">2</h3>
-                </div>
-
-                <div className="bg-[#111111] border border-white/10 rounded-2xl p-6 hover:border-white/20 transition-colors">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="p-3 bg-green-500/10 text-green-400 rounded-xl">
-                      <FolderOpen className="w-6 h-6" />
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-400 font-medium mb-1">Vault Storage</p>
-                  <h3 className="text-3xl font-bold">1.2 <span className="text-lg text-gray-500">/ 50 GB</span></h3>
-                </div>
+                    <p className={`text-sm font-medium mb-1 relative z-10 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{kpi.title}</p>
+                    <h3 className="text-3xl font-bold relative z-10">
+                      {kpi.value} {kpi.suffix && <span className={`text-lg ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{kpi.suffix}</span>}
+                    </h3>
+                  </motion.div>
+                ))}
               </div>
 
               {/* Charts & Activity Grid */}
               <div className="grid lg:grid-cols-3 gap-8">
                 {/* Chart */}
-                <div className="lg:col-span-2 bg-[#111111] border border-white/10 rounded-3xl p-8">
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.6 }}
+                  className={`lg:col-span-2 ${isDark ? 'bg-[#111111] border-white/10' : 'bg-white border-gray-200'} border rounded-3xl p-8 hover:shadow-[0_0_40px_rgba(240,86,74,0.05)] transition-shadow duration-500`}
+                >
                   <div className="flex items-center justify-between mb-8">
                     <div>
-                      <h3 className="text-xl font-bold">Audience Growth</h3>
-                      <p className="text-sm text-gray-400">Traffic & Engagement over time</p>
+                      <h3 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Audience Growth</h3>
+                      <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Traffic & Engagement over time</p>
                     </div>
-                    <select className="bg-black border border-white/10 rounded-lg px-3 py-1.5 text-sm text-gray-300 outline-none">
+                    <select className={`${isDark ? 'bg-black border-white/10 text-gray-300' : 'bg-gray-50 border-gray-200 text-gray-700'} border rounded-lg px-3 py-1.5 text-sm outline-none`}>
                       <option>Last 6 Months</option>
                       <option>This Year</option>
                       <option>All Time</option>
@@ -412,59 +414,64 @@ export default function PortalDashboard() {
                             <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
                           </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                        <XAxis dataKey="name" stroke="#666" tick={{fill: '#888', fontSize: 12}} tickLine={false} axisLine={false} />
-                        <YAxis stroke="#666" tick={{fill: '#888', fontSize: 12}} tickLine={false} axisLine={false} />
+                        <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#333" : "#eee"} vertical={false} />
+                        <XAxis dataKey="name" stroke={isDark ? "#666" : "#999"} tick={{fill: isDark ? '#888' : '#666', fontSize: 12}} tickLine={false} axisLine={false} />
+                        <YAxis stroke={isDark ? "#666" : "#999"} tick={{fill: isDark ? '#888' : '#666', fontSize: 12}} tickLine={false} axisLine={false} />
                         <Tooltip 
-                          contentStyle={{ backgroundColor: '#111', borderColor: '#333', borderRadius: '12px', color: '#fff' }}
-                          itemStyle={{ color: '#fff' }}
+                          contentStyle={{ backgroundColor: isDark ? '#111' : '#fff', borderColor: isDark ? '#333' : '#eee', borderRadius: '12px', color: isDark ? '#fff' : '#000' }}
+                          itemStyle={{ color: isDark ? '#fff' : '#000' }}
                         />
                         <Area type="monotone" dataKey="traffic" stroke="#F0564A" strokeWidth={3} fillOpacity={1} fill="url(#colorTraffic)" />
                         <Area type="monotone" dataKey="engagement" stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#colorEngagement)" />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
-                </div>
+                </motion.div>
 
                 {/* Recent Activity */}
-                <div className="bg-[#111111] border border-white/10 rounded-3xl p-8">
-                  <h3 className="text-xl font-bold mb-6">Recent Activity</h3>
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.7 }}
+                  className={`${isDark ? 'bg-[#111111] border-white/10' : 'bg-white border-gray-200'} border rounded-3xl p-8 hover:shadow-[0_0_40px_rgba(139,92,246,0.05)] transition-shadow duration-500`}
+                >
+                  <h3 className={`text-xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>Recent Activity</h3>
                   <div className="space-y-6">
-                    <div className="flex gap-4">
-                      <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0">
-                        <FileText className="w-4 h-4 text-blue-400" />
+                    <div className="flex gap-4 group">
+                      <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:bg-blue-500/20 transition-all">
+                        <FileText className="w-4 h-4 text-blue-500" />
                       </div>
                       <div>
-                        <p className="text-sm text-white font-medium">New pitch deck uploaded</p>
-                        <p className="text-xs text-gray-500 mt-1">MSC Team • 2 hours ago</p>
+                        <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>New pitch deck uploaded</p>
+                        <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>MSC Team • 2 hours ago</p>
                       </div>
                     </div>
-                    <div className="flex gap-4">
-                      <div className="w-10 h-10 rounded-full bg-yellow-500/10 flex items-center justify-center shrink-0">
-                        <Ticket className="w-4 h-4 text-yellow-400" />
+                    <div className="flex gap-4 group">
+                      <div className="w-10 h-10 rounded-full bg-yellow-500/10 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:bg-yellow-500/20 transition-all">
+                        <Ticket className="w-4 h-4 text-yellow-500" />
                       </div>
                       <div>
-                        <p className="text-sm text-white font-medium">Ticket #1042 status changed</p>
-                        <p className="text-xs text-gray-400 mt-1">Status: <span className="text-yellow-400">In Progress</span></p>
-                        <p className="text-xs text-gray-500 mt-1">Today, 10:23 AM</p>
+                        <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>Ticket #1042 status changed</p>
+                        <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Status: <span className="text-yellow-500 font-medium">In Progress</span></p>
+                        <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Today, 10:23 AM</p>
                       </div>
                     </div>
-                    <div className="flex gap-4">
-                      <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
-                        <CheckCircle2 className="w-4 h-4 text-green-400" />
+                    <div className="flex gap-4 group">
+                      <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:bg-green-500/20 transition-all">
+                        <CheckCircle2 className="w-4 h-4 text-green-500" />
                       </div>
                       <div>
-                        <p className="text-sm text-white font-medium">Ticket #1038 resolved</p>
-                        <p className="text-xs text-gray-500 mt-1">May 4, 2026</p>
+                        <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>Ticket #1038 resolved</p>
+                        <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>May 4, 2026</p>
                       </div>
                     </div>
                   </div>
-                  <Button variant="outline" className="w-full mt-6 border-white/10 text-white hover:bg-white/10 hover:text-white">
+                  <Button className={`w-full mt-6 border bg-transparent ${isDark ? 'border-white/10 text-white hover:bg-white/10' : 'border-gray-200 text-gray-900 hover:bg-gray-50'}`}>
                     View All Activity
                   </Button>
-                </div>
+                </motion.div>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* TICKETS TAB */}
@@ -474,8 +481,8 @@ export default function PortalDashboard() {
                 <div className="p-6 border-b border-white/10 flex items-center justify-between bg-black/20">
                   <h3 className="text-lg font-bold">Active Requests</h3>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="border-white/10 text-gray-300 hover:bg-white/5">Filter</Button>
-                    <Button variant="outline" size="sm" className="border-white/10 text-gray-300 hover:bg-white/5">Sort</Button>
+                    <Button size="sm" className={`border bg-transparent ${isDark ? 'border-white/10 text-gray-300 hover:bg-white/5' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>Filter</Button>
+                    <Button size="sm" className={`border bg-transparent ${isDark ? 'border-white/10 text-gray-300 hover:bg-white/5' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>Sort</Button>
                   </div>
                 </div>
                 <div className="overflow-x-auto">
@@ -591,8 +598,7 @@ export default function PortalDashboard() {
                         <div className="flex items-center gap-3">
                           <Button 
                             onClick={() => handleDownload(file.name)}
-                            variant="outline" 
-                            className="border-white/10 text-gray-300 hover:text-white hover:bg-white/10 rounded-full px-6"
+                            className={`border rounded-full px-6 bg-transparent ${isDark ? 'border-white/10 text-gray-300 hover:text-white hover:bg-white/10' : 'border-gray-200 text-gray-700 hover:text-gray-900 hover:bg-gray-50'}`}
                           >
                             <Download className="w-4 h-4 mr-2" /> Download
                           </Button>
@@ -667,9 +673,9 @@ export default function PortalDashboard() {
                     </div>
                   </div>
 
-                  <div className="pt-6 border-t border-white/10">
+                  <div className={`pt-6 border-t ${isDark ? 'border-white/10' : 'border-gray-200'}`}>
                     <h4 className="text-lg font-bold mb-4">Security</h4>
-                    <Button variant="outline" className="border-white/20 text-black hover:bg-white/10 rounded-full px-6">
+                    <Button className={`border rounded-full px-6 bg-transparent ${isDark ? 'border-white/20 text-white hover:bg-white/10' : 'border-gray-200 text-gray-900 hover:bg-gray-50'}`}>
                       Change Password
                     </Button>
                   </div>
