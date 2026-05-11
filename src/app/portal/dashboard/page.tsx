@@ -27,9 +27,11 @@ import {
   CheckCircle2,
   AlertCircle,
   Sun,
-  Moon
+  Moon,
+  ArrowLeft
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -174,19 +176,19 @@ export default function PortalDashboard() {
   const isDark = theme === "dark";
 
   return (
-    <div className={`min-h-screen flex pt-24 ${isDark ? 'bg-[#0A0A0A] text-white' : 'bg-gray-50 text-gray-900'}`}>
+    <div className={`min-h-screen flex ${isDark ? 'bg-[#0A0A0A] text-white' : 'bg-gray-50 text-gray-900'}`}>
       {/* Sidebar */}
-      <aside className={`w-64 border-r flex flex-col hidden md:flex h-[calc(100vh-6rem)] fixed left-0 top-24 z-30 ${isDark ? 'bg-[#111111] border-white/10' : 'bg-white border-gray-200'}`}>
+      <aside className={`w-64 border-r flex flex-col hidden md:flex h-screen fixed left-0 top-0 z-30 ${isDark ? 'bg-[#111111] border-white/10' : 'bg-white border-gray-200'}`}>
         <div className={`p-6 border-b ${isDark ? 'border-white/10' : 'border-gray-200'}`}>
           <div className="flex items-center gap-3">
             <Image 
-              src={isDark ? "/images/MSC LOGO BITTERSWEET VECTOR (1).svg" : "/images/MSC_Logo with blk tagline (1).svg"} 
+              src="/images/MSC LOGO BITTERSWEET VECTOR (1).svg" 
               alt="MSC Logo" 
-              width={isDark ? 32 : 120} 
-              height={isDark ? 32 : 40} 
+              width={32} 
+              height={32} 
               className="object-contain"
             />
-            {isDark && <span className="font-heading font-bold text-xl tracking-tight">Client Portal</span>}
+            <span className={`font-heading font-bold text-xl tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>Client Portal</span>
           </div>
         </div>
 
@@ -249,6 +251,10 @@ export default function PortalDashboard() {
         </nav>
 
         <div className={`p-4 border-t ${isDark ? 'border-white/10' : 'border-gray-200'}`}>
+          <Link href="/" className={`group w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 mb-2 ${isDark ? 'text-gray-400 hover:bg-white/5 hover:text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}>
+            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+            <span className="font-medium">Back to Website</span>
+          </Link>
           <div className={`px-4 py-3 mb-2 rounded-xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'}`}>
             <p className={`text-xs uppercase tracking-wider font-bold mb-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Logged in as</p>
             <p className={`text-sm truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{user.email}</p>
@@ -264,9 +270,9 @@ export default function PortalDashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-h-[calc(100vh-6rem)] ml-0 md:ml-64 relative">
+      <main className="flex-1 flex flex-col min-h-screen ml-0 md:ml-64 relative">
         {/* Top Header */}
-        <header className={`h-20 border-b flex items-center justify-between px-8 sticky top-24 z-40 backdrop-blur-xl ${isDark ? 'bg-[#0A0A0A]/80 border-white/10' : 'bg-white/80 border-gray-200'}`}>
+        <header className={`h-20 border-b flex items-center justify-between px-8 sticky top-0 z-40 backdrop-blur-xl ${isDark ? 'bg-[#0A0A0A]/80 border-white/10' : 'bg-white/80 border-gray-200'}`}>
           <h1 className="text-2xl font-heading font-bold capitalize">
             {activeTab === "overview" ? "Dashboard Overview" : activeTab === "tickets" ? "Support Tickets" : activeTab === "files" ? "File Vault" : activeTab}
           </h1>
@@ -342,7 +348,7 @@ export default function PortalDashboard() {
                 className={`bg-gradient-to-r ${isDark ? 'from-[#111111] to-[#1a1a1a] border-white/10' : 'from-white to-gray-50 border-gray-200'} border rounded-3xl p-8 relative overflow-hidden shadow-xl`}
               >
                 <div className="absolute top-0 right-0 w-64 h-64 bg-[#F0564A]/10 rounded-full blur-[80px] pointer-events-none" />
-                <h2 className="text-3xl font-heading font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">Welcome back, Client! 👋</h2>
+                <h2 className={`text-3xl font-heading font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r ${isDark ? 'from-white to-gray-400' : 'from-gray-900 to-gray-500'}`}>Welcome back, Client! 👋</h2>
                 <p className={`max-w-2xl ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Here is what's happening with your brand ecosystem today. Your website traffic is up, and our team is currently reviewing your Q3 pitch deck revisions.</p>
               </motion.div>
 
