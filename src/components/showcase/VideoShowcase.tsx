@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, Maximize2, Volume2, VolumeX } from 'lucide-react';
+import { Play, Pause, Maximize2 } from 'lucide-react';
 import Image from 'next/image';
 
 const videos = [
@@ -32,7 +32,8 @@ const videos = [
     src: '/portfolio client videos/leon/whole site overview.mp4',
     poster: '/images/portfolio/leon/Screenshot 2026-05-10 141605.png',
     logo: '/images/portfolio/leon/Leon Master Logo1.svg'
-  },
+  }
+  /* 
   {
     id: 'pbl',
     client: 'PBL Assay Science',
@@ -42,12 +43,12 @@ const videos = [
     poster: '/images/portfolio/pbl/Screenshot 2026-05-10 142358.png',
     logo: '/images/portfolio/pbl/pbl icon_pbl logo.svg'
   }
+  */
 ];
 
 export default function VideoShowcase() {
   const [activeVideo, setActiveVideo] = useState(videos[0]);
   const [isPlaying, setIsPlaying] = useState(true);
-  const [isMuted, setIsMuted] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -68,13 +69,6 @@ export default function VideoShowcase() {
         videoRef.current.play();
       }
       setIsPlaying(!isPlaying);
-    }
-  };
-
-  const toggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
     }
   };
 
@@ -113,7 +107,7 @@ export default function VideoShowcase() {
             ref={videoRef}
             className="w-full h-full object-cover"
             loop
-            muted={isMuted}
+            muted
             playsInline
             poster={activeVideo.poster}
             onClick={togglePlay}
@@ -128,12 +122,6 @@ export default function VideoShowcase() {
                   className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/30 transition-colors"
                 >
                   {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-1" />}
-                </button>
-                <button 
-                  onClick={toggleMute}
-                  className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/20 transition-colors"
-                >
-                  {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
                 </button>
               </div>
               

@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { websites } from "@/app/portfolio/data";
 
 export default function WebsitesShowcase() {
-  const filteredWebsites = websites.filter(w => w.name !== 'PBL Assay Science');
+  const filteredWebsites = websites;
   
   // Find Lytix index in filtered array, default to 0 if not found
   const lytixIndex = filteredWebsites.findIndex(w => w.name === 'Lytix');
@@ -33,7 +33,7 @@ export default function WebsitesShowcase() {
   const getSidebarLogoClasses = (name: string) => {
     if (name === 'KeifeRx') return 'h-14 scale-110 origin-left -ml-6';
     if (name === 'Actym') return 'h-10 scale-100 origin-left';
-    if (name === 'Paint Therapeutics') return 'h-10 scale-100 origin-left';
+    if (name === 'Paint Therapeutics') return 'h-16 scale-110 origin-left';
     if (name === 'Frenelle') return 'h-6 scale-95 origin-left';
     if (name === 'Medicenna') return 'h-8 scale-110 origin-left';
     if (name === 'Leon') return 'h-8 scale-105 origin-left';
@@ -46,7 +46,7 @@ export default function WebsitesShowcase() {
   const getHeaderLogoClasses = (name: string) => {
     if (name === 'KeifeRx') return 'h-20 scale-110 origin-left -ml-8';
     if (name === 'Actym') return 'h-14 scale-100 origin-left';
-    if (name === 'Paint Therapeutics') return 'h-16 scale-100 origin-left';
+    if (name === 'Paint Therapeutics') return 'h-28 scale-110 origin-left';
     if (name === 'Frenelle') return 'h-10 scale-95 origin-left';
     if (name === 'Medicenna') return 'h-12 scale-110 origin-left';
     if (name === 'Leon') return 'h-12 scale-105 origin-left';
@@ -60,20 +60,20 @@ export default function WebsitesShowcase() {
     <>
       <div className="w-full bg-slate-50 rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden flex flex-col md:flex-row h-[900px]">
         
-        {/* Sidebar Navigation */}
-        <div className="w-full md:w-1/3 lg:w-1/4 bg-white border-b md:border-b-0 md:border-r border-slate-200 p-6 md:p-8 flex flex-col relative z-20 shrink-0">
+        {/* Sidebar Navigation (Hidden on mobile, replaced by dropdown) */}
+        <div className="hidden md:flex w-full md:w-1/3 lg:w-1/4 bg-white border-b md:border-b-0 md:border-r border-slate-200 p-6 md:p-8 flex-col relative z-20 shrink-0">
           <div className="mb-8">
             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#F0564A] mb-3 block">Digital Experiences</span>
             <h3 className="text-2xl font-bold text-slate-900">Featured Websites</h3>
             <p className="text-sm text-slate-500 mt-2">Select a client to view their digital transformation.</p>
           </div>
 
-          <div className="flex-1 overflow-y-auto pr-2 space-y-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          <div className="flex-1 overflow-y-auto pr-2 space-y-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {filteredWebsites.map((project, idx) => (
               <button
                 key={idx}
                 onClick={() => setActiveIndex(idx)}
-                className={`w-full text-left px-4 py-4 rounded-2xl transition-all duration-300 flex items-center justify-between group ${
+                className={`w-full text-left px-4 py-3 rounded-2xl transition-all duration-300 flex items-center justify-between group ${
                   activeIndex === idx 
                     ? "bg-slate-50 border border-slate-200 shadow-sm" 
                     : "hover:bg-slate-50 border border-transparent"
@@ -97,6 +97,30 @@ export default function WebsitesShowcase() {
                 )}
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* Mobile Dropdown Navigation */}
+        <div className="md:hidden w-full bg-white border-b border-slate-200 p-4 relative z-30 shrink-0">
+          <div className="mb-3">
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#F0564A] mb-1 block">Digital Experiences</span>
+            <h3 className="text-xl font-bold text-slate-900">Featured Websites</h3>
+          </div>
+          <div className="relative">
+            <select 
+              className="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-900 font-bold py-3 px-4 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-[#F0564A]/50 focus:border-[#F0564A]"
+              value={activeIndex}
+              onChange={(e) => setActiveIndex(Number(e.target.value))}
+            >
+              {filteredWebsites.map((project, idx) => (
+                <option key={idx} value={idx}>
+                  {project.name}
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+              <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+            </div>
           </div>
         </div>
 

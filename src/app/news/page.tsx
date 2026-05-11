@@ -37,13 +37,13 @@ export default function News() {
           <div className="grid gap-8">
             {articles.map((article, index) => (
               <Link key={index} href={`/news/${article.slug}`} className="group block">
-                <Card className="border-gray-200 hover:border-[#F0564A]/30 hover:shadow-xl transition-all duration-300 overflow-hidden bg-white">
+                <Card className="border-gray-100 hover:border-[#F0564A]/30 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_40px_rgb(240,86,74,0.08)] transition-all duration-500 overflow-hidden bg-white rounded-[2rem]">
                   <CardContent className="p-8 md:p-10 flex flex-col md:flex-row gap-8 items-start md:items-center">
                     <div className="flex-grow">
                       <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
-                        <span className="font-medium text-[#F0564A]">{article.date}</span>
+                        <span className="font-medium text-[#F0564A] bg-[#F0564A]/10 px-3 py-1 rounded-full">{article.date}</span>
                         <span>•</span>
-                        <span>{article.readTime}</span>
+                        <span className="bg-gray-100 px-3 py-1 rounded-full">{article.readTime}</span>
                       </div>
                       <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 group-hover:text-[#F0564A] transition-colors">
                         {article.title}
@@ -52,8 +52,8 @@ export default function News() {
                         {article.excerpt}
                       </p>
                     </div>
-                    <div className="hidden md:flex flex-shrink-0 w-12 h-12 rounded-full border border-gray-200 items-center justify-center text-gray-400 group-hover:bg-[#F0564A] group-hover:text-white group-hover:border-[#F0564A] transition-all duration-300">
-                      <ArrowRight className="w-5 h-5" />
+                    <div className="hidden md:flex flex-shrink-0 w-14 h-14 rounded-full border border-gray-200 items-center justify-center text-gray-400 group-hover:bg-[#F0564A] group-hover:text-white group-hover:border-[#F0564A] transition-all duration-500 group-hover:scale-110 group-hover:shadow-lg">
+                      <ArrowRight className="w-6 h-6" />
                     </div>
                   </CardContent>
                 </Card>

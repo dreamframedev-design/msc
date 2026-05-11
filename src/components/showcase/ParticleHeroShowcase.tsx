@@ -159,16 +159,16 @@ export default function ParticleHeroShowcase() {
       />
 
       {/* Content */}
-      <div className="relative z-20 h-full flex flex-col justify-center px-10 md:px-16 max-w-3xl pointer-events-none">
+      <div className="relative z-20 h-full flex flex-col justify-center px-6 md:px-16 max-w-3xl pointer-events-none">
         <div className="pointer-events-auto">
           <span className="inline-block px-4 py-1.5 rounded-full bg-[#F0564A]/20 border border-[#F0564A]/30 text-[#F0564A] text-[10px] font-black uppercase tracking-widest mb-6 w-fit backdrop-blur-md">
             Immersive Hero Sections
           </span>
           <h3 className="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">
             First impressions <br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F0564A] to-orange-400 whitespace-nowrap">engineered to captivate.</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F0564A] to-orange-400">engineered to captivate.</span>
           </h3>
-          <p className="text-lg text-slate-300 font-light leading-relaxed mb-8 max-w-2xl">
+          <p className="text-base md:text-lg text-slate-300 font-light leading-relaxed mb-8 max-w-2xl">
             We combine high-end 3D renders with custom WebGL particle systems to create dynamic, living backgrounds that immediately establish your scientific credibility.
           </p>
           <button className="w-fit px-8 py-4 bg-white text-slate-900 rounded-full font-bold text-sm hover:bg-[#F0564A] hover:text-white transition-colors shadow-xl">

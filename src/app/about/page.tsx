@@ -90,7 +90,7 @@ export default function About() {
       </section>
 
       {/* Team Section */}
-      <section className="py-24">
+      <section className="py-24 bg-gray-50/50">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center mb-20">
             <h2 className="text-sm font-bold tracking-widest text-[#F0564A] uppercase mb-4">Who We Are</h2>
@@ -102,8 +102,8 @@ export default function About() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-12">
             {team.map((member, index) => (
-              <div key={index} className="group">
-                <div className="relative w-full aspect-square rounded-2xl group-hover:rounded-[3rem] group-hover:rounded-tr-xl group-hover:rounded-bl-xl overflow-hidden mb-6 bg-gray-100 transition-all duration-500 ease-out">
+              <div key={index} className="group bg-white rounded-[2.5rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-500 border border-gray-100">
+                <div className="relative w-full aspect-square rounded-[2rem] group-hover:rounded-[3rem] group-hover:rounded-tr-xl group-hover:rounded-bl-xl overflow-hidden mb-8 bg-gray-100 transition-all duration-500 ease-out shadow-inner">
                   {member.image ? (
                     <Image 
                       src={member.image} 
@@ -115,11 +115,13 @@ export default function About() {
                     <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
                   )}
                 </div>
-                <h4 className="text-2xl font-bold text-gray-900 mb-1">{member.name}</h4>
-                <p className="text-[#F0564A] font-medium mb-4">{member.role}</p>
-                <p className="text-gray-600 leading-relaxed text-sm">
-                  {member.bio}
-                </p>
+                <div className="px-2">
+                  <h4 className="text-2xl font-bold text-gray-900 mb-1">{member.name}</h4>
+                  <p className="text-[#F0564A] font-medium mb-4">{member.role}</p>
+                  <p className="text-gray-600 leading-relaxed text-sm">
+                    {member.bio}
+                  </p>
+                </div>
               </div>
             ))}
           </div>

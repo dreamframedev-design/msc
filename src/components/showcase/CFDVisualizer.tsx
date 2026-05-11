@@ -210,22 +210,24 @@ export default function CFDVisualizer() {
   }, [inletVelocity, fluidViscosity, particleDensity, activeTab]);
 
   return (
-    <div className="w-full bg-slate-950 rounded-[2.5rem] p-8 md:p-12 border border-slate-800 shadow-2xl relative overflow-hidden flex flex-col md:flex-row items-center gap-12 min-h-[600px]">
+    <div className="w-full bg-slate-950 rounded-[2.5rem] p-6 md:p-12 border border-slate-800 shadow-2xl relative overflow-hidden flex flex-col gap-8 min-h-[600px]">
       
-      {/* Control Panel */}
-      <div className="relative z-10 w-full md:w-1/3 flex flex-col justify-center">
-        <div className="mb-8">
-          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#F0564A] mb-3 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#F0564A] animate-pulse"></span>
-            Live CFD Engine
-          </span>
-          <h3 className="text-3xl md:text-4xl font-bold text-white mb-4">Computational Fluid Dynamics</h3>
-          <p className="text-sm text-slate-400 font-light leading-relaxed">
-            Real-time Navier-Stokes approximation visualizing flow around parametric CAD geometries. Used for microfluidic device optimization and nanoparticle formulation scaling.
-          </p>
-        </div>
+      {/* Title Section (Always on top) */}
+      <div className="relative z-10 w-full">
+        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#F0564A] mb-3 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-[#F0564A] animate-pulse"></span>
+          Live CFD Engine
+        </span>
+        <h3 className="text-3xl md:text-4xl font-bold text-white mb-4">Computational Fluid Dynamics</h3>
+        <p className="text-sm text-slate-400 font-light leading-relaxed max-w-2xl">
+          Real-time Navier-Stokes approximation visualizing flow around parametric CAD geometries. Used for microfluidic device optimization and nanoparticle formulation scaling.
+        </p>
+      </div>
 
-        <div className="space-y-6 bg-slate-900/80 p-6 rounded-2xl border border-slate-800 backdrop-blur-sm">
+      <div className="flex flex-col md:flex-row items-center gap-12 relative z-10 w-full">
+        {/* Control Panel */}
+        <div className="w-full md:w-1/3 flex flex-col justify-center order-2 md:order-1">
+          <div className="space-y-6 bg-slate-900/80 p-6 rounded-2xl border border-slate-800 backdrop-blur-sm">
           
           {/* Data Sources */}
           <div className="space-y-2 mb-6">
@@ -294,8 +296,8 @@ export default function CFDVisualizer() {
         </div>
       </div>
 
-      {/* Visualizer Stage */}
-      <div className="relative z-10 w-full md:w-2/3 h-[400px] md:h-full min-h-[500px] flex items-center justify-center rounded-2xl overflow-hidden bg-slate-950 border border-slate-800/50 shadow-[inset_0_0_100px_rgba(0,0,0,0.8)]">
+      {/* Visualizer Stage (Moved above on mobile) */}
+      <div className="relative z-10 w-full md:w-2/3 h-[400px] md:h-full min-h-[500px] flex items-center justify-center rounded-2xl overflow-hidden bg-slate-950 border border-slate-800/50 shadow-[inset_0_0_100px_rgba(0,0,0,0.8)] order-1 md:order-2">
         
         {/* Coordinate Grid Background */}
         <div className="absolute inset-0 opacity-20 pointer-events-none" 
@@ -320,6 +322,7 @@ export default function CFDVisualizer() {
       {/* Background ambient glow */}
       <div className="absolute top-1/2 left-3/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#F0564A]/5 rounded-full blur-[100px] pointer-events-none"></div>
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-500/5 rounded-full blur-[100px] pointer-events-none"></div>
+      </div>
     </div>
   );
 }

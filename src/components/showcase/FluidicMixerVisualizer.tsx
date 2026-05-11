@@ -27,18 +27,20 @@ export default function FluidicMixerVisualizer() {
   const glowColor = getGlowColor();
 
   return (
-    <div className="w-full bg-slate-950 rounded-[2.5rem] p-8 md:p-12 border border-slate-800 shadow-2xl relative overflow-hidden flex flex-col md:flex-row gap-12">
+    <div className="w-full bg-slate-950 rounded-[2.5rem] p-6 md:p-12 border border-slate-800 shadow-2xl relative overflow-hidden flex flex-col gap-8">
       {/* Background Grid */}
       <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(#475569 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
       
-      {/* Controls Panel */}
-      <div className="relative z-10 w-full md:w-1/3 flex flex-col justify-center">
-        <div className="mb-8">
-          <h3 className="text-2xl font-bold text-white mb-2">Microfluidic Mixer</h3>
-          <p className="text-sm text-slate-400">Interactive simulation of nanoparticle formulation dynamics.</p>
-        </div>
+      {/* Title Section (Always on top) */}
+      <div className="relative z-10 w-full">
+        <h3 className="text-2xl font-bold text-white mb-2">Microfluidic Mixer</h3>
+        <p className="text-sm text-slate-400">Interactive simulation of nanoparticle formulation dynamics.</p>
+      </div>
 
-        <div className="space-y-6 bg-slate-900/80 p-6 rounded-2xl border border-slate-800 backdrop-blur-sm">
+      <div className="flex flex-col md:flex-row items-center gap-12 relative z-10 w-full">
+        {/* Controls Panel */}
+        <div className="w-full md:w-1/3 flex flex-col justify-center order-2 md:order-1">
+          <div className="space-y-6 bg-slate-900/80 p-6 rounded-2xl border border-slate-800 backdrop-blur-sm">
           {/* Flow Rate */}
           <div>
             <div className="flex justify-between items-center mb-4">
@@ -112,9 +114,9 @@ export default function FluidicMixerVisualizer() {
         </div>
       </div>
 
-      {/* Visualizer Stage */}
-      <div className="relative z-10 w-full md:w-2/3 flex items-center justify-center min-h-[400px]">
-        <svg viewBox="0 0 400 400" className="w-full h-full max-w-md drop-shadow-2xl">
+      {/* Visualizer Stage (Moved above controls on mobile) */}
+      <div className="relative z-10 w-full md:w-2/3 flex items-center justify-center min-h-[300px] md:min-h-[400px] order-1 md:order-2 overflow-visible">
+        <svg viewBox="0 0 400 400" className="w-full h-full max-w-[320px] md:max-w-lg drop-shadow-2xl scale-125 md:scale-125 origin-center">
           <defs>
             {/* Gradients */}
             <linearGradient id="inletLeft" x1="0" y1="0" x2="1" y2="0">
@@ -243,6 +245,7 @@ export default function FluidicMixerVisualizer() {
             <text x="230" y="370">LNP OUTLET</text>
           </g>
         </svg>
+      </div>
       </div>
     </div>
   );

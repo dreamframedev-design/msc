@@ -51,8 +51,19 @@ export default function SparkTime() {
       </section>
 
       {/* Featured Episodes Section */}
-      <section className="py-24 relative z-10 bg-[#0A0A0A]">
-        <div className="container mx-auto px-4 max-w-[1600px]">
+      <section className="py-24 relative z-10 overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0 z-0">
+          <Image 
+            src="/images/flowsaber_a_beautiful_scientific_biotech_close_up_molecular_mic_231de8ff-e324-440e-9056-b28133c799dc_edited (1).jpg" 
+            alt="Background" 
+            fill 
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0A0A0A] via-[#0A0A0A]/80 to-[#0A0A0A]" />
+        </div>
+
+        <div className="container relative z-10 mx-auto px-4 max-w-[1600px]">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-4xl md:text-5xl font-heading font-bold mb-6">Featured Episodes</h2>
             <p className="text-xl text-gray-400">

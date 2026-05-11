@@ -61,6 +61,7 @@ export const websites = [
       "/images/portfolio/lytix/Screenshot 2026-05-10 142920.png"
     ]
   },
+  /*
   {
     "name": "PBL Assay Science",
     "logo": "/images/portfolio/pbl/pbl icon_pbl logo.svg",
@@ -79,6 +80,7 @@ export const websites = [
       "/images/portfolio/pbl/Screenshot 2026-05-10 142641.png"
     ]
   },
+  */
   {
     "name": "CellTaxis",
     "logo": "/images/portfolio/celltaxis/celltaxis final logo_final logo.svg",

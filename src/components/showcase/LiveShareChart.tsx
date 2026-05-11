@@ -43,7 +43,7 @@ export default function LiveShareChart() {
   return (
     <div className="w-full h-full flex flex-col gap-6">
       {/* Share Information Cards */}
-      <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-slate-200">
+      <div className="bg-white rounded-3xl p-4 md:p-8 shadow-sm border border-slate-200">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-8 h-8 rounded-full bg-[#F0564A]/10 flex items-center justify-center text-[#F0564A]">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
@@ -80,7 +80,7 @@ export default function LiveShareChart() {
       </div>
 
       {/* Live Chart Section */}
-      <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-slate-200">
+      <div className="bg-white rounded-3xl p-4 md:p-8 shadow-sm border border-slate-200">
         <div className="flex justify-between items-center mb-8 border-b border-slate-100 pb-4">
           <h3 className="text-lg font-bold text-slate-900">Live Share Chart & Data</h3>
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Powered by INFRONT</span>
@@ -146,6 +146,7 @@ export default function LiveShareChart() {
               <Tooltip 
                 contentStyle={{ borderRadius: '0.5rem', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', fontSize: '12px', fontWeight: 'bold' }}
                 itemStyle={{ color: '#F0564A' }}
+                allowEscapeViewBox={{ x: false, y: true }}
               />
               <Line 
                 type="monotone" 

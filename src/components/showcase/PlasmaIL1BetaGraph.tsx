@@ -44,19 +44,19 @@ const CUSTOM_TOOLTIP = ({ active, payload }: any) => {
     const data = payload[0].payload;
     const matrixName = data.x < 1.5 ? 'Matrix Alpha' : data.x < 2.5 ? 'Matrix Beta' : 'Matrix Gamma';
     return (
-      <div className="bg-white p-4 border border-slate-100 shadow-2xl rounded-2xl min-w-[240px] max-w-[280px] relative overflow-hidden whitespace-normal z-50">
+      <div className="bg-white p-4 md:p-5 border border-slate-100 shadow-2xl rounded-2xl min-w-[200px] max-w-[85vw] md:min-w-[280px] md:max-w-[320px] relative overflow-hidden whitespace-normal z-50">
         <div className="absolute top-0 left-0 w-1 h-full bg-[#F0564A]"></div>
-        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">{matrixName}</p>
-        <div className="flex justify-between items-baseline mb-1">
-          <span className="text-xs font-bold text-slate-600">Concentration:</span>
-          <span className="text-lg font-black text-[#F0564A]">{data.realVal.toFixed(3)} <span className="text-[10px] text-slate-400 font-bold">pg/mL</span></span>
+        <p className="text-[10px] md:text-xs font-black uppercase tracking-widest text-slate-400 mb-2">{matrixName}</p>
+        <div className="flex justify-between items-baseline mb-1 gap-4">
+          <span className="text-xs md:text-sm font-bold text-slate-600">Concentration:</span>
+          <span className="text-xl md:text-2xl font-black text-[#F0564A]">{data.realVal.toFixed(3)} <span className="text-[10px] md:text-xs text-slate-400 font-bold">pg/mL</span></span>
         </div>
-        <div className="flex justify-between items-baseline mb-3">
-          <span className="text-xs font-bold text-slate-600">Variance:</span>
-          <span className="text-xs font-bold text-slate-400">±{(data.realVal * 0.05).toFixed(3)}</span>
+        <div className="flex justify-between items-baseline mb-3 gap-4">
+          <span className="text-xs md:text-sm font-bold text-slate-600">Variance:</span>
+          <span className="text-xs md:text-sm font-bold text-slate-400">±{(data.realVal * 0.05).toFixed(3)}</span>
         </div>
-        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-          <p className="text-[10px] text-slate-600 leading-relaxed font-medium">
+        <div className="bg-slate-50 p-3 md:p-4 rounded-xl border border-slate-100">
+          <p className="text-xs md:text-sm text-slate-600 leading-relaxed font-medium">
             {data.realVal > 1.5 
               ? "🎯 Outlier detected. We highlight these data points to show investors the broad dynamic range of the assay." 
               : "Consistent baseline clustering demonstrates the high precision and reproducibility of the platform."}
@@ -114,19 +114,19 @@ export default function PlasmaIL1BetaGraph() {
   }, []);
 
   return (
-    <div ref={containerRef} className="w-full h-full flex flex-col p-8 bg-white rounded-[2.5rem] shadow-inner border border-slate-100/50 relative group">
+    <div ref={containerRef} className="w-full h-full flex flex-col p-4 md:p-8 bg-white rounded-[2.5rem] shadow-inner border border-slate-100/50 relative group">
       
-      <div className="flex justify-between items-start mb-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start mb-6 md:mb-8 gap-4">
         <div>
-          <div className="flex items-center gap-3">
-            <h4 className="text-xl font-bold text-slate-900 tracking-tight">Multiplex Cytokine Expression</h4>
+          <div className="flex flex-wrap items-center gap-2 md:gap-3">
+            <h4 className="text-lg md:text-xl font-bold text-slate-900 tracking-tight">Multiplex Cytokine Expression</h4>
             {/* "Hover Me" Indicator */}
-            <div className="flex items-center gap-1.5 bg-[#F0564A]/10 text-[#F0564A] px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
-              <svg className="w-3 h-3 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
-              <span className="text-[8px] font-black uppercase tracking-widest">Hover Insights</span>
+            <div className="flex items-center gap-1.5 bg-[#F0564A]/10 text-[#F0564A] px-2 py-1 md:px-3 md:py-1.5 rounded-full opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
+              <svg className="w-3 h-3 md:w-4 md:h-4 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
+              <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">Tap Insights</span>
             </div>
           </div>
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#F0564A] mt-1">Biomarker Profile Variance</p>
+          <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-[#F0564A] mt-1 md:mt-2">Biomarker Profile Variance</p>
         </div>
         <div className="bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100 hidden sm:block">
           <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Platform</span>
@@ -134,9 +134,9 @@ export default function PlasmaIL1BetaGraph() {
         </div>
       </div>
 
-      <div className="flex-1 w-full min-h-[500px] pb-4">
-        <ResponsiveContainer width="100%" height={500}>
-          <ScatterChart margin={{ top: 40, right: 30, bottom: 50, left: 60 }}>
+      <div className="flex-1 w-full min-h-[250px] md:min-h-[300px] pb-4">
+        <ResponsiveContainer width="100%" height={300}>
+          <ScatterChart margin={{ top: 20, right: 30, bottom: 30, left: 40 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
             
             <XAxis 
@@ -172,13 +172,13 @@ export default function PlasmaIL1BetaGraph() {
               fontSize={10}
               fontWeight={900}
               stroke="#94a3b8"
-              label={{ value: 'Analyte Concentration (pg/mL)', angle: -90, position: 'insideLeft', offset: -40, fill: '#64748b', fontSize: 10, fontWeight: 900 }}
+              label={{ value: 'Analyte Concentration (pg/mL)', angle: -90, position: 'insideLeft', offset: -20, fill: '#64748b', fontSize: 10, fontWeight: 900 }}
             />
             
             <Tooltip 
               content={<CUSTOM_TOOLTIP />} 
               cursor={{ strokeDasharray: '3 3', stroke: '#e2e8f0' }} 
-              allowEscapeViewBox={{ x: true, y: true }}
+              allowEscapeViewBox={{ x: false, y: true }}
               wrapperStyle={{ zIndex: 100 }}
             />
             

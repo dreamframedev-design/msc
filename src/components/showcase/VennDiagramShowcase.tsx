@@ -10,25 +10,25 @@ export default function VennDiagramShowcase() {
   // Tie the active index to the scroll progress of the container
   const { scrollYProgress } = useScroll({
     target: containerRef,
-    offset: ["start end", "end start"]
+    offset: ["start center", "end center"]
   });
 
   // Map scroll progress (0 to 1) to an index (0, 1, or 2)
   // We use a wider range so it changes as you scroll past it
-  const activeIndexFloat = useTransform(scrollYProgress, [0.3, 0.5, 0.7], [0, 1, 2]);
+  const activeIndexFloat = useTransform(scrollYProgress, [0.1, 0.5, 0.9], [0, 1, 2]);
 
   useMotionValueEvent(activeIndexFloat, "change", (latest) => {
     setActiveIndex(Math.min(2, Math.max(0, Math.round(latest))));
   });
 
   return (
-    <div ref={containerRef} className="w-full bg-slate-950 rounded-[2.5rem] p-8 md:p-12 border border-slate-800 shadow-2xl relative overflow-hidden flex flex-col md:flex-row items-center gap-12 min-h-[500px]">
+    <div ref={containerRef} className="w-full bg-slate-950 rounded-[2.5rem] p-6 md:p-12 border border-slate-800 shadow-2xl relative overflow-hidden flex flex-col md:flex-row items-center gap-12 min-h-[500px]">
       {/* Background Grid & Glow */}
       <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(#475569 1px, transparent 1px)', backgroundSize: '30px 30px' }}></div>
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#F0564A]/10 rounded-full blur-[120px] pointer-events-none"></div>
 
       {/* Interactive Diagram */}
-      <div className="relative z-10 w-full md:w-1/2 flex items-center justify-center">
+      <div className="relative z-10 w-full md:w-1/2 flex flex-col items-center justify-center order-2 md:order-1 mt-8 md:mt-0 sticky top-24 md:static">
         <svg viewBox="0 0 400 400" className="w-full h-auto max-w-md drop-shadow-2xl">
           <defs>
             {/* Active State Gradients (MSC Brand Colors) */}
@@ -95,7 +95,7 @@ export default function VennDiagramShowcase() {
       </div>
 
       {/* Content Pane */}
-      <div className="relative z-10 w-full md:w-1/2 flex flex-col justify-center">
+      <div className="relative z-10 w-full md:w-1/2 flex flex-col justify-center order-1 md:order-2">
         <div className="mb-8">
           <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#F0564A] mb-3 block">Scroll-Linked Animation</span>
           <h3 className="text-3xl md:text-4xl font-bold text-white mb-4">The Convergence Model</h3>
@@ -105,17 +105,17 @@ export default function VennDiagramShowcase() {
         </div>
 
         <div className="space-y-4">
-          <div className={`p-5 rounded-2xl border transition-all duration-500 ${activeIndex === 0 ? 'bg-slate-800 border-[#F0564A]/50 shadow-[0_0_20px_rgba(240,86,74,0.15)] scale-105' : 'bg-slate-900/50 border-slate-800'}`}>
+          <div className={`p-4 md:p-5 rounded-2xl border transition-all duration-500 ${activeIndex === 0 ? 'bg-slate-800 border-[#F0564A]/50 shadow-[0_0_20px_rgba(240,86,74,0.15)] scale-[1.02] md:scale-105' : 'bg-slate-900/50 border-slate-800 opacity-50'}`}>
             <h4 className={`font-bold mb-1 ${activeIndex === 0 ? 'text-white' : 'text-slate-400'}`}>Discovery Phase Integration</h4>
-            <p className="text-sm text-slate-500">Highlighting early-stage pipeline assets and proprietary screening technologies.</p>
+            <p className="text-xs md:text-sm text-slate-500">Highlighting early-stage pipeline assets and proprietary screening technologies.</p>
           </div>
-          <div className={`p-5 rounded-2xl border transition-all duration-500 ${activeIndex === 1 ? 'bg-slate-800 border-[#F0564A]/50 shadow-[0_0_20px_rgba(240,86,74,0.15)] scale-105' : 'bg-slate-900/50 border-slate-800'}`}>
+          <div className={`p-4 md:p-5 rounded-2xl border transition-all duration-500 ${activeIndex === 1 ? 'bg-slate-800 border-[#F0564A]/50 shadow-[0_0_20px_rgba(240,86,74,0.15)] scale-[1.02] md:scale-105' : 'bg-slate-900/50 border-slate-800 opacity-50'}`}>
             <h4 className={`font-bold mb-1 ${activeIndex === 1 ? 'text-white' : 'text-slate-400'}`}>Clinical Translation</h4>
-            <p className="text-sm text-slate-500">Mapping the journey from bench to bedside with clear milestone tracking.</p>
+            <p className="text-xs md:text-sm text-slate-500">Mapping the journey from bench to bedside with clear milestone tracking.</p>
           </div>
-          <div className={`p-5 rounded-2xl border transition-all duration-500 ${activeIndex === 2 ? 'bg-slate-800 border-[#F0564A]/50 shadow-[0_0_20px_rgba(240,86,74,0.15)] scale-105' : 'bg-slate-900/50 border-slate-800'}`}>
+          <div className={`p-4 md:p-5 rounded-2xl border transition-all duration-500 ${activeIndex === 2 ? 'bg-slate-800 border-[#F0564A]/50 shadow-[0_0_20px_rgba(240,86,74,0.15)] scale-[1.02] md:scale-105' : 'bg-slate-900/50 border-slate-800 opacity-50'}`}>
             <h4 className={`font-bold mb-1 ${activeIndex === 2 ? 'text-white' : 'text-slate-400'}`}>Commercial Readiness</h4>
-            <p className="text-sm text-slate-500">Demonstrating market potential, partnerships, and go-to-market strategies.</p>
+            <p className="text-xs md:text-sm text-slate-500">Demonstrating market potential, partnerships, and go-to-market strategies.</p>
           </div>
         </div>
       </div>
