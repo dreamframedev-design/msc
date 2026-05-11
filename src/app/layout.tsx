@@ -4,6 +4,7 @@ import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { SmoothScroll } from "@/components/layout/SmoothScroll";
+import { PageTransition } from "@/components/layout/PageTransition";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -34,9 +35,8 @@ export default function RootLayout({
         <SmoothScroll>
           <Navbar />
           <main className="flex-1">
-            {children}
+            <PageTransition>{children}</PageTransition>
           </main>
-          {/* Footer is rendered conditionally based on route inside the Footer component itself or we can do it here */}
           <Footer />
         </SmoothScroll>
       </body>
