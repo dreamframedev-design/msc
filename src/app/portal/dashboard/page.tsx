@@ -176,9 +176,22 @@ export default function PortalDashboard() {
   const isDark = theme === "dark";
 
   return (
-    <div className={`min-h-screen flex ${isDark ? 'bg-[#0A0A0A] text-white' : 'bg-gray-50 text-gray-900'}`}>
+    <div className={`min-h-screen flex relative ${isDark ? 'text-white' : 'text-gray-900'}`}>
+      {/* Fixed Background Image */}
+      <div className="fixed inset-0 z-0">
+        <Image 
+          src="/images/flowsaber_minimal_simple_opening_photorealistic_cinematic_shot__42eeffda-30d1-41a4-8f73-c49a4ac32608.png"
+          alt="Portal Background"
+          fill
+          className="object-cover"
+          priority
+        />
+        {/* Gradient Overlay for readability */}
+        <div className={`absolute inset-0 ${isDark ? 'bg-black/80' : 'bg-white/80'} backdrop-blur-[2px] transition-colors duration-500`} />
+      </div>
+
       {/* Sidebar */}
-      <aside className={`w-64 border-r flex flex-col hidden md:flex h-screen fixed left-0 top-0 z-50 ${isDark ? 'bg-[#111111] border-white/10' : 'bg-white border-gray-200'}`}>
+      <aside className={`w-64 border-r flex flex-col hidden md:flex h-screen fixed left-0 top-0 z-50 ${isDark ? 'bg-black/40 backdrop-blur-2xl border-white/10' : 'bg-white/60 backdrop-blur-2xl border-gray-200'}`}>
         <div className={`p-6 border-b ${isDark ? 'border-white/10' : 'border-gray-200'}`}>
           <div className="flex items-center gap-3">
             <Image 
@@ -251,17 +264,13 @@ export default function PortalDashboard() {
         </nav>
 
         <div className={`p-4 border-t ${isDark ? 'border-white/10' : 'border-gray-200'}`}>
-          <Link href="/" className={`group w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 mb-2 ${isDark ? 'text-gray-400 hover:bg-white/5 hover:text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}>
-            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-            <span className="font-medium">Back to Website</span>
-          </Link>
-          <div className={`px-4 py-3 mb-2 rounded-xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'}`}>
+          <div className={`px-4 py-3 mb-2 rounded-xl border backdrop-blur-xl ${isDark ? 'bg-black/40 border-white/10' : 'bg-white/60 border-gray-200'}`}>
             <p className={`text-xs uppercase tracking-wider font-bold mb-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Logged in as</p>
             <p className={`text-sm truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{user.email}</p>
           </div>
           <button 
             onClick={handleSignOut}
-            className={`group w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${isDark ? 'text-gray-400 hover:bg-red-500/10 hover:text-red-500' : 'text-gray-600 hover:bg-red-50 hover:text-red-600'}`}
+            className={`group w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${isDark ? 'text-gray-400 hover:bg-red-500/20 hover:text-red-500' : 'text-gray-600 hover:bg-red-50 hover:text-red-600'}`}
           >
             <LogOut className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
             <span className="font-medium">Sign Out</span>
@@ -272,14 +281,19 @@ export default function PortalDashboard() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-h-screen ml-0 md:ml-64 relative z-40">
         {/* Top Header */}
-        <header className={`h-20 border-b flex items-center justify-between px-8 sticky top-0 z-40 backdrop-blur-xl ${isDark ? 'bg-[#0A0A0A]/80 border-white/10' : 'bg-white/80 border-gray-200'}`}>
-          <h1 className="text-2xl font-heading font-bold capitalize">
+        <header className={`h-20 border-b flex items-center justify-between px-8 sticky top-0 z-40 backdrop-blur-2xl ${isDark ? 'bg-black/40 border-white/10' : 'bg-white/60 border-gray-200'}`}>
+          <h1 className={`text-2xl font-heading font-bold capitalize ${isDark ? 'text-white' : 'text-gray-900'}`}>
             {activeTab === "overview" ? "Dashboard Overview" : activeTab === "tickets" ? "Support Tickets" : activeTab === "files" ? "File Vault" : activeTab}
           </h1>
           
           <div className="flex items-center gap-4">
+            <Link href="/" className={`hidden md:flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-300 ${isDark ? 'border-white/10 text-gray-300 hover:bg-white/10 hover:text-white' : 'border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}>
+              <ArrowLeft className="w-4 h-4" />
+              <span className="text-sm font-medium">Home</span>
+            </Link>
+
             {/* Global Search Mock */}
-            <div className={`hidden lg:flex items-center border rounded-full px-4 py-2 ${isDark ? 'bg-[#111111] border-white/10' : 'bg-gray-100 border-gray-200'}`}>
+            <div className={`hidden lg:flex items-center border rounded-full px-4 py-2 ${isDark ? 'bg-black/40 border-white/10' : 'bg-white/60 border-gray-200'}`}>
               <Search className={`w-4 h-4 mr-2 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
               <input type="text" placeholder="Search..." className={`bg-transparent border-none outline-none text-sm w-48 ${isDark ? 'text-white placeholder:text-gray-500' : 'text-gray-900 placeholder:text-gray-400'}`} />
             </div>
@@ -345,7 +359,7 @@ export default function PortalDashboard() {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
-                className={`bg-gradient-to-r ${isDark ? 'from-[#111111] to-[#1a1a1a] border-white/10' : 'from-white to-gray-50 border-gray-200'} border rounded-3xl p-8 relative overflow-hidden shadow-xl`}
+                className={`bg-gradient-to-r ${isDark ? 'from-black/60 to-black/40 border-white/10' : 'from-white/80 to-white/60 border-gray-200'} backdrop-blur-xl border rounded-3xl p-8 relative overflow-hidden shadow-xl`}
               >
                 <div className="absolute top-0 right-0 w-64 h-64 bg-[#F0564A]/10 rounded-full blur-[80px] pointer-events-none" />
                 <h2 className={`text-3xl font-heading font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r ${isDark ? 'from-white to-gray-400' : 'from-gray-900 to-gray-500'}`}>Welcome back, Client! 👋</h2>
@@ -366,7 +380,7 @@ export default function PortalDashboard() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}
                     whileHover={{ y: -5, scale: 1.02 }}
-                    className={`${isDark ? 'bg-[#111111] border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.05)]' : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-[0_0_30px_rgba(0,0,0,0.05)]'} border rounded-2xl p-6 transition-all duration-300 relative overflow-hidden group`}
+                    className={`${isDark ? 'bg-black/40 backdrop-blur-xl border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.05)]' : 'bg-white/60 backdrop-blur-xl border-gray-200 hover:border-gray-300 hover:shadow-[0_0_30px_rgba(0,0,0,0.05)]'} border rounded-2xl p-6 transition-all duration-300 relative overflow-hidden group`}
                   >
                     <div className={`absolute inset-0 bg-gradient-to-br from-${kpi.color}-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
                     <div className="flex justify-between items-start mb-4 relative z-10">
@@ -394,7 +408,7 @@ export default function PortalDashboard() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.6 }}
-                  className={`lg:col-span-2 ${isDark ? 'bg-[#111111] border-white/10' : 'bg-white border-gray-200'} border rounded-3xl p-8 hover:shadow-[0_0_40px_rgba(240,86,74,0.05)] transition-shadow duration-500`}
+                  className={`lg:col-span-2 ${isDark ? 'bg-black/40 backdrop-blur-xl border-white/10' : 'bg-white/60 backdrop-blur-xl border-gray-200'} border rounded-3xl p-8 hover:shadow-[0_0_40px_rgba(240,86,74,0.05)] transition-shadow duration-500`}
                 >
                   <div className="flex items-center justify-between mb-8">
                     <div>
@@ -439,7 +453,7 @@ export default function PortalDashboard() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.7 }}
-                  className={`${isDark ? 'bg-[#111111] border-white/10' : 'bg-white border-gray-200'} border rounded-3xl p-8 hover:shadow-[0_0_40px_rgba(139,92,246,0.05)] transition-shadow duration-500`}
+                  className={`${isDark ? 'bg-black/40 backdrop-blur-xl border-white/10' : 'bg-white/60 backdrop-blur-xl border-gray-200'} border rounded-3xl p-8 hover:shadow-[0_0_40px_rgba(139,92,246,0.05)] transition-shadow duration-500`}
                 >
                   <h3 className={`text-xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>Recent Activity</h3>
                   <div className="space-y-6">
@@ -483,7 +497,7 @@ export default function PortalDashboard() {
           {/* TICKETS TAB */}
           {activeTab === "tickets" && (
             <div className="max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className={`${isDark ? 'bg-[#111111] border-white/10' : 'bg-white border-gray-200'} border rounded-3xl overflow-hidden shadow-xl`}>
+              <div className={`${isDark ? 'bg-black/40 backdrop-blur-xl border-white/10' : 'bg-white/60 backdrop-blur-xl border-gray-200'} border rounded-3xl overflow-hidden shadow-xl`}>
                 <div className={`p-6 border-b flex items-center justify-between ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50/50'}`}>
                   <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Active Requests</h3>
                   <div className="flex gap-2">
@@ -538,7 +552,7 @@ export default function PortalDashboard() {
             <div className="max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 {/* Placeholder Folders */}
-                <div className={`${isDark ? 'bg-[#111111] border-white/10' : 'bg-white border-gray-200'} border rounded-3xl p-6 hover:border-[#F0564A]/50 transition-colors cursor-pointer group shadow-lg`}>
+                <div className={`${isDark ? 'bg-black/40 backdrop-blur-xl border-white/10' : 'bg-white/60 backdrop-blur-xl border-gray-200'} border rounded-3xl p-6 hover:border-[#F0564A]/50 transition-colors cursor-pointer group shadow-lg`}>
                   <div className="flex items-center justify-between mb-4">
                     <div className="p-4 bg-blue-500/10 text-blue-500 rounded-2xl">
                       <FolderOpen className="w-8 h-8" />
@@ -547,7 +561,7 @@ export default function PortalDashboard() {
                   <h3 className={`font-bold text-xl mb-1 group-hover:text-[#F0564A] transition-colors ${isDark ? 'text-white' : 'text-gray-900'}`}>Brand Assets</h3>
                   <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Logos, Fonts, Colors</p>
                 </div>
-                <div className={`${isDark ? 'bg-[#111111] border-white/10' : 'bg-white border-gray-200'} border rounded-3xl p-6 hover:border-[#F0564A]/50 transition-colors cursor-pointer group shadow-lg`}>
+                <div className={`${isDark ? 'bg-black/40 backdrop-blur-xl border-white/10' : 'bg-white/60 backdrop-blur-xl border-gray-200'} border rounded-3xl p-6 hover:border-[#F0564A]/50 transition-colors cursor-pointer group shadow-lg`}>
                   <div className="flex items-center justify-between mb-4">
                     <div className="p-4 bg-green-500/10 text-green-500 rounded-2xl">
                       <FolderOpen className="w-8 h-8" />
@@ -556,7 +570,7 @@ export default function PortalDashboard() {
                   <h3 className={`font-bold text-xl mb-1 group-hover:text-[#F0564A] transition-colors ${isDark ? 'text-white' : 'text-gray-900'}`}>Pitch Decks</h3>
                   <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Final PDF & PPTX</p>
                 </div>
-                <div className={`${isDark ? 'bg-[#111111] border-white/10' : 'bg-white border-gray-200'} border rounded-3xl p-6 hover:border-[#F0564A]/50 transition-colors cursor-pointer group shadow-lg`}>
+                <div className={`${isDark ? 'bg-black/40 backdrop-blur-xl border-white/10' : 'bg-white/60 backdrop-blur-xl border-gray-200'} border rounded-3xl p-6 hover:border-[#F0564A]/50 transition-colors cursor-pointer group shadow-lg`}>
                   <div className="flex items-center justify-between mb-4">
                     <div className="p-4 bg-purple-500/10 text-purple-500 rounded-2xl">
                       <FolderOpen className="w-8 h-8" />
@@ -568,7 +582,7 @@ export default function PortalDashboard() {
               </div>
 
               <h3 className={`text-2xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>Your Files</h3>
-              <div className={`${isDark ? 'bg-[#111111] border-white/10' : 'bg-white border-gray-200'} border rounded-3xl overflow-hidden shadow-xl`}>
+              <div className={`${isDark ? 'bg-black/40 backdrop-blur-xl border-white/10' : 'bg-white/60 backdrop-blur-xl border-gray-200'} border rounded-3xl overflow-hidden shadow-xl`}>
                 {files.length === 0 ? (
                   <div className="p-16 text-center">
                     <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 ${isDark ? 'bg-white/5' : 'bg-gray-100'}`}>
@@ -629,7 +643,7 @@ export default function PortalDashboard() {
           {/* BILLING TAB (Mock) */}
           {activeTab === "billing" && (
             <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className={`${isDark ? 'bg-[#111111] border-white/10' : 'bg-white border-gray-200'} border rounded-3xl p-8 mb-8 flex items-center justify-between`}>
+              <div className={`${isDark ? 'bg-black/40 backdrop-blur-xl border-white/10' : 'bg-white/60 backdrop-blur-xl border-gray-200'} border rounded-3xl p-8 mb-8 flex items-center justify-between`}>
                 <div>
                   <h3 className={`text-xl font-bold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>Current Balance</h3>
                   <p className={isDark ? 'text-gray-400' : 'text-gray-500'}>Next invoice due on June 1, 2026</p>
@@ -641,7 +655,7 @@ export default function PortalDashboard() {
               </div>
 
               <h3 className={`text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Invoice History</h3>
-              <div className={`${isDark ? 'bg-[#111111] border-white/10' : 'bg-white border-gray-200'} border rounded-3xl overflow-hidden`}>
+              <div className={`${isDark ? 'bg-black/40 backdrop-blur-xl border-white/10' : 'bg-white/60 backdrop-blur-xl border-gray-200'} border rounded-3xl overflow-hidden shadow-xl`}>
                 <div className="p-16 text-center">
                   <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${isDark ? 'bg-white/5' : 'bg-gray-100'}`}>
                     <FileText className={`w-8 h-8 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
@@ -656,7 +670,7 @@ export default function PortalDashboard() {
           {/* SETTINGS TAB */}
           {activeTab === "settings" && (
             <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-               <div className={`${isDark ? 'bg-[#111111] border-white/10' : 'bg-white border-gray-200'} border rounded-3xl p-8 shadow-xl`}>
+               <div className={`${isDark ? 'bg-black/40 backdrop-blur-xl border-white/10' : 'bg-white/60 backdrop-blur-xl border-gray-200'} border rounded-3xl p-8 shadow-xl`}>
                 <div className={`flex items-center gap-4 mb-8 pb-8 border-b ${isDark ? 'border-white/10' : 'border-gray-200'}`}>
                   <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#F0564A] to-orange-500 flex items-center justify-center text-3xl font-bold text-white shadow-lg">
                     {user.email?.charAt(0).toUpperCase()}
