@@ -132,12 +132,12 @@ export default function SharedTasksPage() {
                   </div>
                   
                   <div className="flex-1 min-w-0">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
-                      <p className={`text-base sm:text-lg font-medium ${task.status === 'completed' ? 'text-zinc-500 line-through' : 'text-zinc-100'}`}>
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-2 mb-1">
+                      <p className={`text-base sm:text-lg font-medium break-words whitespace-pre-wrap flex-1 min-w-0 ${task.status === 'completed' ? 'text-zinc-500 line-through' : 'text-zinc-100'}`}>
                         {task.title}
                       </p>
                       {task.client_tag && (
-                        <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-white/10 text-zinc-300 border border-white/10 w-fit">
+                        <span className="inline-flex shrink-0 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-white/10 text-zinc-300 border border-white/10 w-fit self-start mt-1">
                           {task.client_tag}
                         </span>
                       )}

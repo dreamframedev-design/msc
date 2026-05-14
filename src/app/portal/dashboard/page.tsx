@@ -1157,7 +1157,7 @@ function DashboardContent() {
                           <div key={task.id} className={`p-4 sm:p-6 flex flex-col gap-3 transition-colors ${task.status === 'completed' ? 'opacity-60' : ''} ${isDark ? 'hover:bg-white/[0.02]' : 'hover:bg-gray-50/60'}`}>
                             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full">
                               <div className="flex-1 min-w-0">
-                                <p className={`text-base font-semibold mb-1 ${task.status === 'completed' ? (isDark ? 'text-gray-500 line-through' : 'text-gray-400 line-through') : (isDark ? 'text-white' : 'text-gray-900')}`}>
+                                <p className={`text-base font-semibold mb-1 break-words whitespace-pre-wrap ${task.status === 'completed' ? (isDark ? 'text-gray-500 line-through' : 'text-gray-400 line-through') : (isDark ? 'text-white' : 'text-gray-900')}`}>
                                   {task.title}
                                 </p>
                                 <div className="flex items-center gap-3">

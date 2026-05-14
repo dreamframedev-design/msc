@@ -1070,11 +1070,11 @@ export default function AdminDashboard() {
 
               {taskViewMode === "lists" ? (
                 <>
-                  <div className="flex flex-col lg:flex-row gap-6">
-                    {/* Left Sidebar: Projects List */}
-                    <div className="w-full lg:w-72 shrink-0 flex flex-col gap-4">
+                  <div className="flex flex-col gap-8">
+                    {/* Top Section: Projects List */}
+                    <div className="w-full flex flex-col gap-4">
                       <div className="flex items-center justify-between">
-                        <h3 className="text-sm font-bold text-white uppercase tracking-wider">Project Boards</h3>
+                        <h3 className="text-sm font-bold text-white uppercase tracking-wider">Select Project</h3>
                         <Button 
                           onClick={() => {
                             setNewBoardTitle("");
@@ -1082,21 +1082,19 @@ export default function AdminDashboard() {
                             setNewBoardSelectedMembers([]);
                             setShowNewBoardModal(true);
                           }}
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300 rounded-md"
+                          className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-lg px-3 h-9 flex items-center transition-colors text-xs font-semibold"
                           title="New Project"
                         >
-                          <Plus className="w-5 h-5" />
+                          <Plus className="w-4 h-4 mr-1.5" /> New Project
                         </Button>
                       </div>
                       
-                      <div className="flex flex-col gap-2 overflow-y-auto max-h-[70vh] pr-2 custom-scrollbar">
+                      <div className="flex overflow-x-auto pb-4 gap-3 custom-scrollbar snap-x">
                         {taskBoards.map(board => (
                           <button
                             key={board.id}
                             onClick={() => setActiveBoardId(board.id)}
-                            className={`flex flex-col items-start gap-1.5 p-4 rounded-xl text-left transition-all border ${activeBoardId === board.id ? 'bg-[#F0564A]/10 border-[#F0564A]/30 text-white shadow-sm' : 'bg-[#111111] border-white/5 text-zinc-400 hover:bg-white/5 hover:text-zinc-200 hover:border-white/10'}`}
+                            className={`snap-start shrink-0 w-64 flex flex-col items-start gap-1.5 p-4 rounded-xl text-left transition-all border ${activeBoardId === board.id ? 'bg-[#F0564A]/10 border-[#F0564A]/30 text-white shadow-sm ring-1 ring-[#F0564A]/50' : 'bg-[#111111] border-white/5 text-zinc-400 hover:bg-white/5 hover:text-zinc-200 hover:border-white/10'}`}
                           >
                             <span className="font-semibold text-sm truncate w-full">{board.title}</span>
                             <span className={`text-[10px] uppercase tracking-wider font-bold truncate w-full ${activeBoardId === board.id ? 'text-[#F0564A]' : 'text-zinc-500'}`}>
@@ -1105,16 +1103,16 @@ export default function AdminDashboard() {
                           </button>
                         ))}
                         {taskBoards.length === 0 && (
-                          <div className="text-sm text-zinc-500 italic p-4 text-center border border-white/5 rounded-xl border-dashed">
+                          <div className="text-sm text-zinc-500 italic p-4 text-center border border-white/5 rounded-xl border-dashed w-full">
                             No projects available.
                           </div>
                         )}
                       </div>
                     </div>
 
-                    {/* Right Content Area: Active Project Details & Tasks */}
-                    <div className="flex-1 min-w-0 flex flex-col gap-6">
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#111111] p-5 rounded-xl border border-white/5">
+                    {/* Bottom Section: Active Project Details & Tasks */}
+                    <div className="flex-1 min-w-0 flex flex-col gap-6 bg-[#111111]/30 p-1 sm:p-6 rounded-3xl border border-white/5">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#111111] p-5 rounded-2xl border border-white/10 shadow-sm">
                         <div className="min-w-0 flex-1">
                           <h2 className="text-xl font-bold text-white mb-1 truncate">
                             {taskBoards.find(b => b.id === activeBoardId)?.title || "Select a Project"}
@@ -1245,12 +1243,12 @@ export default function AdminDashboard() {
                         </button>
                         
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className={`text-base font-medium truncate ${task.status === 'completed' ? 'text-zinc-500 line-through' : 'text-zinc-100'}`}>
+                          <div className="flex items-start justify-between gap-4 mb-1">
+                            <p className={`text-base font-medium break-words whitespace-pre-wrap flex-1 min-w-0 ${task.status === 'completed' ? 'text-zinc-500 line-through' : 'text-zinc-100'}`}>
                               {task.title}
                             </p>
                             {task.client_tag && (
-                              <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-white/10 text-zinc-300 border border-white/10">
+                              <span className="inline-flex shrink-0 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-white/10 text-zinc-300 border border-white/10 mt-1">
                                 {task.client_tag}
                               </span>
                             )}
