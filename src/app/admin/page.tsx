@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { createClient } from "@supabase/supabase-js";
@@ -107,11 +107,68 @@ export default function AdminDashboard() {
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [commentText, setCommentText] = useState("");
   const [ticketComments, setTicketComments] = useState<any[]>([]);
+  const ticketChatScrollRef = useRef<HTMLDivElement>(null);
 
   // Task Chat State
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [taskCommentText, setTaskCommentText] = useState("");
   const [taskComments, setTaskComments] = useState<any[]>([]);
+  const taskChatScrollRef = useRef<HTMLDivElement>(null);
+
+  // Real-time subscriptions and scrolling
+  useEffect(() => {
+    if (ticketChatScrollRef.current) {
+      ticketChatScrollRef.current.scrollTop = ticketChatScrollRef.current.scrollHeight;
+    }
+  }, [ticketComments]);
+
+  useEffect(() => {
+    if (taskChatScrollRef.current) {
+      taskChatScrollRef.current.scrollTop = taskChatScrollRef.current.scrollHeight;
+    }
+  }, [taskComments]);
+
+  useEffect(() => {
+    if (!selectedTicket) return;
+    const channel = supabase
+      .channel(`ticket_comments_${selectedTicket.id}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'ticket_comments',
+        filter: `ticket_id=eq.${selectedTicket.id}`
+      }, payload => {
+        setTicketComments(prev => {
+          if (prev.find(c => c.id === payload.new.id)) return prev;
+          return [...prev, payload.new];
+        });
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedTicket]);
+
+  useEffect(() => {
+    if (!selectedTask) return;
+    const channel = supabase
+      .channel(`task_comments_${selectedTask.id}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'task_comments',
+        filter: `task_id=eq.${selectedTask.id}`
+      }, payload => {
+        setTaskComments(prev => {
+          if (prev.find(c => c.id === payload.new.id)) return prev;
+          return [...prev, payload.new];
+        });
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedTask]);
 
   // File Request State
   const [showRequestModal, setShowRequestModal] = useState(false);
@@ -848,27 +905,55 @@ export default function AdminDashboard() {
         </div>
 
         <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
-          {[
-            { key: "tickets", label: "Global Action Queue", Icon: Ticket },
-            { key: "tasks", label: "Project Boards", Icon: CheckSquare },
-            { key: "files", label: "Global Vault", Icon: FolderOpen },
-            { key: "users", label: "User Management", Icon: Users },
-            { key: "news", label: "News Articles", Icon: Newspaper },
-            { key: "settings", label: "Account Settings", Icon: Settings },
-          ].map(({ key, label, Icon }) => (
-            <button
-              key={key}
-              onClick={() => setActiveTab(key)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
-                activeTab === key
-                  ? "bg-white/10 text-white"
-                  : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              {label}
-            </button>
-          ))}
+          <div className="space-y-6">
+            <div>
+              <h4 className="px-3 text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">Core Operations</h4>
+              <div className="space-y-1">
+                {[
+                  { key: "tickets", label: "Global Action Queue", Icon: Ticket, accent: "text-[#F0564A]" },
+                  { key: "tasks", label: "Project Boards", Icon: CheckSquare, accent: "text-[#F0564A]" },
+                ].map(({ key, label, Icon, accent }) => (
+                  <button
+                    key={key}
+                    onClick={() => setActiveTab(key)}
+                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all text-sm font-semibold border ${
+                      activeTab === key
+                        ? "bg-[#1A1A1A] text-white border-white/10 shadow-[0_0_15px_rgba(240,86,74,0.1)]"
+                        : "bg-transparent border-transparent text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
+                    }`}
+                  >
+                    <Icon className={`w-4 h-4 ${activeTab === key ? accent : ""}`} />
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h4 className="px-3 text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">System</h4>
+              <div className="space-y-1">
+                {[
+                  { key: "files", label: "Global Vault", Icon: FolderOpen },
+                  { key: "users", label: "User Management", Icon: Users },
+                  { key: "news", label: "News Articles", Icon: Newspaper },
+                  { key: "settings", label: "Account Settings", Icon: Settings },
+                ].map(({ key, label, Icon }) => (
+                  <button
+                    key={key}
+                    onClick={() => setActiveTab(key)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
+                      activeTab === key
+                        ? "bg-white/10 text-white"
+                        : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
 
           <div className="pt-4 pb-2">
             <div className="h-px w-full bg-white/10 mb-4" />
@@ -1879,7 +1964,7 @@ export default function AdminDashboard() {
                 </div>
                 
                 {/* Chat Area */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-black/20">
+                <div ref={ticketChatScrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 bg-black/20 scroll-smooth">
                   {/* Original Ticket Description */}
                   <div className="flex gap-4">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold bg-white/5 text-zinc-400 border border-white/5 text-xs">
@@ -1985,7 +2070,7 @@ export default function AdminDashboard() {
                 </div>
                 
                 {/* Chat Area */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-black/20">
+                <div ref={taskChatScrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 bg-black/20 scroll-smooth">
                   {/* Task Metadata */}
                   <div className="flex gap-4">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold bg-white/5 text-zinc-400 border border-white/5 text-xs">
