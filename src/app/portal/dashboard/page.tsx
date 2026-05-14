@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +24,8 @@ import {
   ArrowUpRight,
   Clock,
   CheckCircle2,
+  CheckSquare,
+  MessageSquare,
   Sun,
   Moon,
   ArrowLeft,
@@ -35,6 +37,10 @@ import {
   FileSpreadsheet,
   Filter,
   X,
+  ChevronRight,
+  FolderPlus,
+  Folder,
+  Link2,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -118,6 +124,8 @@ const KPI_ACCENTS = {
 
 export default function PortalDashboard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const impersonateId = searchParams.get('impersonate');
   const [user, setUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [isLoading, setIsLoading] = useState(true);
@@ -127,10 +135,35 @@ export default function PortalDashboard() {
   const [recentUpload, setRecentUpload] = useState<string | null>(null);
   const [showNewTicket, setShowNewTicket] = useState(false);
   const [ticketFilter, setTicketFilter] = useState<"all" | "open" | "completed">("all");
+  
+  // Ticket State
+  const [tickets, setTickets] = useState<any[]>([]);
+  const [taskBoards, setTaskBoards] = useState<any[]>([]);
+  const [internalTasks, setInternalTasks] = useState<any[]>([]);
+  const [activeBoardId, setActiveBoardId] = useState<string>("");
+  const [newTicketSubject, setNewTicketSubject] = useState("");
+  const [newTicketPriority, setNewTicketPriority] = useState("Normal");
+  const [newTicketPageUrl, setNewTicketPageUrl] = useState("");
+  const [newTicketSection, setNewTicketSection] = useState("");
+  const [newTicketDescription, setNewTicketDescription] = useState("");
+  const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<any>(null);
+  const [commentText, setCommentText] = useState("");
+  const [ticketComments, setTicketComments] = useState<any[]>([]);
+
+  // Task Chat State
+  const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [taskCommentText, setTaskCommentText] = useState("");
+  const [taskComments, setTaskComments] = useState<any[]>([]);
 
   // Storage State
   const [files, setFiles] = useState<any[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [currentFolder, setCurrentFolder] = useState<string>("root");
+  const [showNewFolder, setShowNewFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [previewFile, setPreviewFile] = useState<any>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
 
@@ -151,13 +184,191 @@ export default function PortalDashboard() {
     if (user && activeTab === "files") {
       fetchFiles();
     }
+    if (user && activeTab === "tickets") {
+      fetchTickets();
+    }
+    if (user && activeTab === "tasks") {
+      fetchTaskBoards();
+    }
+    // Also fetch on load for dashboard overview stats
+    if (user) {
+      fetchTickets();
+      fetchTaskBoards();
+    }
   }, [user, activeTab]);
+
+  const fetchTaskBoards = async () => {
+    if (!user) return;
+    const isAdmin = user?.user_metadata?.role === 'admin' || user?.app_metadata?.role === 'admin' || user?.user_metadata?.role === 'superadmin' || user?.app_metadata?.role === 'superadmin';
+    const targetUserId = (isAdmin && impersonateId) ? impersonateId : user.id;
+
+    // Client can see boards where they are a member
+    const { data: memberData } = await supabase
+      .from("task_board_members")
+      .select("board_id")
+      .eq("user_id", targetUserId);
+      
+    if (memberData && memberData.length > 0) {
+      const boardIds = memberData.map(m => m.board_id);
+      const { data } = await supabase
+        .from("task_boards")
+        .select("*")
+        .in("id", boardIds)
+        .order("created_at", { ascending: false });
+        
+      if (data) {
+        setTaskBoards(data);
+        if (data.length > 0 && !activeBoardId) {
+          setActiveBoardId(data[0].id);
+        }
+      }
+    } else {
+      setTaskBoards([]);
+    }
+  };
+
+  useEffect(() => {
+    if (activeBoardId) {
+      fetchTasksForBoard(activeBoardId);
+    }
+  }, [activeBoardId]);
+
+  const fetchTasksForBoard = async (boardId: string) => {
+    const { data } = await supabase
+      .from("admin_tasks")
+      .select("*")
+      .eq("board_id", boardId)
+      .order("created_at", { ascending: false });
+    if (data) setInternalTasks(data);
+  };
+
+  const fetchTickets = async () => {
+    if (!user) return;
+    const isAdmin = user?.user_metadata?.role === 'admin' || user?.app_metadata?.role === 'admin' || user?.user_metadata?.role === 'superadmin' || user?.app_metadata?.role === 'superadmin';
+    
+    let query = supabase
+      .from("client_tickets")
+      .select("*")
+      .order("created_at", { ascending: false });
+      
+    if (isAdmin && impersonateId) {
+      query = query.eq("client_id", impersonateId);
+    }
+
+    const { data, error } = await query;
+      
+    if (data) {
+      setTickets(data);
+    }
+  };
+
+  const fetchComments = async (ticketId: string) => {
+    const { data, error } = await supabase
+      .from('ticket_comments')
+      .select('*')
+      .eq('ticket_id', ticketId)
+      .order('created_at', { ascending: true });
+    
+    if (data) {
+      setTicketComments(data);
+    } else if (error && error.code === '42P01') {
+      // Table doesn't exist yet, just mock for now so UI doesn't break
+      setTicketComments([
+        { id: 1, user_id: 'system', content: 'We received your ticket and are looking into it.', created_at: new Date(Date.now() - 3600000).toISOString() }
+      ]);
+    }
+  };
+
+  const handleOpenTicket = (ticket: any) => {
+    setSelectedTicket(ticket);
+    fetchComments(ticket.id);
+  };
+
+  const handleSubmitComment = async () => {
+    if (!selectedTicket || !commentText.trim() || !user) return;
+    
+    // Optimistic update
+    const newComment = {
+      id: Date.now(),
+      ticket_id: selectedTicket.id,
+      user_id: user.id,
+      content: commentText,
+      created_at: new Date().toISOString()
+    };
+    
+    setTicketComments(prev => [...prev, newComment]);
+    setCommentText("");
+
+    const { error } = await supabase.from('ticket_comments').insert({
+      ticket_id: selectedTicket.id,
+      user_id: user.id,
+      content: newComment.content
+    });
+
+    if (error && error.code !== '42P01') {
+       alert("Error posting comment: " + error.message);
+    }
+  };
+
+  const fetchTaskComments = async (taskId: string) => {
+    const { data, error } = await supabase
+      .from('task_comments')
+      .select('*')
+      .eq('task_id', taskId)
+      .order('created_at', { ascending: true });
+    
+    if (data) {
+      setTaskComments(data);
+    }
+  };
+
+  const handleOpenTask = (task: any) => {
+    setSelectedTask(task);
+    fetchTaskComments(task.id);
+  };
+
+  const handleSubmitTaskComment = async () => {
+    if (!selectedTask || !taskCommentText.trim() || !user) return;
+    
+    const newComment = {
+      id: Date.now(),
+      task_id: selectedTask.id,
+      user_id: user.id,
+      content: taskCommentText,
+      created_at: new Date().toISOString()
+    };
+    
+    setTaskComments(prev => [...prev, newComment]);
+    setTaskCommentText("");
+
+    const { error } = await supabase.from('task_comments').insert({
+      task_id: selectedTask.id,
+      user_id: user.id,
+      content: newComment.content
+    });
+
+    if (error) {
+       alert("Error posting comment: " + error.message);
+    }
+  };
 
   const fetchFiles = async () => {
     if (!user) return;
-    const { data } = await supabase.storage.from('client-vault').list(user.id + '/');
+    const isAdmin = user?.user_metadata?.role === 'admin' || user?.app_metadata?.role === 'admin' || user?.user_metadata?.role === 'superadmin' || user?.app_metadata?.role === 'superadmin';
+
+    let query = supabase
+      .from('vault_files')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (isAdmin && impersonateId) {
+       query = query.or(`client_id.eq.${impersonateId},client_id.eq.00000000-0000-0000-0000-000000000000`);
+       query = query.eq('is_internal', false);
+    }
+
+    const { data } = await query;
     if (data) {
-      setFiles(data.filter(f => f.name !== '.emptyFolderPlaceholder'));
+      setFiles(data);
     }
   };
 
@@ -166,25 +377,39 @@ export default function PortalDashboard() {
     setIsUploading(true);
     setUploadProgress(0);
 
+    const isAdmin = user?.user_metadata?.role === 'admin' || user?.app_metadata?.role === 'admin' || user?.user_metadata?.role === 'superadmin' || user?.app_metadata?.role === 'superadmin';
+    const targetUserId = (isAdmin && impersonateId) ? impersonateId : user.id;
+
     // Simulated progress for visual feedback
     const progressInterval = setInterval(() => {
       setUploadProgress((p) => Math.min(p + Math.random() * 15, 90));
     }, 200);
 
-    const filePath = `${user.id}/${file.name}`;
-    const { error } = await supabase.storage.from('client-vault').upload(filePath, file, {
-      upsert: true,
-    });
+    const filePath = `${targetUserId}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+    const { error: storageError } = await supabase.storage.from('client-vault').upload(filePath, file);
 
     clearInterval(progressInterval);
     setUploadProgress(100);
 
-    if (!error) {
-      setRecentUpload(file.name);
-      setTimeout(() => setRecentUpload(null), 3000);
-      await fetchFiles();
+    if (!storageError) {
+      const { error: dbError } = await supabase.from('vault_files').insert({
+        client_id: targetUserId,
+        name: file.name,
+        folder: currentFolder, // Default to active folder
+        storage_path: filePath,
+        size: file.size,
+        is_internal: false // Clients can't make files internal
+      });
+
+      if (!dbError) {
+        setRecentUpload(file.name);
+        setTimeout(() => setRecentUpload(null), 3000);
+        await fetchFiles();
+      } else {
+        alert("Error saving file record: " + dbError.message);
+      }
     } else {
-      alert("Error uploading file: " + error.message);
+      alert("Error uploading file: " + storageError.message);
     }
 
     setTimeout(() => {
@@ -223,26 +448,136 @@ export default function PortalDashboard() {
     }
   };
 
-  const handleDownload = async (fileName: string) => {
+  const handleCreateFolder = async () => {
+    if (!user || !newFolderName) return;
+
+    const isAdmin = user?.user_metadata?.role === 'admin' || user?.app_metadata?.role === 'admin' || user?.user_metadata?.role === 'superadmin' || user?.app_metadata?.role === 'superadmin';
+    const targetUserId = (isAdmin && impersonateId) ? impersonateId : user.id;
+
+    const { error } = await supabase.from('vault_files').insert({
+      client_id: targetUserId,
+      name: '.keep',
+      folder: newFolderName,
+      storage_path: `${targetUserId}/.keep_${Date.now()}`,
+      size: 0,
+      is_internal: false
+    });
+    if (!error) {
+      setShowNewFolder(false);
+      setNewFolderName("");
+      fetchFiles();
+      setCurrentFolder(newFolderName);
+    } else {
+      alert("Error creating folder: " + error.message);
+    }
+  };
+
+  const handleDownload = async (file: any) => {
     if (!user) return;
-    const { data } = await supabase.storage.from('client-vault').download(`${user.id}/${fileName}`);
+    const { data } = await supabase.storage.from('client-vault').download(file.storage_path);
     if (data) {
       const url = URL.createObjectURL(data);
       const a = document.createElement('a');
       a.href = url;
-      a.download = fileName;
+      a.download = file.name;
       a.click();
       URL.revokeObjectURL(url);
     }
   };
 
-  const handleDelete = async (fileName: string) => {
-    if (!user || !confirm(`Delete ${fileName}?`)) return;
-    const { error } = await supabase.storage.from('client-vault').remove([`${user.id}/${fileName}`]);
+  const handleShareLink = async (file: any) => {
+    if (!user) return;
+    const { data, error } = await supabase.storage.from('client-vault').createSignedUrl(file.storage_path, 60 * 60 * 24 * 7); // 7 days
+    if (data?.signedUrl) {
+      await navigator.clipboard.writeText(data.signedUrl);
+      alert("Shareable link copied to clipboard! (Valid for 7 days)");
+    } else {
+      alert("Error generating link: " + error?.message);
+    }
+  };
+
+  const handleDelete = async (file: any) => {
+    if (!user || !confirm(`Delete ${file.name}?`)) return;
+    // Remove from storage first
+    await supabase.storage.from('client-vault').remove([file.storage_path]);
+    // Then remove from DB
+    const { error } = await supabase.from('vault_files').delete().eq('id', file.id);
     if (!error) {
       fetchFiles();
     } else {
       alert("Error deleting file: " + error.message);
+    }
+  };
+
+  const handlePreviewFile = async (file: any) => {
+    if (!user) return;
+    
+    // Check if it's an image
+    const isImage = file.name.match(/\.(jpeg|jpg|gif|png|webp)$/i);
+    
+    if (isImage) {
+      const { data, error } = await supabase.storage.from('client-vault').createSignedUrl(file.storage_path, 60 * 60); // 1 hour
+      if (data?.signedUrl) {
+        setPreviewUrl(data.signedUrl);
+        setPreviewFile(file);
+      } else {
+        alert("Error generating preview link: " + error?.message);
+      }
+    } else {
+      // If not an image, just download it
+      handleDownload(file);
+    }
+  };
+
+  const handleSubmitTicket = async () => {
+    if (!user || !newTicketSubject || !newTicketDescription) return;
+    setIsSubmittingTicket(true);
+    
+    // Combine fields into a structured description for AI parsing
+    let finalDescription = "";
+    if (newTicketPageUrl) finalDescription += `[Page URL: ${newTicketPageUrl}]\n`;
+    if (newTicketSection) finalDescription += `[Section/Element: ${newTicketSection}]\n`;
+    if (newTicketPageUrl || newTicketSection) finalDescription += `\n`;
+    finalDescription += newTicketDescription;
+
+    const isAdmin = user?.user_metadata?.role === 'admin' || user?.app_metadata?.role === 'admin' || user?.user_metadata?.role === 'superadmin' || user?.app_metadata?.role === 'superadmin';
+    const targetUserId = (isAdmin && impersonateId) ? impersonateId : user.id;
+
+    const { data, error } = await supabase.from('client_tickets').insert({
+      client_id: targetUserId,
+      title: newTicketSubject,
+      description: finalDescription,
+      priority: newTicketPriority,
+      task_type: 'General',
+      status: 'pending'
+    }).select();
+
+    setIsSubmittingTicket(false);
+    
+    if (!error && data) {
+      setShowNewTicket(false);
+      
+      // Fire Slack Notification
+      fetch('/api/slack', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ticketId: data[0].id,
+          title: newTicketSubject,
+          description: finalDescription,
+          priority: newTicketPriority,
+          clientEmail: user.email
+        })
+      }).catch(console.error);
+
+      setNewTicketSubject("");
+      setNewTicketPageUrl("");
+      setNewTicketSection("");
+      setNewTicketDescription("");
+      setNewTicketPriority("Normal");
+      fetchTickets();
+    } else {
+      alert("Error submitting ticket: " + error?.message);
     }
   };
 
@@ -252,10 +587,10 @@ export default function PortalDashboard() {
   };
 
   const filteredTickets = useMemo(() => {
-    if (ticketFilter === "all") return mockTickets;
-    if (ticketFilter === "completed") return mockTickets.filter(t => t.status === "Completed");
-    return mockTickets.filter(t => t.status !== "Completed");
-  }, [ticketFilter]);
+    if (ticketFilter === "all") return tickets;
+    if (ticketFilter === "completed") return tickets.filter(t => t.status === "completed");
+    return tickets.filter(t => t.status !== "completed");
+  }, [ticketFilter, tickets]);
 
   if (isLoading) {
     return (
@@ -272,21 +607,24 @@ export default function PortalDashboard() {
   const getStatusColor = (status: string) => {
     if (theme === "light") {
       switch (status) {
-        case "In Progress": return "text-amber-700 bg-amber-100 border-amber-200";
-        case "Review": return "text-[#5BCBD7] bg-[#5BCBD7]/10 border-[#5BCBD7]/30";
-        case "Completed": return "text-emerald-700 bg-emerald-100 border-emerald-200";
+        case "pending":
+        case "in_progress": return "text-amber-700 bg-amber-100 border-amber-200";
+        case "review": return "text-[#5BCBD7] bg-[#5BCBD7]/10 border-[#5BCBD7]/30";
+        case "completed": return "text-emerald-700 bg-emerald-100 border-emerald-200";
         default: return "text-gray-600 bg-gray-100 border-gray-200";
       }
     }
     switch (status) {
-      case "In Progress": return "text-amber-300 bg-amber-400/10 border-amber-400/20";
-      case "Review": return "text-[#5BCBD7] bg-[#5BCBD7]/10 border-[#5BCBD7]/20";
-      case "Completed": return "text-emerald-400 bg-emerald-400/10 border-emerald-400/20";
+      case "pending":
+      case "in_progress": return "text-amber-300 bg-amber-400/10 border-amber-400/20";
+      case "review": return "text-[#5BCBD7] bg-[#5BCBD7]/10 border-[#5BCBD7]/20";
+      case "completed": return "text-emerald-400 bg-emerald-400/10 border-emerald-400/20";
       default: return "text-gray-400 bg-gray-400/10 border-gray-400/20";
     }
   };
 
   const isDark = theme === "dark";
+  const isAdmin = user?.user_metadata?.role === 'admin' || user?.app_metadata?.role === 'admin' || user?.user_metadata?.role === 'superadmin' || user?.app_metadata?.role === 'superadmin';
 
   return (
     <div className={`min-h-screen flex relative ${isDark ? 'text-white bg-black' : 'text-gray-900 bg-gray-50'}`}>
@@ -358,6 +696,7 @@ export default function PortalDashboard() {
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {[
             { key: "overview", label: "Overview", Icon: LayoutDashboard },
+            { key: "tasks", label: "Shared Projects", Icon: CheckSquare },
             { key: "tickets", label: "Support Tickets", Icon: Ticket },
             { key: "files", label: "File Vault", Icon: FolderOpen },
             { key: "billing", label: "Billing & Invoices", Icon: CreditCard },
@@ -413,6 +752,13 @@ export default function PortalDashboard() {
           </h1>
 
           <div className="flex items-center gap-2 sm:gap-4">
+            {isAdmin && (
+              <Link href="/admin" className={`hidden md:flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-300 bg-[#F0564A]/10 border-[#F0564A]/30 text-[#F0564A] hover:bg-[#F0564A]/20`}>
+                <span className="text-sm font-bold">Admin Portal</span>
+                <ArrowUpRight className="w-4 h-4" />
+              </Link>
+            )}
+
             <Link href="/" className={`hidden md:flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-300 ${isDark ? 'border-white/[0.08] text-gray-300 hover:bg-white/[0.06] hover:text-white' : 'border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}>
               <ArrowLeft className="w-4 h-4" />
               <span className="text-sm font-medium">Home</span>
@@ -503,6 +849,7 @@ export default function PortalDashboard() {
                   </div>
                   <h2 className={`text-2xl sm:text-3xl md:text-4xl font-heading font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                     Welcome back, <span className="text-aurora">Client</span>
+                    {isAdmin && impersonateId && <span className="text-xs ml-3 bg-white/10 px-3 py-1 rounded-full text-zinc-400 font-normal">Viewing as: {impersonateId.substring(0,8)}</span>}
                   </h2>
                   <p className={`max-w-2xl text-sm sm:text-base ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                     Your brand ecosystem is humming today. Website traffic is climbing, the MSC team is reviewing your Q3 pitch deck, and your vault is healthy.
@@ -715,11 +1062,11 @@ export default function PortalDashboard() {
                             transition={{ duration: 0.25, delay: i * 0.04 }}
                             className={`transition-colors group ${isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-gray-50/60'}`}
                           >
-                            <td className={`p-4 text-sm font-mono ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{ticket.id}</td>
-                            <td className={`p-4 text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{ticket.subject}</td>
+                            <td className={`p-4 text-sm font-mono ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>#{ticket.id.substring(0, 8)}</td>
+                            <td className={`p-4 text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{ticket.title}</td>
                             <td className="p-4">
-                              <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${getStatusColor(ticket.status)}`}>
-                                {ticket.status}
+                              <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border capitalize ${getStatusColor(ticket.status)}`}>
+                                {ticket.status.replace('_', ' ')}
                               </span>
                             </td>
                             <td className="p-4">
@@ -727,9 +1074,11 @@ export default function PortalDashboard() {
                                 {ticket.priority}
                               </span>
                             </td>
-                            <td className={`p-4 text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>{ticket.date}</td>
+                            <td className={`p-4 text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                              {new Date(ticket.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </td>
                             <td className="p-4 text-right">
-                              <Button variant="ghost" size="sm" className={`${isDark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'} group/btn`}>
+                              <Button variant="ghost" size="sm" onClick={() => handleOpenTicket(ticket)} className={`${isDark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'} group/btn`}>
                                 View <ArrowUpRight className="w-4 h-4 ml-1 transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
                               </Button>
                             </td>
@@ -743,29 +1092,195 @@ export default function PortalDashboard() {
             </motion.div>
           )}
 
-          {/* ============ FILES ============ */}
-          {activeTab === "files" && (
+          {/* ============ TASKS ============ */}
+          {activeTab === "tasks" && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
               className="max-w-6xl mx-auto"
             >
-              {/* DRAG-AND-DROP ZONE */}
+              <div className="flex flex-col md:flex-row gap-6">
+                {/* Boards Sidebar */}
+                <div className="w-full md:w-64 space-y-2">
+                  <h3 className={`text-sm font-bold uppercase tracking-wider mb-4 px-2 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Shared Projects</h3>
+                  {taskBoards.length === 0 ? (
+                    <div className={`p-4 rounded-xl text-sm text-center ${isDark ? 'bg-white/[0.02] text-gray-500' : 'bg-gray-50 text-gray-400'}`}>
+                      No shared projects found.
+                    </div>
+                  ) : (
+                    taskBoards.map(board => (
+                      <button
+                        key={board.id}
+                        onClick={() => setActiveBoardId(board.id)}
+                        className={`w-full text-left px-4 py-3 rounded-xl transition-all ${
+                          activeBoardId === board.id
+                            ? (isDark ? 'bg-[#5BCBD7]/10 text-[#5BCBD7] border border-[#5BCBD7]/20' : 'bg-[#5BCBD7]/10 text-[#5BCBD7] border border-[#5BCBD7]/20')
+                            : (isDark ? 'text-gray-400 hover:bg-white/[0.04] hover:text-white border border-transparent' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 border border-transparent')
+                        }`}
+                      >
+                        <div className="font-semibold text-sm truncate">{board.title}</div>
+                        {board.client_tag && (
+                          <div className="text-[10px] mt-1 opacity-70 uppercase tracking-widest">{board.client_tag}</div>
+                        )}
+                      </button>
+                    ))
+                  )}
+                </div>
+
+                {/* Tasks List */}
+                <div className={`flex-1 rounded-3xl overflow-hidden border ${isDark ? 'glass-panel-dark' : 'glass-panel'}`}>
+                  <div className={`p-4 sm:p-6 border-b flex items-center justify-between flex-wrap gap-3 ${isDark ? 'border-white/[0.06]' : 'border-gray-200'}`}>
+                    <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      {taskBoards.find(b => b.id === activeBoardId)?.title || "Select a Project"}
+                    </h3>
+                  </div>
+                  <div className="overflow-x-auto">
+                    {internalTasks.length === 0 ? (
+                      <div className="p-16 text-center">
+                        <CheckSquare className={`w-10 h-10 mx-auto mb-4 ${isDark ? 'text-gray-600' : 'text-gray-300'}`} />
+                        <h3 className={`text-lg font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>No active tasks</h3>
+                        <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>There are no tasks available in this project right now.</p>
+                      </div>
+                    ) : (
+                      <div className={`divide-y ${isDark ? 'divide-white/[0.05]' : 'divide-gray-100'}`}>
+                        {internalTasks.map((task) => (
+                          <div key={task.id} className={`p-4 sm:p-6 flex flex-col gap-3 transition-colors ${task.status === 'completed' ? 'opacity-60' : ''} ${isDark ? 'hover:bg-white/[0.02]' : 'hover:bg-gray-50/60'}`}>
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full">
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-base font-semibold mb-1 ${task.status === 'completed' ? (isDark ? 'text-gray-500 line-through' : 'text-gray-400 line-through') : (isDark ? 'text-white' : 'text-gray-900')}`}>
+                                  {task.title}
+                                </p>
+                                <div className="flex items-center gap-3">
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${getStatusColor(task.status)}`}>
+                                    {task.status.replace('_', ' ')}
+                                  </span>
+                                  <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                                    {new Date(task.created_at).toLocaleDateString()}
+                                  </span>
+                                </div>
+                              </div>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => handleOpenTask(task)}
+                                className={`shrink-0 ${isDark ? 'text-gray-400 hover:text-white hover:bg-white/10' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'}`}
+                              >
+                                <MessageSquare className="w-4 h-4 mr-2" /> Chat
+                              </Button>
+                            </div>
+                            
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ============ FILES ============ */}
+          {activeTab === "files" && (() => {
+            const uniqueFolders = Array.from(new Set(files.map(f => f.folder || "root"))).filter(f => f !== "root");
+            const displayedFiles = files.filter(f => (f.folder || "root") === currentFolder).filter(f => f.name !== '.keep');
+
+            return (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="max-w-6xl mx-auto"
+            >
+              {/* BREADCRUMBS */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div className="flex items-center gap-2 text-2xl font-heading font-bold">
+                  <button 
+                    onClick={() => setCurrentFolder("root")} 
+                    className={`${currentFolder === "root" ? (isDark ? 'text-white' : 'text-gray-900') : (isDark ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-700')} transition-colors`}
+                  >
+                    File Vault
+                  </button>
+                  {currentFolder !== "root" && (
+                    <>
+                      <ChevronRight className={`w-6 h-6 ${isDark ? 'text-gray-600' : 'text-gray-300'}`} />
+                      <span className={isDark ? 'text-white' : 'text-gray-900'}>{currentFolder}</span>
+                    </>
+                  )}
+                </div>
+                
+                {/* TOOLBAR */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button onClick={() => setShowNewFolder(true)} variant="outline" className={`rounded-full h-10 ${isDark ? 'border-white/[0.1] text-gray-300 hover:bg-white/[0.06] hover:text-white' : 'border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900'}`}>
+                    <FolderPlus className="w-4 h-4 mr-2" />
+                    New Folder
+                  </Button>
+                  <Button onClick={() => fileInputRef.current?.click()} className={`rounded-full h-10 ${isDark ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-200 text-gray-900 hover:bg-gray-300'}`}>
+                    <File className="w-4 h-4 mr-2" />
+                    Upload Files
+                  </Button>
+                </div>
+              </div>
+
+              {/* FOLDERS GRID (Only in Root) */}
+              {currentFolder === "root" && uniqueFolders.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
+                  {uniqueFolders.map(folder => {
+                    const itemCount = files.filter(f => f.folder === folder && f.name !== '.keep').length;
+                    return (
+                      <motion.div
+                        key={folder}
+                        whileHover={{ y: -3 }}
+                        onClick={() => setCurrentFolder(folder)}
+                        className={`cursor-pointer rounded-2xl p-4 border transition-all flex flex-col gap-3 ${isDark ? 'glass-panel-dark hover:border-[#5BCBD7]/40' : 'glass-panel hover:border-[#5BCBD7]/40'}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="p-3 rounded-xl bg-[#5BCBD7]/10 text-[#5BCBD7]">
+                            <Folder className="w-6 h-6 fill-current opacity-20" />
+                          </div>
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className={`font-bold text-lg truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{folder}</h3>
+                          <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                            {itemCount} {itemCount === 1 ? 'item' : 'items'}
+                          </p>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* MAIN DROP ZONE & FILE LIST */}
               <div
                 ref={dropZoneRef}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
-                className={`relative cursor-pointer rounded-3xl p-8 sm:p-10 mb-6 border-2 border-dashed transition-all duration-300 ${
+                className={`relative min-h-[400px] rounded-3xl border transition-all duration-300 overflow-hidden flex flex-col ${
                   isDragging
-                    ? "dragging-active"
-                    : isDark
-                      ? "border-white/15 hover:border-[#F0564A]/40 glass-panel-dark"
-                      : "border-gray-300 hover:border-[#F0564A]/40 glass-panel"
+                    ? isDark ? "border-[#F0564A] bg-[#F0564A]/5" : "border-[#F0564A] bg-[#F0564A]/5"
+                    : isDark ? "glass-panel-dark border-transparent" : "glass-panel border-transparent"
                 }`}
               >
+                {/* Drag Overlay */}
+                <AnimatePresence>
+                  {isDragging && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/40 rounded-3xl border-2 border-[#F0564A] border-dashed"
+                    >
+                      <div className="text-center pointer-events-none">
+                        <UploadCloud className="w-16 h-16 text-[#F0564A] mx-auto mb-4 animate-bounce" />
+                        <h3 className="text-2xl font-bold text-white mb-2">Drop files to upload</h3>
+                        <p className="text-gray-300">Files will be uploaded to {currentFolder === "root" ? "File Vault" : currentFolder}</p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 {/* Upload progress overlay */}
                 <AnimatePresence>
                   {isUploading && (
@@ -773,12 +1288,13 @@ export default function PortalDashboard() {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      className={`absolute inset-0 rounded-3xl flex items-center justify-center z-10 ${isDark ? 'bg-black/70' : 'bg-white/70'} backdrop-blur-sm`}
+                      className={`absolute inset-0 z-40 flex items-center justify-center ${isDark ? 'bg-black/80' : 'bg-white/80'} backdrop-blur-md rounded-3xl`}
                     >
-                      <div className="text-center w-full max-w-xs px-6">
-                        <Loader2 className="w-10 h-10 mx-auto mb-4 animate-spin text-[#F0564A]" />
-                        <p className={`text-sm font-bold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>Uploading... {Math.round(uploadProgress)}%</p>
-                        <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-white/10' : 'bg-gray-200'}`}>
+                      <div className="text-center w-full max-w-sm px-6">
+                        <Loader2 className="w-12 h-12 mx-auto mb-6 animate-spin text-[#F0564A]" />
+                        <h3 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>Uploading...</h3>
+                        <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Saving to {currentFolder === "root" ? "Vault" : currentFolder}</p>
+                        <div className={`h-2 rounded-full overflow-hidden ${isDark ? 'bg-white/10' : 'bg-gray-200'}`}>
                           <motion.div
                             className="h-full bg-gradient-to-r from-[#F0564A] to-[#F08435]"
                             style={{ width: `${uploadProgress}%` }}
@@ -790,150 +1306,119 @@ export default function PortalDashboard() {
                   )}
                 </AnimatePresence>
 
-                <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-                  <motion.div
-                    animate={isDragging ? { y: [-4, 0, -4] } : { y: 0 }}
-                    transition={{ duration: 1.2, repeat: Infinity }}
-                    className={`relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center shrink-0 ${isDragging ? "bg-[#F0564A]/20" : isDark ? "bg-white/[0.06]" : "bg-gray-100"}`}
-                  >
-                    {isDragging && (
-                      <motion.div
-                        className="absolute inset-0 rounded-2xl bg-[#F0564A]/30"
-                        animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
-                        transition={{ duration: 1.5, repeat: Infinity }}
-                      />
-                    )}
-                    <UploadCloud className={`w-7 h-7 sm:w-9 sm:h-9 relative ${isDragging ? "text-[#F0564A]" : isDark ? "text-gray-400" : "text-gray-500"}`} />
-                  </motion.div>
-                  <div className="text-center sm:text-left flex-1">
-                    <h3 className={`text-lg sm:text-xl font-bold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                      {isDragging ? "Drop it like it's hot 🔥" : "Drag & drop files here"}
-                    </h3>
-                    <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                      or click to browse · PDF, images, decks, videos accepted
-                    </p>
+                {/* File Header (Columns) */}
+                {displayedFiles.length > 0 && (
+                  <div className={`grid grid-cols-12 gap-4 p-4 sm:px-6 border-b text-xs font-bold uppercase tracking-wider ${isDark ? 'border-white/[0.05] text-gray-500' : 'border-gray-200 text-gray-500'}`}>
+                    <div className="col-span-6 sm:col-span-5">Name</div>
+                    <div className="col-span-3 hidden sm:block">Date Modified</div>
+                    <div className="col-span-3 sm:col-span-2 text-right sm:text-left">Size</div>
+                    <div className="col-span-3 sm:col-span-2 text-right">Actions</div>
                   </div>
-                </div>
-              </div>
-
-              {/* Recent upload success toast */}
-              <AnimatePresence>
-                {recentUpload && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                    className="mb-6 inline-flex items-center gap-3 px-5 py-3 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 backdrop-blur-md"
-                  >
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span className="text-sm font-medium">{recentUpload} uploaded successfully</span>
-                  </motion.div>
                 )}
-              </AnimatePresence>
 
-              {/* Folder Pills */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-8">
-                {[
-                  { label: "Brand Assets", sub: "Logos, Fonts, Colors", accent: "#5BCBD7", count: 24 },
-                  { label: "Pitch Decks", sub: "Final PDF & PPTX", accent: "#F08435", count: 8 },
-                  { label: "Uploads", sub: "Files you sent us", accent: "#F0564A", count: files.length },
-                ].map((folder, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.08 }}
-                    whileHover={{ y: -3 }}
-                    className={`cursor-pointer rounded-2xl p-5 border transition-all group ${isDark ? 'glass-panel-dark' : 'glass-panel'}`}
-                    style={{ boxShadow: `0 0 0 1px ${folder.accent}28` }}
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <div
-                        className="p-3 rounded-xl transition-transform group-hover:scale-110"
-                        style={{ background: `${folder.accent}1F`, color: folder.accent }}
-                      >
-                        <FolderOpen className="w-6 h-6" />
-                      </div>
-                      <span className={`text-xs font-bold px-2 py-1 rounded-full ${isDark ? 'bg-white/[0.06] text-gray-400' : 'bg-gray-100 text-gray-500'}`}>
-                        {folder.count}
-                      </span>
+                {/* Empty State */}
+                {displayedFiles.length === 0 && !isDragging && (
+                  <div className="flex-1 flex flex-col items-center justify-center p-12 text-center h-full">
+                    <div className={`w-24 h-24 rounded-3xl flex items-center justify-center mb-6 shadow-inner ${isDark ? 'bg-white/[0.02] shadow-white/[0.02]' : 'bg-gray-50 shadow-gray-200/50'}`}>
+                      <UploadCloud className={`w-10 h-10 ${isDark ? 'text-gray-600' : 'text-gray-400'}`} />
                     </div>
-                    <h3 className={`font-bold text-lg mb-0.5 group-hover:translate-x-0.5 transition-transform ${isDark ? 'text-white' : 'text-gray-900'}`}>{folder.label}</h3>
-                    <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>{folder.sub}</p>
-                  </motion.div>
-                ))}
-              </div>
-
-              {/* File List */}
-              <h3 className={`text-xl sm:text-2xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Your Files</h3>
-              <div className={`rounded-3xl overflow-hidden border ${isDark ? 'glass-panel-dark' : 'glass-panel'}`}>
-                {files.length === 0 ? (
-                  <div className="p-12 sm:p-16 text-center">
-                    <div className={`w-20 h-20 sm:w-24 sm:h-24 rounded-2xl flex items-center justify-center mx-auto mb-6 ${isDark ? 'bg-white/[0.04]' : 'bg-gray-100'}`}>
-                      <FileText className={`w-9 h-9 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
-                    </div>
-                    <h3 className={`text-xl sm:text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>Your Vault is Empty</h3>
-                    <p className={`mb-6 max-w-md mx-auto text-base ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Upload documents, images, or videos. Both you and the MSC team can access files stored here.</p>
+                    <h3 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>This folder is empty</h3>
+                    <p className={`mb-8 max-w-sm mx-auto text-base ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                      Drag and drop files right here to upload, or click the button below to browse your computer.
+                    </p>
                     <Button
                       onClick={() => fileInputRef.current?.click()}
-                      size="lg"
-                      className="bg-[#F0564A] hover:bg-[#D94D42] text-white rounded-full px-7 font-semibold glow-spark-sm glow-spark-hover"
+                      className="bg-[#F0564A] hover:bg-[#D94D42] text-white rounded-full px-8 h-12 font-bold shadow-[0_0_20px_rgba(240,86,74,0.3)] hover:shadow-[0_0_30px_rgba(240,86,74,0.5)] transition-all"
                     >
-                      <UploadCloud className="w-4 h-4 mr-2" />
-                      Upload First File
+                      <UploadCloud className="w-5 h-5 mr-2" />
+                      Select Files to Upload
                     </Button>
                   </div>
-                ) : (
-                  <div className={`divide-y ${isDark ? 'divide-white/[0.05]' : 'divide-gray-100'}`}>
-                    {files.map((file, idx) => {
-                      const { Icon, color, bg } = getFileIcon(file.name);
-                      return (
-                        <motion.div
-                          key={file.name + idx}
-                          layout
-                          initial={{ opacity: 0, x: -8 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: idx * 0.04 }}
-                          className={`flex items-center justify-between p-4 sm:p-6 transition-colors group ${isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-gray-50/60'}`}
-                        >
-                          <div className="flex items-center gap-4 min-w-0">
-                            <div className={`p-3 rounded-xl ${bg} ${color} shrink-0 transition-transform group-hover:scale-105`}>
-                              <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
+                )}
+
+                {/* File List */}
+                {displayedFiles.length > 0 && (
+                  <div className={`flex-1 overflow-y-auto divide-y ${isDark ? 'divide-white/[0.05]' : 'divide-gray-100'}`}>
+                    <AnimatePresence>
+                      {displayedFiles.map((file, idx) => {
+                        const { Icon, color, bg } = getFileIcon(file.name);
+                        return (
+                          <motion.div
+                            key={file.id + idx}
+                            layout
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            transition={{ duration: 0.2 }}
+                            className={`grid grid-cols-12 gap-4 p-4 sm:px-6 items-center transition-colors group ${isDark ? 'hover:bg-white/[0.02]' : 'hover:bg-gray-50/80'}`}
+                          >
+                            <div className="col-span-8 sm:col-span-5 flex items-center gap-4 min-w-0">
+                              <div className={`p-2.5 rounded-xl ${bg} ${color} shrink-0`}>
+                                <Icon className="w-5 h-5" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className={`font-semibold text-sm truncate ${isDark ? 'text-gray-200 group-hover:text-white' : 'text-gray-700 group-hover:text-gray-900'} transition-colors`}>{file.name}</p>
+                              </div>
                             </div>
-                            <div className="min-w-0">
-                              <p className={`font-semibold text-sm sm:text-base truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{file.name}</p>
-                              <p className={`text-xs sm:text-sm flex items-center gap-2 mt-1 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                                <span>{(file.metadata.size / 1024 / 1024).toFixed(2)} MB</span>
-                                <span>•</span>
-                                <span className="flex items-center"><Clock className="w-3 h-3 mr-1" /> {new Date(file.created_at).toLocaleDateString()}</span>
-                              </p>
+                            
+                            <div className={`col-span-3 hidden sm:flex items-center text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                              {new Date(file.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                             </div>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <Button
-                              onClick={() => handleDownload(file.name)}
-                              className={`border rounded-full px-4 sm:px-5 bg-transparent ${isDark ? 'border-white/[0.1] text-gray-300 hover:text-white hover:bg-white/[0.06]' : 'border-gray-200 text-gray-700 hover:text-gray-900 hover:bg-gray-50'}`}
-                            >
-                              <Download className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">Download</span>
-                            </Button>
-                            <Button
-                              onClick={() => handleDelete(file.name)}
-                              variant="ghost"
-                              size="icon"
-                              className="text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-full"
-                              title="Delete"
-                            >
-                              <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
-                            </Button>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
+                            
+                            <div className={`col-span-2 hidden sm:flex items-center text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                              {(file.size / 1024 / 1024).toFixed(2)} MB
+                            </div>
+                            
+                            <div className="col-span-4 sm:col-span-2 flex items-center justify-end gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                              {file.name.match(/\.(jpeg|jpg|gif|png|webp)$/i) && (
+                                <Button
+                                  onClick={() => handlePreviewFile(file)}
+                                  variant="ghost"
+                                  size="icon"
+                                  className={`rounded-full ${isDark ? 'hover:bg-white/10 text-gray-400 hover:text-white' : 'hover:bg-gray-200 text-gray-500 hover:text-gray-900'}`}
+                                  title="Preview Image"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                              )}
+                              <Button
+                                onClick={() => handleShareLink(file)}
+                                variant="ghost"
+                                size="icon"
+                                className={`rounded-full ${isDark ? 'hover:bg-white/10 text-gray-400 hover:text-white' : 'hover:bg-gray-200 text-gray-500 hover:text-gray-900'}`}
+                                title="Copy Shareable Link"
+                              >
+                                <Link2 className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                onClick={() => handleDownload(file)}
+                                variant="ghost"
+                                size="icon"
+                                className={`rounded-full ${isDark ? 'hover:bg-white/10 text-gray-400 hover:text-white' : 'hover:bg-gray-200 text-gray-500 hover:text-gray-900'}`}
+                                title="Download"
+                              >
+                                <Download className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                onClick={() => handleDelete(file)}
+                                variant="ghost"
+                                size="icon"
+                                className={`rounded-full hover:bg-red-500/10 hover:text-red-500 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}
+                                title="Delete"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </AnimatePresence>
                   </div>
                 )}
               </div>
             </motion.div>
-          )}
+            );
+          })()}
 
           {/* ============ BILLING ============ */}
           {activeTab === "billing" && (
@@ -1003,9 +1488,32 @@ export default function PortalDashboard() {
 
                   <div className={`pt-6 border-t ${isDark ? 'border-white/[0.08]' : 'border-gray-200'}`}>
                     <h4 className={`text-lg font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Security</h4>
-                    <Button className={`border rounded-full px-6 bg-transparent ${isDark ? 'border-white/[0.15] text-white hover:bg-white/[0.06]' : 'border-gray-200 text-gray-900 hover:bg-gray-50'}`}>
-                      Change Password
-                    </Button>
+                    <form onSubmit={async (e) => {
+                      e.preventDefault();
+                      const formData = new FormData(e.currentTarget);
+                      const password = formData.get('password') as string;
+                      if (!password || password.length < 6) return alert("Password must be at least 6 characters.");
+                      
+                      const { error } = await supabase.auth.updateUser({ password });
+                      if (error) alert("Error updating password: " + error.message);
+                      else {
+                        alert("Password updated successfully!");
+                        (e.target as HTMLFormElement).reset();
+                      }
+                    }} className="space-y-4 max-w-sm">
+                      <div className="space-y-2">
+                        <label className={`block text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>New Password</label>
+                        <input 
+                          name="password"
+                          type="password" 
+                          placeholder="••••••••" 
+                          className={`w-full border rounded-xl px-4 py-3 focus:outline-none focus:border-[#F0564A] transition-colors ${isDark ? 'bg-black/40 border-white/[0.08] text-white' : 'bg-white border-gray-200 text-gray-900'}`} 
+                        />
+                      </div>
+                      <Button type="submit" className={`border rounded-full px-6 bg-[#F0564A] text-white hover:bg-[#F0564A]/90 border-transparent`}>
+                        Change Password
+                      </Button>
+                    </form>
                   </div>
                 </div>
               </div>
@@ -1014,6 +1522,58 @@ export default function PortalDashboard() {
 
         </div>
       </main>
+
+      {/* ============ FILE PREVIEW MODAL ============ */}
+      <AnimatePresence>
+        {previewFile && previewUrl && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => { setPreviewFile(null); setPreviewUrl(null); }}
+              className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100]"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              className="fixed inset-4 md:inset-10 z-[101] flex flex-col items-center justify-center pointer-events-none"
+            >
+              <div className="bg-[#111111] border border-white/10 rounded-2xl overflow-hidden w-full max-w-5xl max-h-full flex flex-col pointer-events-auto shadow-2xl">
+                <div className="flex items-center justify-between p-4 border-b border-white/5 bg-black/20">
+                  <h3 className="text-white font-semibold truncate pr-4">{previewFile.name}</h3>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDownload(previewFile)}
+                      className="text-zinc-400 hover:text-white hover:bg-white/5"
+                    >
+                      <Download className="w-4 h-4 mr-2" /> Download
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => { setPreviewFile(null); setPreviewUrl(null); }}
+                      className="text-zinc-400 hover:text-white hover:bg-white/5 rounded-full"
+                    >
+                      <X className="w-5 h-5" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-black/40 min-h-[300px]">
+                  <img 
+                    src={previewUrl} 
+                    alt={previewFile.name} 
+                    className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
+                  />
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* ============ NEW TICKET MODAL ============ */}
       <AnimatePresence>
@@ -1048,6 +1608,8 @@ export default function PortalDashboard() {
                     <label className={`block text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Subject</label>
                     <input
                       type="text"
+                      value={newTicketSubject}
+                      onChange={(e) => setNewTicketSubject(e.target.value)}
                       placeholder="What can we help with?"
                       className={`w-full border rounded-xl px-4 py-3 focus:outline-none focus:border-[#F0564A] transition-colors ${isDark ? 'bg-black/40 border-white/[0.08] text-white placeholder:text-gray-500' : 'bg-white border-gray-200 text-gray-900'}`}
                     />
@@ -1058,7 +1620,8 @@ export default function PortalDashboard() {
                       {["Normal", "High", "Urgent"].map((p) => (
                         <button
                           key={p}
-                          className={`py-2.5 rounded-xl text-sm font-semibold border transition-all ${isDark ? 'border-white/[0.1] text-gray-300 hover:bg-white/[0.06] hover:border-[#F0564A]/40' : 'border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-[#F0564A]/40'}`}
+                          onClick={() => setNewTicketPriority(p)}
+                          className={`py-2.5 rounded-xl text-sm font-semibold border transition-all ${newTicketPriority === p ? (isDark ? 'bg-[#F0564A]/20 border-[#F0564A] text-[#F0564A]' : 'bg-[#F0564A]/10 border-[#F0564A] text-[#F0564A]') : (isDark ? 'border-white/[0.1] text-gray-300 hover:bg-white/[0.06] hover:border-[#F0564A]/40' : 'border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-[#F0564A]/40')}`}
                         >
                           {p}
                         </button>
@@ -1069,9 +1632,33 @@ export default function PortalDashboard() {
                     <label className={`block text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Description</label>
                     <textarea
                       rows={4}
-                      placeholder="Add details, links, or context..."
+                      value={newTicketDescription}
+                      onChange={(e) => setNewTicketDescription(e.target.value)}
+                      placeholder="Add details or context..."
                       className={`w-full border rounded-xl px-4 py-3 focus:outline-none focus:border-[#F0564A] transition-colors resize-none ${isDark ? 'bg-black/40 border-white/[0.08] text-white placeholder:text-gray-500' : 'bg-white border-gray-200 text-gray-900'}`}
                     />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className={`block text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Page URL (Optional)</label>
+                      <input
+                        type="text"
+                        value={newTicketPageUrl}
+                        onChange={(e) => setNewTicketPageUrl(e.target.value)}
+                        placeholder="e.g. /about-us"
+                        className={`w-full border rounded-xl px-4 py-3 focus:outline-none focus:border-[#F0564A] transition-colors ${isDark ? 'bg-black/40 border-white/[0.08] text-white placeholder:text-gray-500' : 'bg-white border-gray-200 text-gray-900'}`}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className={`block text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Section (Optional)</label>
+                      <input
+                        type="text"
+                        value={newTicketSection}
+                        onChange={(e) => setNewTicketSection(e.target.value)}
+                        placeholder="e.g. Hero Banner"
+                        className={`w-full border rounded-xl px-4 py-3 focus:outline-none focus:border-[#F0564A] transition-colors ${isDark ? 'bg-black/40 border-white/[0.08] text-white placeholder:text-gray-500' : 'bg-white border-gray-200 text-gray-900'}`}
+                      />
+                    </div>
                   </div>
                 </div>
                 <div className={`p-6 pt-0 flex justify-end gap-3`}>
@@ -1082,11 +1669,285 @@ export default function PortalDashboard() {
                     Cancel
                   </Button>
                   <Button
-                    onClick={() => setShowNewTicket(false)}
-                    className="bg-[#F0564A] hover:bg-[#D94D42] text-white rounded-full px-6 glow-spark-sm glow-spark-hover"
+                    onClick={handleSubmitTicket}
+                    disabled={isSubmittingTicket || !newTicketSubject || !newTicketDescription}
+                    className="bg-[#F0564A] hover:bg-[#D94D42] text-white rounded-full px-6 glow-spark-sm glow-spark-hover disabled:opacity-50"
                   >
-                    Submit Ticket
+                    {isSubmittingTicket ? "Submitting..." : "Submit Ticket"}
                   </Button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+      {/* ============ NEW FOLDER MODAL ============ */}
+      <AnimatePresence>
+        {showNewFolder && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowNewFolder(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 30, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 30, scale: 0.96 }}
+              transition={{ type: "spring", bounce: 0.25, duration: 0.5 }}
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-sm z-[101]"
+            >
+              <div className={`rounded-3xl border overflow-hidden ${isDark ? 'glass-panel-dark' : 'glass-panel'}`}>
+                <div className={`p-6 border-b flex items-center justify-between ${isDark ? 'border-white/[0.08]' : 'border-gray-200'}`}>
+                  <h3 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>New Folder</h3>
+                  <button
+                    onClick={() => setShowNewFolder(false)}
+                    className={`p-2 rounded-full transition-colors ${isDark ? 'text-gray-400 hover:bg-white/[0.06]' : 'text-gray-500 hover:bg-gray-100'}`}
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="p-6 space-y-5">
+                  <div className="space-y-2">
+                    <label className={`block text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Folder Name</label>
+                    <input
+                      type="text"
+                      value={newFolderName}
+                      onChange={(e) => setNewFolderName(e.target.value)}
+                      placeholder="e.g. Q4 Pitch Decks"
+                      autoFocus
+                      onKeyDown={(e) => { if(e.key === 'Enter') handleCreateFolder(); }}
+                      className={`w-full border rounded-xl px-4 py-3 focus:outline-none focus:border-[#F0564A] transition-colors ${isDark ? 'bg-black/40 border-white/[0.08] text-white placeholder:text-gray-500' : 'bg-white border-gray-200 text-gray-900'}`}
+                    />
+                  </div>
+                </div>
+                <div className={`p-6 pt-0 flex justify-end gap-3`}>
+                  <Button
+                    onClick={() => setShowNewFolder(false)}
+                    className={`border rounded-full px-5 bg-transparent ${isDark ? 'border-white/[0.1] text-gray-300 hover:bg-white/[0.06]' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleCreateFolder}
+                    disabled={!newFolderName.trim()}
+                    className="bg-[#F0564A] hover:bg-[#D94D42] text-white rounded-full px-6 glow-spark-sm glow-spark-hover disabled:opacity-50"
+                  >
+                    Create
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+      {/* ============ TICKET CHAT MODAL ============ */}
+      <AnimatePresence>
+        {selectedTicket && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedTicket(null)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 30, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 30, scale: 0.96 }}
+              transition={{ type: "spring", bounce: 0.25, duration: 0.5 }}
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-2xl max-h-[85vh] flex flex-col z-[101]"
+            >
+              <div className={`rounded-3xl border overflow-hidden flex flex-col h-full ${isDark ? 'glass-panel-dark' : 'glass-panel bg-white'}`}>
+                {/* Header */}
+                <div className={`p-6 border-b flex items-center justify-between shrink-0 ${isDark ? 'border-white/[0.08]' : 'border-gray-200'}`}>
+                  <div>
+                    <h3 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{selectedTicket.title}</h3>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold border capitalize ${getStatusColor(selectedTicket.status)}`}>
+                        {selectedTicket.status.replace('_', ' ')}
+                      </span>
+                      <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                        Ticket #{selectedTicket.id.substring(0,8)}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setSelectedTicket(null)}
+                    className={`p-2 rounded-full transition-colors self-start ${isDark ? 'text-gray-400 hover:bg-white/[0.06]' : 'text-gray-500 hover:bg-gray-100'}`}
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                
+                {/* Chat Area */}
+                <div className={`flex-1 overflow-y-auto p-6 space-y-6 ${isDark ? 'bg-black/20' : 'bg-gray-50/50'}`}>
+                  {/* Original Ticket Description */}
+                  <div className="flex gap-4">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold ${isDark ? 'bg-[#F0564A]/20 text-[#F0564A]' : 'bg-[#F0564A]/10 text-[#F0564A]'}`}>
+                      {user.email?.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-baseline gap-2 mb-1">
+                        <span className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>You</span>
+                        <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{new Date(selectedTicket.created_at).toLocaleString()}</span>
+                      </div>
+                      <div className={`p-4 rounded-2xl rounded-tl-sm text-sm whitespace-pre-wrap ${isDark ? 'bg-white/[0.06] text-gray-200' : 'bg-white border border-gray-100 text-gray-700 shadow-sm'}`}>
+                        {selectedTicket.description}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Comments */}
+                  {ticketComments.map((comment) => {
+                    const isClient = comment.user_id === user.id;
+                    return (
+                      <div key={comment.id} className="flex gap-4">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold ${isClient ? (isDark ? 'bg-[#F0564A]/20 text-[#F0564A]' : 'bg-[#F0564A]/10 text-[#F0564A]') : (isDark ? 'bg-[#5BCBD7]/20 text-[#5BCBD7]' : 'bg-[#5BCBD7]/10 text-[#5BCBD7]')}`}>
+                          {isClient ? user.email?.charAt(0).toUpperCase() : 'M'}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-baseline gap-2 mb-1">
+                            <span className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{isClient ? 'You' : 'MSC Support'}</span>
+                            <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{new Date(comment.created_at).toLocaleString()}</span>
+                          </div>
+                          <div className={`p-4 rounded-2xl rounded-tl-sm text-sm whitespace-pre-wrap ${isClient ? (isDark ? 'bg-white/[0.06] text-gray-200' : 'bg-white border border-gray-100 text-gray-700 shadow-sm') : (isDark ? 'bg-[#5BCBD7]/10 text-gray-200' : 'bg-cyan-50 border border-cyan-100 text-gray-800 shadow-sm')}`}>
+                            {comment.content}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Input Area */}
+                <div className={`p-4 border-t shrink-0 ${isDark ? 'border-white/[0.08] bg-black/40' : 'border-gray-200 bg-white'}`}>
+                  <div className={`flex gap-3 p-2 rounded-2xl border ${isDark ? 'bg-black/60 border-white/[0.1] focus-within:border-[#F0564A]/40' : 'bg-gray-50 border-gray-200 focus-within:border-[#F0564A]/40'}`}>
+                    <input
+                      type="text"
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                      placeholder="Type a message..."
+                      onKeyDown={(e) => { if(e.key === 'Enter') handleSubmitComment(); }}
+                      className={`flex-1 bg-transparent border-none outline-none px-2 text-sm ${isDark ? 'text-white placeholder:text-gray-500' : 'text-gray-900 placeholder:text-gray-400'}`}
+                    />
+                    <Button
+                      onClick={handleSubmitComment}
+                      disabled={!commentText.trim()}
+                      className="bg-[#F0564A] hover:bg-[#D94D42] text-white rounded-xl h-10 px-6 glow-spark-sm disabled:opacity-50"
+                    >
+                      Send
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ============ TASK CHAT MODAL ============ */}
+      <AnimatePresence>
+        {selectedTask && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedTask(null)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 30, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 30, scale: 0.96 }}
+              transition={{ type: "spring", bounce: 0.25, duration: 0.5 }}
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-2xl max-h-[85vh] flex flex-col z-[101]"
+            >
+              <div className={`rounded-3xl border overflow-hidden flex flex-col h-full ${isDark ? 'glass-panel-dark' : 'glass-panel bg-white'}`}>
+                {/* Header */}
+                <div className={`p-6 border-b flex items-center justify-between shrink-0 ${isDark ? 'border-white/[0.08]' : 'border-gray-200'}`}>
+                  <div>
+                    <h3 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{selectedTask.title}</h3>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold border capitalize ${getStatusColor(selectedTask.status)}`}>
+                        {selectedTask.status.replace('_', ' ')}
+                      </span>
+                      <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                        Task #{selectedTask.id.substring(0,8)}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setSelectedTask(null)}
+                    className={`p-2 rounded-full transition-colors self-start ${isDark ? 'text-gray-400 hover:bg-white/[0.06]' : 'text-gray-500 hover:bg-gray-100'}`}
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                
+                {/* Chat Area */}
+                <div className={`flex-1 overflow-y-auto p-6 space-y-6 ${isDark ? 'bg-black/20' : 'bg-gray-50/50'}`}>
+                  {/* Task Metadata */}
+                  <div className="flex gap-4">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold ${isDark ? 'bg-[#5BCBD7]/20 text-[#5BCBD7]' : 'bg-[#5BCBD7]/10 text-[#5BCBD7]'}`}>
+                      M
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-baseline gap-2 mb-1">
+                        <span className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>MSC Team</span>
+                        <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{new Date(selectedTask.created_at).toLocaleString()}</span>
+                      </div>
+                      <div className={`p-4 rounded-2xl rounded-tl-sm text-sm whitespace-pre-wrap ${isDark ? 'bg-[#5BCBD7]/10 text-gray-200' : 'bg-cyan-50 border border-cyan-100 text-gray-800 shadow-sm'}`}>
+                        {`Client Tag: ${selectedTask.client_tag || 'None'}`}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Comments */}
+                  {taskComments.map((comment) => {
+                    const isClient = comment.user_id === user.id;
+                    return (
+                      <div key={comment.id} className="flex gap-4">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold ${isClient ? (isDark ? 'bg-[#F0564A]/20 text-[#F0564A]' : 'bg-[#F0564A]/10 text-[#F0564A]') : (isDark ? 'bg-[#5BCBD7]/20 text-[#5BCBD7]' : 'bg-[#5BCBD7]/10 text-[#5BCBD7]')}`}>
+                          {isClient ? user.email?.charAt(0).toUpperCase() : 'M'}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-baseline gap-2 mb-1">
+                            <span className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{isClient ? 'You' : 'MSC Support'}</span>
+                            <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{new Date(comment.created_at).toLocaleString()}</span>
+                          </div>
+                          <div className={`p-4 rounded-2xl rounded-tl-sm text-sm whitespace-pre-wrap ${isClient ? (isDark ? 'bg-white/[0.06] text-gray-200' : 'bg-white border border-gray-100 text-gray-700 shadow-sm') : (isDark ? 'bg-[#5BCBD7]/10 text-gray-200' : 'bg-cyan-50 border border-cyan-100 text-gray-800 shadow-sm')}`}>
+                            {comment.content}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Input Area */}
+                <div className={`p-4 border-t shrink-0 ${isDark ? 'border-white/[0.08] bg-black/40' : 'border-gray-200 bg-white'}`}>
+                  <div className={`flex gap-3 p-2 rounded-2xl border ${isDark ? 'bg-black/60 border-white/[0.1] focus-within:border-[#F0564A]/40' : 'bg-gray-50 border-gray-200 focus-within:border-[#F0564A]/40'}`}>
+                    <input
+                      type="text"
+                      value={taskCommentText}
+                      onChange={(e) => setTaskCommentText(e.target.value)}
+                      placeholder="Add a comment to this task..."
+                      onKeyDown={(e) => { if(e.key === 'Enter') handleSubmitTaskComment(); }}
+                      className={`flex-1 bg-transparent border-none outline-none px-2 text-sm ${isDark ? 'text-white placeholder:text-gray-500' : 'text-gray-900 placeholder:text-gray-400'}`}
+                    />
+                    <Button
+                      onClick={handleSubmitTaskComment}
+                      disabled={!taskCommentText.trim()}
+                      className="bg-[#F0564A] hover:bg-[#D94D42] text-white rounded-xl h-10 px-6 glow-spark-sm disabled:opacity-50"
+                    >
+                      Post
+                    </Button>
+                  </div>
                 </div>
               </div>
             </motion.div>

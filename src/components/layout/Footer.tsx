@@ -10,7 +10,7 @@ export function Footer() {
   const pathname = usePathname();
   const mscText = "MSC";
   
-  if (pathname?.startsWith('/portal')) {
+  if (pathname?.startsWith('/portal') || pathname?.startsWith('/admin')) {
     return null;
   }
   

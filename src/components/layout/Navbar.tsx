@@ -28,17 +28,17 @@ export function Navbar() {
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
-  if (pathname?.startsWith('/portal/dashboard')) {
+  if (pathname?.startsWith('/portal/dashboard') || pathname?.startsWith('/admin')) {
     return null;
   }
 
   const isActive = isScrolled || isHovered || isMobileMenuOpen;
 
   // Determine if we are on a page with a dark hero section and haven't scrolled yet
-  const isDarkHero = pathname === '/services' || pathname === '/bundles' || pathname === '/spark-time' || pathname === '/portal' || pathname === '/about' || pathname === '/news' || pathname?.startsWith('/news/');
+  const isDarkHero = pathname === '/services' || pathname === '/bundles' || pathname === '/spark-time' || pathname === '/portal' || pathname === '/about' || pathname === '/news' || pathname?.startsWith('/news/') || pathname === '/msconboarding2026';
   const isDarkTheme = isDarkHero && !isActive;
 
-  const linkColor = isDarkTheme ? "text-white/85 hover:text-white" : "text-gray-600 hover:text-[#F0564A]";
+  const linkColor = isDarkTheme ? "text-white hover:text-white" : "text-gray-600 hover:text-[#F0564A]";
   const logoColor = isDarkTheme ? "text-white" : "text-gray-900";
   const portalBtnClass = isDarkTheme
     ? "bg-white/5 backdrop-blur-md border-white/25 text-white hover:bg-white hover:text-gray-900 hover:border-white"

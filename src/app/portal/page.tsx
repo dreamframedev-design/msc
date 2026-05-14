@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -14,8 +14,27 @@ export default function PortalLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    // Check if user is already logged in
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const role = session.user.user_metadata?.role || session.user.app_metadata?.role;
+        if (role === 'admin' || role === 'superadmin') {
+          router.replace("/admin");
+        } else {
+          router.replace("/portal/dashboard");
+        }
+      } else {
+        setIsCheckingAuth(false);
+      }
+    };
+    checkUser();
+  }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +63,6 @@ export default function PortalLogin() {
       {/* Background Effects */}
       <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-[#F0564A]/10 rounded-full blur-[150px] pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[150px] pointer-events-none" />
-      <div className="absolute inset-0 bg-[url('/images/MSC%20LOGO%20BITTERSWEET%20VECTOR%20(1).svg')] opacity-[0.02] bg-repeat bg-[length:100px_100px] pointer-events-none" />
 
       <div className="flex-1 flex flex-col items-center justify-center p-4 relative z-10">
         <div className="mb-12">
@@ -71,64 +89,74 @@ export default function PortalLogin() {
           </Link>
         </div>
 
-        <div className="w-full max-w-md bg-[#111111]/80 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-heading font-bold mb-2">Client Portal</h1>
-            <p className="text-gray-400">Sign in to manage your projects, tickets, and files.</p>
-          </div>
-
-          <form onSubmit={handleLogin} className="space-y-6">
-            {error && (
-              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm text-center">
-                {error}
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-300">Email Address</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="client@company.com" 
-                required 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="bg-black/50 border-white/10 text-white placeholder:text-gray-600 focus-visible:ring-[#F0564A] rounded-xl h-12"
-              />
+        <div className="w-full max-w-md bg-[#111111]/80 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl min-h-[400px] flex flex-col justify-center">
+          {isCheckingAuth ? (
+            <div className="flex flex-col items-center justify-center text-center">
+              <Loader2 className="h-10 w-10 animate-spin text-[#F0564A] mb-4" />
+              <h2 className="text-xl font-heading font-bold mb-2">Authenticating...</h2>
+              <p className="text-gray-400 text-sm">Please wait while we log you in securely.</p>
             </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-gray-300">Password</Label>
-                <Link href="#" className="text-sm text-[#F0564A] hover:text-[#D94D42] transition-colors">
-                  Forgot password?
-                </Link>
+          ) : (
+            <>
+              <div className="text-center mb-8">
+                <h1 className="text-3xl font-heading font-bold mb-2">Client Portal</h1>
+                <p className="text-gray-400">Sign in to manage your projects, tickets, and files.</p>
               </div>
-              <Input 
-                id="password" 
-                type="password" 
-                required 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="bg-black/50 border-white/10 text-white focus-visible:ring-[#F0564A] rounded-xl h-12"
-              />
-            </div>
 
-            <Button 
-              type="submit" 
-              disabled={isLoading}
-              className="w-full h-12 bg-[#F0564A] hover:bg-[#D94D42] text-white rounded-xl font-bold text-lg transition-all shadow-[0_0_20px_rgba(240,86,74,0.2)] hover:shadow-[0_0_30px_rgba(240,86,74,0.4)]"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Signing In...
-                </>
-              ) : (
-                "Sign In"
-              )}
-            </Button>
-          </form>
+              <form onSubmit={handleLogin} className="space-y-6">
+                {error && (
+                  <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm text-center">
+                    {error}
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-gray-300">Email Address</Label>
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    placeholder="client@company.com" 
+                    required 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="bg-black/50 border-white/10 text-white placeholder:text-gray-600 focus-visible:ring-[#F0564A] rounded-xl h-12"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password" className="text-gray-300">Password</Label>
+                    <Link href="#" className="text-sm text-[#F0564A] hover:text-[#D94D42] transition-colors">
+                      Forgot password?
+                    </Link>
+                  </div>
+                  <Input 
+                    id="password" 
+                    type="password" 
+                    required 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="bg-black/50 border-white/10 text-white focus-visible:ring-[#F0564A] rounded-xl h-12"
+                  />
+                </div>
+
+                <Button 
+                  type="submit" 
+                  disabled={isLoading}
+                  className="w-full h-12 bg-[#F0564A] hover:bg-[#D94D42] text-white rounded-xl font-bold text-lg transition-all shadow-[0_0_20px_rgba(240,86,74,0.2)] hover:shadow-[0_0_30px_rgba(240,86,74,0.4)]"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Signing In...
+                    </>
+                  ) : (
+                    "Sign In"
+                  )}
+                </Button>
+              </form>
+            </>
+          )}
         </div>
         
         <p className="mt-8 text-gray-500 text-sm">
