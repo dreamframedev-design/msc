@@ -63,6 +63,9 @@ export default function AdminDashboard() {
   const [user, setUser] = useState<any>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   
+  const [boardShortcuts, setBoardShortcuts] = useState<string[]>([]);
+  const [showShortcutDropdown, setShowShortcutDropdown] = useState(false);
+
   const [allInternalTasks, setAllInternalTasks] = useState<any[]>([]);
 
   const fetchBoardMembers = async (boardId: string) => {
@@ -250,6 +253,9 @@ export default function AdminDashboard() {
     if (data && data.length > 0) {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       const customOrder = currentUser?.user_metadata?.board_order || [];
+      const shortcuts = currentUser?.user_metadata?.board_shortcuts || [];
+      
+      setBoardShortcuts(shortcuts);
       
       if (customOrder.length > 0) {
         data.sort((a, b) => {
@@ -265,6 +271,28 @@ export default function AdminDashboard() {
       setTaskBoards(data);
       if (!activeBoardId) setActiveBoardId(data[0].id);
     }
+  };
+
+  const handleAddShortcut = async (boardId: string) => {
+    if (boardShortcuts.includes(boardId)) {
+      setShowShortcutDropdown(false);
+      return;
+    }
+    const newShortcuts = [...boardShortcuts, boardId];
+    setBoardShortcuts(newShortcuts);
+    setShowShortcutDropdown(false);
+    await supabase.auth.updateUser({
+      data: { board_shortcuts: newShortcuts }
+    });
+  };
+
+  const handleRemoveShortcut = async (boardId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newShortcuts = boardShortcuts.filter(id => id !== boardId);
+    setBoardShortcuts(newShortcuts);
+    await supabase.auth.updateUser({
+      data: { board_shortcuts: newShortcuts }
+    });
   };
 
   const handleReorderBoards = async (newOrder: any[]) => {
@@ -841,6 +869,64 @@ export default function AdminDashboard() {
               {label}
             </button>
           ))}
+
+          <div className="pt-4 pb-2">
+            <div className="h-px w-full bg-white/10 mb-4" />
+            <div className="px-3 flex items-center justify-between mb-2">
+              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Shortcuts</span>
+            </div>
+            
+            {boardShortcuts.map(boardId => {
+              const board = taskBoards.find(b => b.id === boardId);
+              if (!board) return null;
+              return (
+                <button
+                  key={`shortcut-${boardId}`}
+                  onClick={() => {
+                    setActiveTab("tasks");
+                    setTaskViewMode("lists");
+                    setActiveBoardId(boardId);
+                  }}
+                  className="w-full flex items-center justify-between group px-3 py-2 rounded-lg transition-colors text-xs font-medium text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
+                >
+                  <span className="truncate pr-2 text-left">{board.title}</span>
+                  <X 
+                    className="w-3 h-3 opacity-0 group-hover:opacity-100 hover:text-red-400 transition-opacity shrink-0" 
+                    onClick={(e) => handleRemoveShortcut(boardId, e)}
+                  />
+                </button>
+              );
+            })}
+
+            <div className="relative mt-1">
+              <button
+                onClick={() => setShowShortcutDropdown(!showShortcutDropdown)}
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-xs font-medium text-zinc-500 hover:bg-white/5 hover:text-zinc-300"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add Shortcut
+              </button>
+              
+              {showShortcutDropdown && (
+                <div className="absolute top-full left-0 w-full mt-1 bg-[#1A1A1A] border border-white/10 rounded-lg shadow-xl overflow-hidden z-50">
+                  <div className="max-h-48 overflow-y-auto p-1 custom-scrollbar">
+                    {taskBoards.filter(b => !boardShortcuts.includes(b.id)).length > 0 ? (
+                      taskBoards.filter(b => !boardShortcuts.includes(b.id)).map(board => (
+                        <button
+                          key={`add-${board.id}`}
+                          onClick={() => handleAddShortcut(board.id)}
+                          className="w-full text-left px-3 py-2 rounded-md hover:bg-white/10 text-xs text-zinc-300 truncate transition-colors"
+                        >
+                          {board.title}
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-3 py-2 text-xs text-zinc-500 italic text-center">No projects available</div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </nav>
 
         <div className="p-4 border-t border-white/5 space-y-3">
