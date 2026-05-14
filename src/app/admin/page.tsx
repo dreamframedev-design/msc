@@ -36,9 +36,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { articles } from "../news/data";
+import { useToast } from "@/components/ui/toast";
+import { useRegisterCommandsMemo, useCommandPalette } from "@/components/command/CommandPaletteContext";
+import type { CommandItem } from "@/components/command/CommandPalette";
+import { Command as CommandIcon } from "lucide-react";
 
 export default function AdminDashboard() {
   const router = useRouter();
+  const toast = useToast();
+  const palette = useCommandPalette();
   const [activeTab, setActiveTab] = useState("tickets");
   const [tickets, setTickets] = useState<any[]>([]);
   const [vaultFiles, setVaultFiles] = useState<any[]>([]);
@@ -88,7 +94,7 @@ export default function AdminDashboard() {
       fetchBoardMembers(activeBoardId);
       setSelectedUserToAdd("");
     } else {
-      alert("Error adding member: " + error.message);
+      toast.error("Couldn't add member", error.message);
     }
   };
 
@@ -246,9 +252,9 @@ export default function AdminDashboard() {
     const { error } = await supabase.rpc('set_user_role', { target_user_id: userId, new_role: newRole });
     if (!error) {
       fetchUsersList();
-      alert("Role updated successfully!");
+      toast.success("Role updated");
     } else {
-      alert("Error updating user role. Did you run the SQL script for set_user_role? " + error.message);
+      toast.error("Couldn't update role", "Run set_user_role SQL? " + error.message);
     }
   };
 
@@ -256,9 +262,9 @@ export default function AdminDashboard() {
     const { error } = await supabase.rpc('set_user_company', { target_user_id: userId, new_company: newCompany });
     if (!error) {
       fetchUsersList();
-      alert("Company updated successfully!");
+      toast.success("Company updated");
     } else {
-      alert("Error updating company. Did you run the SQL script for set_user_company? " + error.message);
+      toast.error("Couldn't update company", "Run set_user_company SQL? " + error.message);
     }
   };
 
@@ -290,9 +296,9 @@ export default function AdminDashboard() {
     setIsCreatingUser(false);
 
     if (error) {
-      alert("Error creating user: " + error.message);
+      toast.error("Couldn't create user", error.message);
     } else {
-      alert("User created successfully!");
+      toast.success("User created", newUserEmail);
       setShowNewUserModal(false);
       setNewUserEmail("");
       setNewUserPassword("");
@@ -417,7 +423,7 @@ export default function AdminDashboard() {
       setTaskBoards([data, ...taskBoards]);
       setActiveBoardId(data.id);
     } else {
-      alert("Error creating board: " + error?.message);
+      toast.error("Couldn't create board", error?.message);
     }
   };
 
@@ -436,7 +442,7 @@ export default function AdminDashboard() {
       setActiveBoardId(remainingBoards.length > 0 ? remainingBoards[0].id : "");
       setInternalTasks([]); // Clear the tasks view
     } else {
-      alert("Error deleting board: " + error.message);
+      toast.error("Couldn't delete board", error.message);
     }
   };
 
@@ -464,7 +470,7 @@ export default function AdminDashboard() {
       fetchTasks();
       fetchAllInternalTasks();
     } else {
-      alert("Please run the SQL script to update the admin_tasks table first! " + error.message);
+      toast.error("Couldn't create task", "Run the admin_tasks SQL migration? " + error.message);
     }
   };
 
@@ -497,7 +503,7 @@ export default function AdminDashboard() {
     if (!activeBoardId) return;
     const url = window.location.origin + "/shared-tasks/" + activeBoardId;
     await navigator.clipboard.writeText(url);
-    alert("Shareable Tasks link copied to clipboard!\n\n" + url);
+    toast.success("Shareable link copied", url);
   };
 
   const fetchVaultFiles = async () => {
@@ -575,7 +581,7 @@ export default function AdminDashboard() {
       setEditingFile(null);
       fetchVaultFiles();
     } else {
-      alert("Error updating file: " + error.message);
+      toast.error("Couldn't update file", error.message);
     }
   };
 
@@ -583,9 +589,9 @@ export default function AdminDashboard() {
     const { data, error } = await supabase.storage.from('client-vault').createSignedUrl(storagePath, 60 * 60 * 24 * 7);
     if (data?.signedUrl) {
       await navigator.clipboard.writeText(data.signedUrl);
-      alert("Shareable link copied to clipboard! (Valid for 7 days)");
+      toast.success("Shareable link copied", "Valid for 7 days");
     } else {
-      alert("Error generating link: " + error?.message);
+      toast.error("Couldn't generate link", error?.message);
     }
   };
 
@@ -597,7 +603,7 @@ export default function AdminDashboard() {
         setPreviewUrl(data.signedUrl);
         setPreviewFile(file);
       } else {
-        alert("Error generating preview link: " + error?.message);
+        toast.error("Couldn't generate preview", error?.message);
       }
     } else {
       window.open(supabase.storage.from('client-vault').getPublicUrl(file.storage_path).data.publicUrl, '_blank');
@@ -606,12 +612,12 @@ export default function AdminDashboard() {
 
   const requestNotificationPermission = async () => {
     if (!('Notification' in window)) {
-      alert("This browser does not support desktop notification");
+      toast.error("Push notifications not supported in this browser");
       return;
     }
     const permission = await Notification.requestPermission();
     if (permission === "granted") {
-      alert("Push notifications enabled! You will now receive alerts for urgent tickets.");
+      toast.success("Push notifications enabled", "You'll receive alerts for urgent tickets");
       // In a full implementation, you would subscribe the user to push manager and save the PushSubscription to Supabase.
       // e.g., const registration = await navigator.serviceWorker.ready;
       // const subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: 'YOUR_PUBLIC_VAPID_KEY' });
@@ -630,11 +636,11 @@ export default function AdminDashboard() {
     }).select().single();
 
     if (error) {
-      alert("Error creating file request. Did you run the master SQL script? " + error.message);
+      toast.error("Couldn't create file request", "Run the master SQL script? " + error.message);
     } else if (data) {
       const url = `${window.location.origin}/request/${data.id}`;
       await navigator.clipboard.writeText(url);
-      alert(`File Request Created & Link Copied!\n\nSend this link to the client:\n${url}`);
+      toast.success("File request created", `Link copied — ${url}`);
       setShowRequestModal(false);
       setRequestClient("");
       setRequestMessage("");
@@ -708,7 +714,7 @@ export default function AdminDashboard() {
     });
 
     if (error) {
-       alert("Error posting comment: " + error.message);
+       toast.error("Couldn't post comment", error.message);
     }
   };
 
@@ -750,7 +756,7 @@ export default function AdminDashboard() {
     });
 
     if (error) {
-       alert("Error posting comment: " + error.message);
+       toast.error("Couldn't post comment", error.message);
     }
   };
 
@@ -827,6 +833,87 @@ export default function AdminDashboard() {
 
     return filtered;
   }, [tickets, allInternalTasks, usersList, taskBoards, ticketFilter, clientFilter]);
+
+  // ============ COMMAND PALETTE REGISTRATION ============
+  useRegisterCommandsMemo(() => {
+    const goto = (tab: string, extra?: () => void) => () => {
+      setActiveTab(tab);
+      extra?.();
+    };
+
+    const tabItems: CommandItem[] = [
+      { id: "tab-tickets", group: "Navigate", label: "Global Action Queue", sublabel: "Tickets dashboard", icon: <Ticket className="w-3.5 h-3.5" />, accent: "#F0564A", action: goto("tickets"), keywords: "support help requests inbox" },
+      { id: "tab-tasks", group: "Navigate", label: "Project Boards", sublabel: "Internal task management", icon: <CheckSquare className="w-3.5 h-3.5" />, accent: "#F0564A", action: goto("tasks"), keywords: "kanban tasks projects boards" },
+      { id: "tab-files", group: "Navigate", label: "Global Vault", sublabel: "Files & folders", icon: <FolderOpen className="w-3.5 h-3.5" />, action: goto("files"), keywords: "documents storage uploads" },
+      { id: "tab-users", group: "Navigate", label: "User Management", sublabel: "Clients & admins", icon: <Users className="w-3.5 h-3.5" />, action: goto("users"), keywords: "people accounts roles" },
+      { id: "tab-news", group: "Navigate", label: "News Articles", sublabel: "Published & drafts", icon: <Newspaper className="w-3.5 h-3.5" />, action: goto("news"), keywords: "blog posts press" },
+      { id: "tab-settings", group: "Navigate", label: "Account Settings", icon: <Settings className="w-3.5 h-3.5" />, action: goto("settings"), keywords: "preferences profile" },
+    ];
+
+    const actionItems: CommandItem[] = [
+      { id: "act-new-board", group: "Actions", label: "New Project Board", sublabel: "Create a board", icon: <Plus className="w-3.5 h-3.5" />, action: () => { setActiveTab("tasks"); setShowNewBoardModal(true); }, keywords: "create project board" },
+      { id: "act-file-request", group: "Actions", label: "Send File Request", sublabel: "Generate a secure upload link", icon: <Link2 className="w-3.5 h-3.5" />, action: () => { setActiveTab("files"); setShowRequestModal(true); }, keywords: "upload request link share" },
+      { id: "act-new-user", group: "Actions", label: "Create User", sublabel: "Add a client or admin", icon: <Users className="w-3.5 h-3.5" />, action: () => { setActiveTab("users"); setShowNewUserModal(true); }, keywords: "add invite signup" },
+      { id: "act-portal", group: "Actions", label: "Open Client Portal", sublabel: "View as client", icon: <Eye className="w-3.5 h-3.5" />, action: () => { window.location.href = "/portal/dashboard"; }, keywords: "impersonate preview" },
+    ];
+
+    const ticketItems: CommandItem[] = tickets.slice(0, 25).map((t: any) => ({
+      id: `ticket-${t.id}`,
+      group: "Tickets",
+      label: t.subject || t.title || "Untitled ticket",
+      sublabel: `${t.status || "open"} · ${t.client_email || t.client_tag || "—"}`,
+      icon: <Ticket className="w-3.5 h-3.5" />,
+      action: () => { setActiveTab("tickets"); setSelectedTicket(t); },
+      keywords: `${t.client_email || ""} ${t.client_tag || ""} ${t.status || ""}`,
+    }));
+
+    const boardItems: CommandItem[] = taskBoards.map((b: any) => ({
+      id: `board-${b.id}`,
+      group: "Project Boards",
+      label: b.title,
+      sublabel: b.client_tag ? `Client: ${b.client_tag}` : "Internal",
+      icon: <CheckSquare className="w-3.5 h-3.5" />,
+      action: () => { setActiveTab("tasks"); setActiveBoardId(b.id); setTaskViewMode("lists"); },
+      keywords: b.client_tag || "",
+    }));
+
+    const taskItems: CommandItem[] = allInternalTasks.slice(0, 40).map((t: any) => {
+      const board = taskBoards.find((b: any) => b.id === t.board_id);
+      return {
+        id: `task-${t.id}`,
+        group: "Tasks",
+        label: t.title,
+        sublabel: `${board?.title || "Board"} · ${t.status || "pending"}`,
+        icon: <CheckSquare className="w-3.5 h-3.5" />,
+        action: () => { setActiveTab("tasks"); setActiveBoardId(t.board_id); setTaskViewMode("lists"); setSelectedTask(t); },
+        keywords: `${board?.title || ""} ${t.client_tag || ""}`,
+      };
+    });
+
+    const userItems: CommandItem[] = isSuperAdmin
+      ? usersList.slice(0, 30).map((u: any) => ({
+          id: `user-${u.id}`,
+          group: "Users",
+          label: u.email || "Unknown",
+          sublabel: `${u.role || "client"}${u.company ? ` · ${u.company}` : ""}`,
+          icon: <Users className="w-3.5 h-3.5" />,
+          action: () => { setActiveTab("users"); },
+          keywords: `${u.company || ""} ${u.role || ""}`,
+        }))
+      : [];
+
+    const fileItems: CommandItem[] = vaultFiles.slice(0, 20).map((f: any) => ({
+      id: `file-${f.id}`,
+      group: "Files",
+      label: f.filename || "Untitled",
+      sublabel: f.folder ? `${f.folder}` : "root",
+      icon: <FolderOpen className="w-3.5 h-3.5" />,
+      action: () => { setActiveTab("files"); setPreviewFile(f); },
+      keywords: f.folder || "",
+    }));
+
+    return [...tabItems, ...actionItems, ...ticketItems, ...boardItems, ...taskItems, ...userItems, ...fileItems];
+  }, [tickets, taskBoards, allInternalTasks, usersList, vaultFiles, isSuperAdmin]);
 
   if (isLoading) {
     return (
@@ -1042,8 +1129,20 @@ export default function AdminDashboard() {
           </h1>
 
           <div className="flex items-center gap-3">
-            <Link 
-              href="/" 
+            <button
+              type="button"
+              onClick={palette.open}
+              className="group flex items-center gap-2 pl-3 pr-2 py-1.5 rounded-md text-xs font-medium text-zinc-400 hover:text-white bg-white/[0.03] hover:bg-white/[0.06] border border-white/10 hover:border-white/15 transition-colors"
+              aria-label="Open command palette"
+            >
+              <Search className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Search</span>
+              <kbd className="hidden sm:inline-flex items-center gap-0.5 ml-2 text-[10px] font-semibold text-zinc-500 bg-white/5 border border-white/10 rounded px-1.5 py-0.5">
+                <CommandIcon className="w-2.5 h-2.5" />K
+              </kbd>
+            </button>
+            <Link
+              href="/"
               className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors text-zinc-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10"
             >
               <ArrowLeft className="w-3.5 h-3.5" /> Return to Website
@@ -1798,12 +1897,12 @@ export default function AdminDashboard() {
                     e.preventDefault();
                     const formData = new FormData(e.currentTarget);
                     const password = formData.get('password') as string;
-                    if (!password || password.length < 6) return alert("Password must be at least 6 characters.");
+                    if (!password || password.length < 6) { toast.error("Password must be at least 6 characters"); return; }
                     
                     const { error } = await supabase.auth.updateUser({ password });
-                    if (error) alert("Error updating password: " + error.message);
+                    if (error) toast.error("Couldn't update password", error.message);
                     else {
-                      alert("Password updated successfully!");
+                      toast.success("Password updated");
                       (e.target as HTMLFormElement).reset();
                     }
                   }} className="space-y-4">

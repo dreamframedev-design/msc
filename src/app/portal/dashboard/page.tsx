@@ -57,6 +57,10 @@ import {
   Line,
 } from 'recharts';
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
+import { useToast } from "@/components/ui/toast";
+import { useRegisterCommandsMemo, useCommandPalette } from "@/components/command/CommandPaletteContext";
+import type { CommandItem } from "@/components/command/CommandPalette";
+import { Command as CommandIcon } from "lucide-react";
 
 // ============ MOCK DATA ============
 const mockChartData = [
@@ -135,6 +139,8 @@ function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const impersonateId = searchParams.get('impersonate');
+  const toast = useToast();
+  const palette = useCommandPalette();
   const [user, setUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [isLoading, setIsLoading] = useState(true);
@@ -159,11 +165,68 @@ function DashboardContent() {
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [commentText, setCommentText] = useState("");
   const [ticketComments, setTicketComments] = useState<any[]>([]);
+  const ticketChatScrollRef = useRef<HTMLDivElement>(null);
 
   // Task Chat State
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [taskCommentText, setTaskCommentText] = useState("");
   const [taskComments, setTaskComments] = useState<any[]>([]);
+  const taskChatScrollRef = useRef<HTMLDivElement>(null);
+
+  // Real-time subscriptions and scrolling
+  useEffect(() => {
+    if (ticketChatScrollRef.current) {
+      ticketChatScrollRef.current.scrollTop = ticketChatScrollRef.current.scrollHeight;
+    }
+  }, [ticketComments]);
+
+  useEffect(() => {
+    if (taskChatScrollRef.current) {
+      taskChatScrollRef.current.scrollTop = taskChatScrollRef.current.scrollHeight;
+    }
+  }, [taskComments]);
+
+  useEffect(() => {
+    if (!selectedTicket) return;
+    const channel = supabase
+      .channel(`client_ticket_comments_${selectedTicket.id}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'ticket_comments',
+        filter: `ticket_id=eq.${selectedTicket.id}`
+      }, payload => {
+        setTicketComments(prev => {
+          if (prev.find(c => c.id === payload.new.id)) return prev;
+          return [...prev, payload.new];
+        });
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedTicket]);
+
+  useEffect(() => {
+    if (!selectedTask) return;
+    const channel = supabase
+      .channel(`client_task_comments_${selectedTask.id}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'task_comments',
+        filter: `task_id=eq.${selectedTask.id}`
+      }, payload => {
+        setTaskComments(prev => {
+          if (prev.find(c => c.id === payload.new.id)) return prev;
+          return [...prev, payload.new];
+        });
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedTask]);
 
   // Storage State
   const [files, setFiles] = useState<any[]>([]);
@@ -315,7 +378,7 @@ function DashboardContent() {
     });
 
     if (error && error.code !== '42P01') {
-       alert("Error posting comment: " + error.message);
+       toast.error("Couldn't post comment", error.message);
     }
   };
 
@@ -357,7 +420,7 @@ function DashboardContent() {
     });
 
     if (error) {
-       alert("Error posting comment: " + error.message);
+       toast.error("Couldn't post comment", error.message);
     }
   };
 
@@ -415,10 +478,10 @@ function DashboardContent() {
         setTimeout(() => setRecentUpload(null), 3000);
         await fetchFiles();
       } else {
-        alert("Error saving file record: " + dbError.message);
+        toast.error("Couldn't save file record", dbError.message);
       }
     } else {
-      alert("Error uploading file: " + storageError.message);
+      toast.error("Upload failed", storageError.message);
     }
 
     setTimeout(() => {
@@ -477,7 +540,7 @@ function DashboardContent() {
       fetchFiles();
       setCurrentFolder(newFolderName);
     } else {
-      alert("Error creating folder: " + error.message);
+      toast.error("Couldn't create folder", error.message);
     }
   };
 
@@ -499,9 +562,9 @@ function DashboardContent() {
     const { data, error } = await supabase.storage.from('client-vault').createSignedUrl(file.storage_path, 60 * 60 * 24 * 7); // 7 days
     if (data?.signedUrl) {
       await navigator.clipboard.writeText(data.signedUrl);
-      alert("Shareable link copied to clipboard! (Valid for 7 days)");
+      toast.success("Shareable link copied", "Valid for 7 days");
     } else {
-      alert("Error generating link: " + error?.message);
+      toast.error("Couldn't generate link", error?.message);
     }
   };
 
@@ -514,7 +577,7 @@ function DashboardContent() {
     if (!error) {
       fetchFiles();
     } else {
-      alert("Error deleting file: " + error.message);
+      toast.error("Couldn't delete file", error.message);
     }
   };
 
@@ -530,7 +593,7 @@ function DashboardContent() {
         setPreviewUrl(data.signedUrl);
         setPreviewFile(file);
       } else {
-        alert("Error generating preview link: " + error?.message);
+        toast.error("Couldn't generate preview", error?.message);
       }
     } else {
       // If not an image, just download it
@@ -586,7 +649,7 @@ function DashboardContent() {
       setNewTicketPriority("Normal");
       fetchTickets();
     } else {
-      alert("Error submitting ticket: " + error?.message);
+      toast.error("Couldn't submit ticket", error?.message);
     }
   };
 
@@ -600,6 +663,58 @@ function DashboardContent() {
     if (ticketFilter === "completed") return tickets.filter(t => t.status === "completed");
     return tickets.filter(t => t.status !== "completed");
   }, [ticketFilter, tickets]);
+
+  useRegisterCommandsMemo(() => {
+    const goto = (tab: string) => () => setActiveTab(tab);
+
+    const tabItems: CommandItem[] = [
+      { id: "p-tab-overview", group: "Navigate", label: "Overview", sublabel: "Dashboard home", icon: <LayoutDashboard className="w-3.5 h-3.5" />, accent: "#F0564A", action: goto("overview") },
+      { id: "p-tab-tasks", group: "Navigate", label: "Shared Projects", sublabel: "Tasks shared with you", icon: <CheckSquare className="w-3.5 h-3.5" />, action: goto("tasks") },
+      { id: "p-tab-tickets", group: "Navigate", label: "Support Tickets", icon: <Ticket className="w-3.5 h-3.5" />, action: goto("tickets") },
+      { id: "p-tab-files", group: "Navigate", label: "File Vault", icon: <FolderOpen className="w-3.5 h-3.5" />, action: goto("files") },
+      { id: "p-tab-billing", group: "Navigate", label: "Billing & Invoices", icon: <CreditCard className="w-3.5 h-3.5" />, action: goto("billing") },
+      { id: "p-tab-settings", group: "Navigate", label: "Settings", icon: <Settings className="w-3.5 h-3.5" />, action: goto("settings") },
+    ];
+
+    const actions: CommandItem[] = [
+      { id: "p-act-new-ticket", group: "Actions", label: "New Support Ticket", icon: <Plus className="w-3.5 h-3.5" />, action: () => { setActiveTab("tickets"); setShowNewTicket(true); }, keywords: "support request open" },
+      { id: "p-act-upload", group: "Actions", label: "Upload Files", icon: <UploadCloud className="w-3.5 h-3.5" />, action: () => { setActiveTab("files"); fileInputRef.current?.click(); }, keywords: "vault attach" },
+      { id: "p-act-theme", group: "Actions", label: `Toggle ${theme === "dark" ? "Light" : "Dark"} Mode`, icon: theme === "dark" ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />, action: () => setTheme(theme === "dark" ? "light" : "dark"), keywords: "theme appearance" },
+      { id: "p-act-home", group: "Actions", label: "Return to Home", icon: <ArrowLeft className="w-3.5 h-3.5" />, action: () => { window.location.href = "/"; } },
+    ];
+
+    const ticketItems: CommandItem[] = tickets.slice(0, 20).map((t: any) => ({
+      id: `p-ticket-${t.id}`,
+      group: "My Tickets",
+      label: t.subject || "Ticket",
+      sublabel: `${t.status || "open"} · ${t.priority || "Normal"}`,
+      icon: <Ticket className="w-3.5 h-3.5" />,
+      action: () => { setActiveTab("tickets"); setSelectedTicket(t); },
+    }));
+
+    const taskItems: CommandItem[] = internalTasks.slice(0, 30).map((t: any) => {
+      const board = taskBoards.find((b: any) => b.id === t.board_id);
+      return {
+        id: `p-task-${t.id}`,
+        group: "Shared Tasks",
+        label: t.title,
+        sublabel: `${board?.title || "Project"} · ${t.status || "pending"}`,
+        icon: <CheckSquare className="w-3.5 h-3.5" />,
+        action: () => { setActiveTab("tasks"); setActiveBoardId(t.board_id); setSelectedTask(t); },
+      };
+    });
+
+    const fileItems: CommandItem[] = files.slice(0, 20).map((f: any) => ({
+      id: `p-file-${f.id}`,
+      group: "My Files",
+      label: f.filename || "Untitled",
+      sublabel: f.folder || "root",
+      icon: <FolderOpen className="w-3.5 h-3.5" />,
+      action: () => { setActiveTab("files"); setPreviewFile(f); },
+    }));
+
+    return [...tabItems, ...actions, ...ticketItems, ...taskItems, ...fileItems];
+  }, [tickets, internalTasks, taskBoards, files, theme]);
 
   if (isLoading) {
     return (
@@ -773,10 +888,18 @@ function DashboardContent() {
               <span className="text-sm font-medium">Home</span>
             </Link>
 
-            <div className={`hidden lg:flex items-center border rounded-full px-4 py-2 transition-all ${isDark ? 'bg-black/40 border-white/[0.08] focus-within:border-[#F0564A]/40' : 'bg-white/70 border-gray-200 focus-within:border-[#F0564A]/40'}`}>
-              <Search className={`w-4 h-4 mr-2 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
-              <input type="text" placeholder="Search..." className={`bg-transparent border-none outline-none text-sm w-48 ${isDark ? 'text-white placeholder:text-gray-500' : 'text-gray-900 placeholder:text-gray-400'}`} />
-            </div>
+            <button
+              type="button"
+              onClick={palette.open}
+              className={`hidden lg:flex items-center gap-2 border rounded-full pl-4 pr-1.5 py-1.5 transition-all group ${isDark ? 'bg-black/40 border-white/[0.08] hover:bg-black/60 text-gray-400 hover:text-white' : 'bg-white/70 border-gray-200 hover:bg-white text-gray-500 hover:text-gray-900'}`}
+              aria-label="Open command palette"
+            >
+              <Search className="w-4 h-4" />
+              <span className="text-sm w-32 text-left">Search…</span>
+              <kbd className={`inline-flex items-center gap-0.5 text-[10px] font-semibold rounded px-1.5 py-0.5 border ${isDark ? 'text-gray-500 bg-white/5 border-white/10' : 'text-gray-500 bg-gray-100 border-gray-200'}`}>
+                <CommandIcon className="w-2.5 h-2.5" />K
+              </kbd>
+            </button>
 
             <Button
               variant="ghost"
@@ -1501,12 +1624,12 @@ function DashboardContent() {
                       e.preventDefault();
                       const formData = new FormData(e.currentTarget);
                       const password = formData.get('password') as string;
-                      if (!password || password.length < 6) return alert("Password must be at least 6 characters.");
+                      if (!password || password.length < 6) { toast.error("Password must be at least 6 characters"); return; }
                       
                       const { error } = await supabase.auth.updateUser({ password });
-                      if (error) alert("Error updating password: " + error.message);
+                      if (error) toast.error("Couldn't update password", error.message);
                       else {
-                        alert("Password updated successfully!");
+                        toast.success("Password updated");
                         (e.target as HTMLFormElement).reset();
                       }
                     }} className="space-y-4 max-w-sm">
@@ -1793,7 +1916,7 @@ function DashboardContent() {
                 </div>
                 
                 {/* Chat Area */}
-                <div className={`flex-1 overflow-y-auto p-6 space-y-6 ${isDark ? 'bg-black/20' : 'bg-gray-50/50'}`}>
+                <div ref={ticketChatScrollRef} className={`flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth ${isDark ? 'bg-black/20' : 'bg-gray-50/50'}`}>
                   {/* Original Ticket Description */}
                   <div className="flex gap-4">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold ${isDark ? 'bg-[#F0564A]/20 text-[#F0564A]' : 'bg-[#F0564A]/10 text-[#F0564A]'}`}>
@@ -1899,7 +2022,7 @@ function DashboardContent() {
                 </div>
                 
                 {/* Chat Area */}
-                <div className={`flex-1 overflow-y-auto p-6 space-y-6 ${isDark ? 'bg-black/20' : 'bg-gray-50/50'}`}>
+                <div ref={taskChatScrollRef} className={`flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth ${isDark ? 'bg-black/20' : 'bg-gray-50/50'}`}>
                   {/* Task Metadata */}
                   <div className="flex gap-4">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold ${isDark ? 'bg-[#5BCBD7]/20 text-[#5BCBD7]' : 'bg-[#5BCBD7]/10 text-[#5BCBD7]'}`}>

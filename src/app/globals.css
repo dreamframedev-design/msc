@@ -545,6 +545,11 @@
   background: rgba(240, 86, 74, 0.06) !important;
 }
 
+/* ===== SKELETON SHIMMER ===== */
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+
 /* ===== SCROLLBAR POLISH ===== */
 @media (hover: hover) {
   ::-webkit-scrollbar { width: 10px; height: 10px; }
