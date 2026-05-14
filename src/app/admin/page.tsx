@@ -37,6 +37,7 @@ import Link from "next/link";
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { articles } from "../news/data";
 import { useToast } from "@/components/ui/toast";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { useRegisterCommandsMemo, useCommandPalette } from "@/components/command/CommandPaletteContext";
 import type { CommandItem } from "@/components/command/CommandPalette";
 import { Command as CommandIcon } from "lucide-react";
@@ -231,6 +232,39 @@ export default function AdminDashboard() {
     fetchUsersList();
     fetchAllInternalTasks();
 
+    // ====== REALTIME LIST SUBSCRIPTIONS ======
+    // Live-update the major lists whenever rows change anywhere in the table.
+    // Refetches are coarse but keep state consistent with RLS-filtered results.
+    const ticketsChannel = supabase
+      .channel('admin_tickets_list')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'client_tickets' }, () => fetchTickets())
+      .subscribe();
+
+    const tasksChannel = supabase
+      .channel('admin_tasks_list')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'admin_tasks' }, () => {
+        fetchTasks();
+        fetchAllInternalTasks();
+      })
+      .subscribe();
+
+    const boardsChannel = supabase
+      .channel('admin_boards_list')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'task_boards' }, () => fetchBoards())
+      .subscribe();
+
+    const filesChannel = supabase
+      .channel('admin_files_list')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'vault_files' }, () => fetchVaultFiles())
+      .subscribe();
+
+    const cleanup = () => {
+      supabase.removeChannel(ticketsChannel);
+      supabase.removeChannel(tasksChannel);
+      supabase.removeChannel(boardsChannel);
+      supabase.removeChannel(filesChannel);
+    };
+
     // Register Service Worker for PWA / Push
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').then((reg) => {
@@ -239,6 +273,8 @@ export default function AdminDashboard() {
         console.error('Service Worker registration failed', err);
       });
     }
+
+    return cleanup;
   }, []);
 
   const fetchUsersList = async () => {
@@ -1109,9 +1145,7 @@ export default function AdminDashboard() {
             <Bell className="w-3.5 h-3.5" /> Enable Notifications
           </button>
           <div className="flex items-center gap-3 px-2">
-            <div className="w-8 h-8 rounded-full bg-zinc-800 border border-white/10 flex items-center justify-center text-xs font-bold text-zinc-300">
-              {user?.email?.charAt(0).toUpperCase()}
-            </div>
+            <UserAvatar email={user?.email} size="sm" ringClassName="ring-white/10" />
             <div className="min-w-0">
               <p className="text-xs font-medium text-white truncate">{user?.email}</p>
               <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-0.5">Administrator</p>
@@ -1798,9 +1832,7 @@ export default function AdminDashboard() {
                     {usersList.map((u) => (
                       <tr key={u.id} className="hover:bg-white/[0.02] transition-colors group">
                         <td className="p-5 pl-6 text-sm font-semibold text-zinc-100 flex items-center gap-3">
-                           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${u.role === 'admin' ? 'bg-[#F0564A]/20 text-[#F0564A]' : 'bg-white/5 text-zinc-400'}`}>
-                              {u.email.charAt(0).toUpperCase()}
-                            </div>
+                           <UserAvatar email={u.email} size="sm" ringClassName={u.role === 'admin' || u.role === 'superadmin' ? 'ring-[#F0564A]/30' : 'ring-white/10'} />
                            {u.email}
                         </td>
                         <td className="p-5 text-xs text-zinc-500 font-mono">
@@ -2066,12 +2098,15 @@ export default function AdminDashboard() {
                 <div ref={ticketChatScrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 bg-black/20 scroll-smooth">
                   {/* Original Ticket Description */}
                   <div className="flex gap-4">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold bg-white/5 text-zinc-400 border border-white/5 text-xs">
-                      {selectedTicket.client_id.charAt(0).toUpperCase()}
-                    </div>
+                    {(() => {
+                      const clientEmail = usersList.find(u => u.id === selectedTicket.client_id)?.email;
+                      return <UserAvatar email={clientEmail} name={clientEmail?.split('@')[0]} size="md" ringClassName="ring-white/10" />;
+                    })()}
                     <div className="flex-1">
                       <div className="flex items-baseline gap-2 mb-1">
-                        <span className="font-semibold text-zinc-200">Client</span>
+                        <span className="font-semibold text-zinc-200">
+                          {usersList.find(u => u.id === selectedTicket.client_id)?.email?.split('@')[0] || 'Client'}
+                        </span>
                         <span className="text-xs text-zinc-500">{new Date(selectedTicket.created_at).toLocaleString()}</span>
                       </div>
                       <div className="p-4 rounded-2xl rounded-tl-sm text-sm whitespace-pre-wrap bg-white/5 border border-white/5 text-zinc-300">
@@ -2083,14 +2118,18 @@ export default function AdminDashboard() {
                   {/* Comments */}
                   {ticketComments.map((comment) => {
                     const isAdminComment = comment.user_id === user.id;
+                    const commentUser = usersList.find(u => u.id === comment.user_id);
                     return (
                       <div key={comment.id} className="flex gap-4">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold text-xs border ${isAdminComment ? 'bg-[#F0564A]/10 text-[#F0564A] border-[#F0564A]/20' : 'bg-white/5 text-zinc-400 border-white/5'}`}>
-                          {isAdminComment ? 'MSC' : selectedTicket.client_id.charAt(0).toUpperCase()}
-                        </div>
+                        <UserAvatar
+                          email={isAdminComment ? user.email : commentUser?.email}
+                          name={isAdminComment ? 'MSC Admin' : commentUser?.email?.split('@')[0]}
+                          size="md"
+                          ringClassName={isAdminComment ? 'ring-[#F0564A]/30' : 'ring-white/10'}
+                        />
                         <div className="flex-1">
                           <div className="flex items-baseline gap-2 mb-1">
-                            <span className={`font-semibold ${isAdminComment ? 'text-[#F0564A]' : 'text-zinc-200'}`}>{isAdminComment ? 'You' : 'Client'}</span>
+                            <span className={`font-semibold ${isAdminComment ? 'text-[#F0564A]' : 'text-zinc-200'}`}>{isAdminComment ? 'You' : (commentUser?.email?.split('@')[0] || 'Client')}</span>
                             <span className="text-xs text-zinc-500">{new Date(comment.created_at).toLocaleString()}</span>
                           </div>
                           <div className={`p-4 rounded-2xl rounded-tl-sm text-sm whitespace-pre-wrap border ${isAdminComment ? 'bg-[#F0564A]/5 border-[#F0564A]/10 text-zinc-200' : 'bg-white/5 border-white/5 text-zinc-300'}`}>
@@ -2172,9 +2211,10 @@ export default function AdminDashboard() {
                 <div ref={taskChatScrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 bg-black/20 scroll-smooth">
                   {/* Task Metadata */}
                   <div className="flex gap-4">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold bg-white/5 text-zinc-400 border border-white/5 text-xs">
-                      {usersList.find(u => u.id === selectedTask.created_by)?.email?.charAt(0).toUpperCase() || '?'}
-                    </div>
+                    {(() => {
+                      const creator = usersList.find(u => u.id === selectedTask.created_by);
+                      return <UserAvatar email={creator?.email} name={creator?.email?.split('@')[0]} size="md" />;
+                    })()}
                     <div className="flex-1">
                       <div className="flex items-baseline gap-2 mb-1">
                         <span className="font-semibold text-zinc-200">
@@ -2194,9 +2234,12 @@ export default function AdminDashboard() {
                     const commentUser = usersList.find(u => u.id === comment.user_id);
                     return (
                       <div key={comment.id} className="flex gap-4">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold text-xs border ${isMyComment ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-white/5 text-zinc-400 border-white/5'}`}>
-                          {commentUser?.email?.charAt(0).toUpperCase() || '?'}
-                        </div>
+                        <UserAvatar
+                          email={isMyComment ? user.email : commentUser?.email}
+                          name={isMyComment ? 'You' : commentUser?.email?.split('@')[0]}
+                          size="md"
+                          ringClassName={isMyComment ? 'ring-blue-400/30' : 'ring-white/10'}
+                        />
                         <div className="flex-1">
                           <div className="flex items-baseline gap-2 mb-1">
                             <span className={`font-semibold ${isMyComment ? 'text-blue-400' : 'text-zinc-200'}`}>
@@ -2630,9 +2673,7 @@ export default function AdminDashboard() {
                           .map(u => (
                             <div key={u.id} className="flex items-center justify-between bg-black/40 border border-white/5 p-3 rounded-lg">
                               <div className="flex items-center gap-3">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${u.role === 'admin' ? 'bg-[#F0564A]/20 text-[#F0564A]' : 'bg-emerald-500/10 text-emerald-400'}`}>
-                                  {u.email.charAt(0).toUpperCase()}
-                                </div>
+                                <UserAvatar email={u.email} size="sm" ringClassName={u.role === 'admin' || u.role === 'superadmin' ? 'ring-[#F0564A]/30' : 'ring-emerald-400/30'} />
                                 <div>
                                   <p className="text-sm font-medium text-white">{u.email}</p>
                                   <p className="text-xs text-zinc-500 capitalize">{u.role}</p>

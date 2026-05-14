@@ -58,6 +58,7 @@ import {
 } from 'recharts';
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
 import { useToast } from "@/components/ui/toast";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { useRegisterCommandsMemo, useCommandPalette } from "@/components/command/CommandPaletteContext";
 import type { CommandItem } from "@/components/command/CommandPalette";
 import { Command as CommandIcon } from "lucide-react";
@@ -268,6 +269,28 @@ function DashboardContent() {
       fetchTaskBoards();
     }
   }, [user, activeTab]);
+
+  // ====== REALTIME LIST SUBSCRIPTIONS (portal) ======
+  useEffect(() => {
+    if (!user) return;
+    const ticketsChannel = supabase
+      .channel('portal_tickets_list')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'client_tickets' }, () => fetchTickets())
+      .subscribe();
+    const tasksChannel = supabase
+      .channel('portal_tasks_list')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'admin_tasks' }, () => fetchTaskBoards())
+      .subscribe();
+    const filesChannel = supabase
+      .channel('portal_files_list')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'vault_files' }, () => fetchFiles())
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ticketsChannel);
+      supabase.removeChannel(tasksChannel);
+      supabase.removeChannel(filesChannel);
+    };
+  }, [user]);
 
   const fetchTaskBoards = async () => {
     if (!user) return;
@@ -1596,9 +1619,7 @@ function DashboardContent() {
                 <div className={`flex items-center gap-4 mb-8 pb-8 border-b ${isDark ? 'border-white/[0.08]' : 'border-gray-200'}`}>
                   <div className="relative">
                     <div className="absolute inset-0 rounded-full bg-[#F0564A]/40 blur-xl" />
-                    <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-[#F0564A] to-[#F08435] flex items-center justify-center text-2xl sm:text-3xl font-bold text-white shadow-lg">
-                      {user.email?.charAt(0).toUpperCase()}
-                    </div>
+                    <UserAvatar email={user.email} size="xl" ringClassName="ring-white/20 relative shadow-lg" />
                   </div>
                   <div>
                     <h3 className={`text-xl sm:text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Client Profile</h3>
@@ -1919,9 +1940,7 @@ function DashboardContent() {
                 <div ref={ticketChatScrollRef} className={`flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth ${isDark ? 'bg-black/20' : 'bg-gray-50/50'}`}>
                   {/* Original Ticket Description */}
                   <div className="flex gap-4">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold ${isDark ? 'bg-[#F0564A]/20 text-[#F0564A]' : 'bg-[#F0564A]/10 text-[#F0564A]'}`}>
-                      {user.email?.charAt(0).toUpperCase()}
-                    </div>
+                    <UserAvatar email={user.email} size="md" ringClassName="ring-[#F0564A]/30" />
                     <div className="flex-1">
                       <div className="flex items-baseline gap-2 mb-1">
                         <span className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>You</span>
@@ -1938,9 +1957,12 @@ function DashboardContent() {
                     const isClient = comment.user_id === user.id;
                     return (
                       <div key={comment.id} className="flex gap-4">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold ${isClient ? (isDark ? 'bg-[#F0564A]/20 text-[#F0564A]' : 'bg-[#F0564A]/10 text-[#F0564A]') : (isDark ? 'bg-[#5BCBD7]/20 text-[#5BCBD7]' : 'bg-[#5BCBD7]/10 text-[#5BCBD7]')}`}>
-                          {isClient ? user.email?.charAt(0).toUpperCase() : 'M'}
-                        </div>
+                        <UserAvatar
+                          email={isClient ? user.email : "support@msc"}
+                          name={isClient ? "You" : "MSC Support"}
+                          size="md"
+                          ringClassName={isClient ? "ring-[#F0564A]/30" : "ring-[#5BCBD7]/30"}
+                        />
                         <div className="flex-1">
                           <div className="flex items-baseline gap-2 mb-1">
                             <span className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{isClient ? 'You' : 'MSC Support'}</span>
@@ -2025,9 +2047,7 @@ function DashboardContent() {
                 <div ref={taskChatScrollRef} className={`flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth ${isDark ? 'bg-black/20' : 'bg-gray-50/50'}`}>
                   {/* Task Metadata */}
                   <div className="flex gap-4">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold ${isDark ? 'bg-[#5BCBD7]/20 text-[#5BCBD7]' : 'bg-[#5BCBD7]/10 text-[#5BCBD7]'}`}>
-                      M
-                    </div>
+                    <UserAvatar name="MSC Team" email="team@msc" size="md" ringClassName="ring-[#5BCBD7]/30" />
                     <div className="flex-1">
                       <div className="flex items-baseline gap-2 mb-1">
                         <span className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>MSC Team</span>
@@ -2044,9 +2064,12 @@ function DashboardContent() {
                     const isClient = comment.user_id === user.id;
                     return (
                       <div key={comment.id} className="flex gap-4">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold ${isClient ? (isDark ? 'bg-[#F0564A]/20 text-[#F0564A]' : 'bg-[#F0564A]/10 text-[#F0564A]') : (isDark ? 'bg-[#5BCBD7]/20 text-[#5BCBD7]' : 'bg-[#5BCBD7]/10 text-[#5BCBD7]')}`}>
-                          {isClient ? user.email?.charAt(0).toUpperCase() : 'M'}
-                        </div>
+                        <UserAvatar
+                          email={isClient ? user.email : "support@msc"}
+                          name={isClient ? "You" : "MSC Support"}
+                          size="md"
+                          ringClassName={isClient ? "ring-[#F0564A]/30" : "ring-[#5BCBD7]/30"}
+                        />
                         <div className="flex-1">
                           <div className="flex items-baseline gap-2 mb-1">
                             <span className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{isClient ? 'You' : 'MSC Support'}</span>
