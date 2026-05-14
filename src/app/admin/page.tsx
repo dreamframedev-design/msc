@@ -34,7 +34,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { articles } from "../news/data";
 
 export default function AdminDashboard() {
@@ -248,9 +248,31 @@ export default function AdminDashboard() {
       .select("*")
       .order("created_at", { ascending: false });
     if (data && data.length > 0) {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      const customOrder = currentUser?.user_metadata?.board_order || [];
+      
+      if (customOrder.length > 0) {
+        data.sort((a, b) => {
+          const indexA = customOrder.indexOf(a.id);
+          const indexB = customOrder.indexOf(b.id);
+          if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+          if (indexA !== -1) return -1;
+          if (indexB !== -1) return 1;
+          return 0;
+        });
+      }
+
       setTaskBoards(data);
       if (!activeBoardId) setActiveBoardId(data[0].id);
     }
+  };
+
+  const handleReorderBoards = async (newOrder: any[]) => {
+    setTaskBoards(newOrder);
+    const orderIds = newOrder.map(board => board.id);
+    await supabase.auth.updateUser({
+      data: { board_order: orderIds }
+    });
   };
 
   const fetchTasks = async (boardId?: string, mode?: string) => {
@@ -1089,25 +1111,38 @@ export default function AdminDashboard() {
                         </Button>
                       </div>
                       
-                      <div className="flex overflow-x-auto pb-4 gap-3 custom-scrollbar snap-x">
-                        {taskBoards.map(board => (
-                          <button
-                            key={board.id}
-                            onClick={() => setActiveBoardId(board.id)}
-                            className={`snap-start shrink-0 w-64 flex flex-col items-start gap-1.5 p-4 rounded-xl text-left transition-all border ${activeBoardId === board.id ? 'bg-[#F0564A]/10 border-[#F0564A]/30 text-white shadow-sm ring-1 ring-[#F0564A]/50' : 'bg-[#111111] border-white/5 text-zinc-400 hover:bg-white/5 hover:text-zinc-200 hover:border-white/10'}`}
-                          >
-                            <span className="font-semibold text-sm truncate w-full">{board.title}</span>
-                            <span className={`text-[10px] uppercase tracking-wider font-bold truncate w-full ${activeBoardId === board.id ? 'text-[#F0564A]' : 'text-zinc-500'}`}>
-                              {board.client_tag || 'Internal / Untagged'}
-                            </span>
-                          </button>
-                        ))}
-                        {taskBoards.length === 0 && (
+                      {taskBoards.length > 0 ? (
+                        <Reorder.Group 
+                          axis="x" 
+                          values={taskBoards} 
+                          onReorder={handleReorderBoards}
+                          className="flex overflow-x-auto pb-4 gap-3 custom-scrollbar"
+                        >
+                          {taskBoards.map(board => (
+                            <Reorder.Item
+                              key={board.id}
+                              value={board}
+                              className="shrink-0 cursor-grab active:cursor-grabbing list-none"
+                            >
+                              <button
+                                onClick={() => setActiveBoardId(board.id)}
+                                className={`w-64 flex flex-col items-start gap-1.5 p-4 rounded-xl text-left transition-all border ${activeBoardId === board.id ? 'bg-[#F0564A]/10 border-[#F0564A]/30 text-white shadow-sm ring-1 ring-[#F0564A]/50' : 'bg-[#111111] border-white/5 text-zinc-400 hover:bg-white/5 hover:text-zinc-200 hover:border-white/10'}`}
+                              >
+                                <span className="font-semibold text-sm truncate w-full">{board.title}</span>
+                                <span className={`text-[10px] uppercase tracking-wider font-bold truncate w-full ${activeBoardId === board.id ? 'text-[#F0564A]' : 'text-zinc-500'}`}>
+                                  {board.client_tag || 'Internal / Untagged'}
+                                </span>
+                              </button>
+                            </Reorder.Item>
+                          ))}
+                        </Reorder.Group>
+                      ) : (
+                        <div className="flex overflow-x-auto pb-4 gap-3 custom-scrollbar">
                           <div className="text-sm text-zinc-500 italic p-4 text-center border border-white/5 rounded-xl border-dashed w-full">
                             No projects available.
                           </div>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Bottom Section: Active Project Details & Tasks */}
