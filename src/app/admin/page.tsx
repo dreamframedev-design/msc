@@ -38,6 +38,8 @@ import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { articles } from "../news/data";
 import { useToast } from "@/components/ui/toast";
 import { UserAvatar } from "@/components/ui/user-avatar";
+import { SkeletonList, SkeletonGrid, SkeletonRow } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import { useRegisterCommandsMemo, useCommandPalette } from "@/components/command/CommandPaletteContext";
 import type { CommandItem } from "@/components/command/CommandPalette";
 import { Command as CommandIcon } from "lucide-react";
@@ -74,6 +76,7 @@ export default function AdminDashboard() {
   const [showShortcutDropdown, setShowShortcutDropdown] = useState(false);
 
   const [allInternalTasks, setAllInternalTasks] = useState<any[]>([]);
+  const [firstFetchDone, setFirstFetchDone] = useState(false);
 
   const fetchBoardMembers = async (boardId: string) => {
     const { data } = await supabase
@@ -226,11 +229,13 @@ export default function AdminDashboard() {
       setIsLoading(false);
     };
     checkAuth();
-    fetchTickets();
-    fetchVaultFiles();
-    fetchBoards();
-    fetchUsersList();
-    fetchAllInternalTasks();
+    Promise.all([
+      fetchTickets(),
+      fetchVaultFiles(),
+      fetchBoards(),
+      fetchUsersList(),
+      fetchAllInternalTasks(),
+    ]).finally(() => setFirstFetchDone(true));
 
     // ====== REALTIME LIST SUBSCRIPTIONS ======
     // Live-update the major lists whenever rows change anywhere in the table.
@@ -1331,14 +1336,15 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                     </motion.div>
-                  )) : (
-                    <div className="bg-[#111111] border border-white/5 rounded-2xl p-16 text-center flex flex-col items-center justify-center">
-                      <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-6">
-                        <MessageSquare className="w-8 h-8 text-zinc-600" />
-                      </div>
-                      <h3 className="text-lg font-bold text-white mb-2">No action items found</h3>
-                      <p className="text-sm text-zinc-500 max-w-sm mx-auto">You're all caught up! There are no items matching the current filter criteria.</p>
-                    </div>
+                  )) : !firstFetchDone ? (
+                    <SkeletonList count={4} />
+                  ) : (
+                    <EmptyState
+                      Icon={MessageSquare}
+                      title="No action items found"
+                      description="You're all caught up. Nothing matches the current filter."
+                      accent="spark"
+                    />
                   )}
                 </AnimatePresence>
               </div>
@@ -1637,11 +1643,19 @@ export default function AdminDashboard() {
                     </motion.div>
                   ))}
                   {internalTasks.length === 0 && (
-                    <div className="text-center p-16">
-                      <CheckSquare className="w-10 h-10 text-zinc-700 mx-auto mb-4" />
-                      <p className="text-lg font-medium text-white mb-1">No pending tasks</p>
-                      <p className="text-sm text-zinc-500">Add a task above to get started.</p>
-                    </div>
+                    !firstFetchDone ? (
+                      <div className="p-2">
+                        <SkeletonRow />
+                        <SkeletonRow />
+                        <SkeletonRow />
+                      </div>
+                    ) : (
+                      <div className="text-center p-16">
+                        <CheckSquare className="w-10 h-10 text-zinc-700 mx-auto mb-4" />
+                        <p className="text-lg font-medium text-white mb-1">No pending tasks</p>
+                        <p className="text-sm text-zinc-500">Add a task above to get started.</p>
+                      </div>
+                    )
                   )}
                 </AnimatePresence>
               </div>
@@ -1690,10 +1704,14 @@ export default function AdminDashboard() {
                         );
                       })}
                       {internalTasks.length === 0 && (
-                        <div className="text-center p-12">
-                          <CheckSquare className="w-10 h-10 text-zinc-700 mx-auto mb-4" />
-                          <p className="text-lg font-medium text-white mb-1">No active tasks across any projects</p>
-                        </div>
+                        !firstFetchDone ? <SkeletonGrid count={6} /> : (
+                          <EmptyState
+                            Icon={CheckSquare}
+                            title="No active tasks across any projects"
+                            description="Tasks across all boards will appear here as they're created."
+                            accent="spark"
+                          />
+                        )
                       )}
                     </div>
                   </div>
@@ -1780,14 +1798,26 @@ export default function AdminDashboard() {
                       </tr>
                     ))}
                     {vaultFiles.length === 0 && (
-                      <tr>
-                        <td colSpan={6} className="text-center text-zinc-500 p-20 text-sm">
-                          <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
-                            <FolderOpen className="w-8 h-8 text-zinc-600" />
-                          </div>
-                          No files stored in the vault across any clients.
-                        </td>
-                      </tr>
+                      !firstFetchDone ? (
+                        <>
+                          {Array.from({ length: 4 }).map((_, i) => (
+                            <tr key={`vault-skel-${i}`}>
+                              <td colSpan={6} className="p-0"><SkeletonRow /></td>
+                            </tr>
+                          ))}
+                        </>
+                      ) : (
+                        <tr>
+                          <td colSpan={6} className="p-12">
+                            <EmptyState
+                              Icon={FolderOpen}
+                              title="No files in the vault"
+                              description="Files uploaded by clients or admins will appear here."
+                              accent="cyan"
+                            />
+                          </td>
+                        </tr>
+                      )
                     )}
                   </tbody>
                 </table>
@@ -1897,11 +1927,26 @@ export default function AdminDashboard() {
                       </tr>
                     ))}
                     {usersList.length === 0 && (
-                      <tr>
-                        <td colSpan={5} className="text-center text-zinc-500 p-20 text-sm">
-                          Loading users...
-                        </td>
-                      </tr>
+                      !firstFetchDone ? (
+                        <>
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <tr key={`user-skel-${i}`}>
+                              <td colSpan={5} className="p-0"><SkeletonRow /></td>
+                            </tr>
+                          ))}
+                        </>
+                      ) : (
+                        <tr>
+                          <td colSpan={5} className="p-12">
+                            <EmptyState
+                              Icon={Users}
+                              title="No users yet"
+                              description="Create your first user using the New User button above."
+                              accent="neutral"
+                            />
+                          </td>
+                        </tr>
+                      )
                     )}
                   </tbody>
                 </table>
