@@ -14,7 +14,7 @@ export default function manifest(): MetadataRoute.Manifest {
         src: '/images/MSC LOGO BITTERSWEET VECTOR (1).svg',
         sizes: '512x512',
         type: 'image/svg+xml',
-        purpose: 'any maskable'
+        purpose: 'maskable'
       }
     ],
   }

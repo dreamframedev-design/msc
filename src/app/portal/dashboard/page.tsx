@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,7 @@ import {
   FolderPlus,
   Folder,
   Link2,
+  Eye,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -123,6 +124,14 @@ const KPI_ACCENTS = {
 };
 
 export default function PortalDashboard() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-[#F0564A]" /></div>}>
+      <DashboardContent />
+    </Suspense>
+  );
+}
+
+function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const impersonateId = searchParams.get('impersonate');

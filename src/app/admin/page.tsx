@@ -117,7 +117,7 @@ export default function AdminDashboard() {
 
   // Edit File State
   const [editingFile, setEditingFile] = useState<any>(null);
-  const [editFileVisibility, setEditFileVisibility] = useState<"internal" | "global" | "client">("internal");
+  const [editFileVisibility, setEditFileVisibility] = useState<"internal" | "global" | "client" | "superadmin">("internal");
   const [editFileClient, setEditFileClient] = useState("");
   const [editFileFolder, setEditFileFolder] = useState("");
   const [usersList, setUsersList] = useState<any[]>([]);
@@ -1070,69 +1070,90 @@ export default function AdminDashboard() {
 
               {taskViewMode === "lists" ? (
                 <>
-                  <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-bold text-white mb-1">Project Boards</h2>
-                  <p className="text-sm text-zinc-400">Create separate project boards for different clients, internal teams, or specific initiatives.</p>
-                </div>
-                <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
-                  <div className="flex items-center bg-[#111111] border border-white/10 rounded-lg p-1">
-                    <span className="text-xs text-zinc-500 px-2 uppercase tracking-wider font-semibold">Active Project:</span>
-                    <select
-                      value={activeBoardId}
-                      onChange={(e) => setActiveBoardId(e.target.value)}
-                      className="bg-transparent border-none py-1 text-sm font-medium text-white focus:outline-none max-w-[200px] cursor-pointer"
-                    >
-                      {taskBoards.map(board => (
-                        <option key={board.id} value={board.id} className="bg-[#111111]">
-                          {board.title} {board.client_tag ? `(${board.client_tag})` : ''}
-                        </option>
-                      ))}
-                      {taskBoards.length === 0 && <option value="">No projects available</option>}
-                    </select>
-                  </div>
-                  
-                  <Button 
-                    onClick={() => {
-                      setNewBoardTitle("");
-                      setNewBoardClient("");
-                      setNewBoardSelectedMembers([]);
-                      setShowNewBoardModal(true);
-                    }}
-                    className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-lg px-3 h-9 flex items-center transition-colors text-xs font-semibold"
-                  >
-                    <Plus className="w-4 h-4 mr-1.5" /> New Project
-                  </Button>
-                  
-                  <Button 
-                    onClick={() => setShowManageMembersModal(true)}
-                    disabled={!activeBoardId || (!isSuperAdmin && taskBoards.find(b => b.id === activeBoardId)?.created_by !== user?.id)}
-                    className={`border rounded-lg px-3 h-9 flex items-center transition-colors text-xs font-semibold ${boardMembers.length > 0 ? 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border-blue-500/20' : 'bg-white/5 hover:bg-white/10 text-zinc-300 border-white/10'} disabled:opacity-50 disabled:cursor-not-allowed`}
-                    title="Manage Project Access"
-                  >
-                    <Users className="w-4 h-4 mr-1.5" /> 
-                    {boardMembers.length > 0 ? `Shared (${boardMembers.length})` : 'Private (Admins Only)'}
-                  </Button>
-                  
-                  <Button 
-                    onClick={handleShareTasks}
-                    disabled={!activeBoardId}
-                    className="bg-white/10 hover:bg-white/20 text-white border border-white/5 rounded-lg px-3 h-9 flex items-center transition-colors text-xs"
-                    title="Get Shareable Public Link"
-                  >
-                    <Share2 className="w-4 h-4 mr-1.5" /> Link
-                  </Button>
+                  <div className="flex flex-col lg:flex-row gap-6">
+                    {/* Left Sidebar: Projects List */}
+                    <div className="w-full lg:w-72 shrink-0 flex flex-col gap-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-bold text-white uppercase tracking-wider">Project Boards</h3>
+                        <Button 
+                          onClick={() => {
+                            setNewBoardTitle("");
+                            setNewBoardClient("");
+                            setNewBoardSelectedMembers([]);
+                            setShowNewBoardModal(true);
+                          }}
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300 rounded-md"
+                          title="New Project"
+                        >
+                          <Plus className="w-5 h-5" />
+                        </Button>
+                      </div>
+                      
+                      <div className="flex flex-col gap-2 overflow-y-auto max-h-[70vh] pr-2 custom-scrollbar">
+                        {taskBoards.map(board => (
+                          <button
+                            key={board.id}
+                            onClick={() => setActiveBoardId(board.id)}
+                            className={`flex flex-col items-start gap-1.5 p-4 rounded-xl text-left transition-all border ${activeBoardId === board.id ? 'bg-[#F0564A]/10 border-[#F0564A]/30 text-white shadow-sm' : 'bg-[#111111] border-white/5 text-zinc-400 hover:bg-white/5 hover:text-zinc-200 hover:border-white/10'}`}
+                          >
+                            <span className="font-semibold text-sm truncate w-full">{board.title}</span>
+                            <span className={`text-[10px] uppercase tracking-wider font-bold truncate w-full ${activeBoardId === board.id ? 'text-[#F0564A]' : 'text-zinc-500'}`}>
+                              {board.client_tag || 'Internal / Untagged'}
+                            </span>
+                          </button>
+                        ))}
+                        {taskBoards.length === 0 && (
+                          <div className="text-sm text-zinc-500 italic p-4 text-center border border-white/5 rounded-xl border-dashed">
+                            No projects available.
+                          </div>
+                        )}
+                      </div>
+                    </div>
 
-                  <Button 
-                    onClick={handleDeleteBoard}
-                    disabled={!activeBoardId || (!isSuperAdmin && taskBoards.find(b => b.id === activeBoardId)?.created_by !== user?.id)}
-                    className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg px-3 h-9 flex items-center transition-colors text-xs"
-                    title="Delete this entire project"
-                  >
-                    <Trash2 className="w-4 h-4 mr-1.5" /> Delete
-                  </Button>
-                </div>
-              </div>
+                    {/* Right Content Area: Active Project Details & Tasks */}
+                    <div className="flex-1 min-w-0 flex flex-col gap-6">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#111111] p-5 rounded-xl border border-white/5">
+                        <div className="min-w-0 flex-1">
+                          <h2 className="text-xl font-bold text-white mb-1 truncate">
+                            {taskBoards.find(b => b.id === activeBoardId)?.title || "Select a Project"}
+                          </h2>
+                          <p className="text-sm text-zinc-400 truncate">
+                            {taskBoards.find(b => b.id === activeBoardId)?.client_tag ? `Client: ${taskBoards.find(b => b.id === activeBoardId)?.client_tag}` : "Internal / Untagged"}
+                          </p>
+                        </div>
+                        
+                        <div className="flex flex-wrap items-center gap-2 shrink-0">
+                          <Button 
+                            onClick={() => setShowManageMembersModal(true)}
+                            disabled={!activeBoardId || (!isSuperAdmin && taskBoards.find(b => b.id === activeBoardId)?.created_by !== user?.id)}
+                            className={`border rounded-lg px-3 h-9 flex items-center transition-colors text-xs font-semibold ${boardMembers.length > 0 ? 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border-blue-500/20' : 'bg-white/5 hover:bg-white/10 text-zinc-300 border-white/10'} disabled:opacity-50 disabled:cursor-not-allowed`}
+                            title="Manage Project Access"
+                          >
+                            <Users className="w-4 h-4 mr-1.5" /> 
+                            {boardMembers.length > 0 ? `Shared (${boardMembers.length})` : 'Private'}
+                          </Button>
+                          
+                          <Button 
+                            onClick={handleShareTasks}
+                            disabled={!activeBoardId}
+                            className="bg-white/10 hover:bg-white/20 text-white border border-white/5 rounded-lg px-3 h-9 flex items-center transition-colors text-xs"
+                            title="Get Shareable Public Link"
+                          >
+                            <Share2 className="w-4 h-4 mr-1.5" /> Link
+                          </Button>
+
+                          <Button 
+                            onClick={handleDeleteBoard}
+                            disabled={!activeBoardId || (!isSuperAdmin && taskBoards.find(b => b.id === activeBoardId)?.created_by !== user?.id)}
+                            className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg px-3 h-9 flex items-center transition-colors text-xs"
+                            title="Delete this entire project"
+                          >
+                            <Trash2 className="w-4 h-4 mr-1.5" /> Delete
+                          </Button>
+                        </div>
+                      </div>
 
               {/* Add New Task Form */}
               <div className="bg-[#111111] p-4 rounded-xl border border-white/5">
@@ -1287,6 +1308,8 @@ export default function AdminDashboard() {
                   )}
                 </AnimatePresence>
               </div>
+                    </div>
+                  </div>
                 </>
               ) : (
                 <div className="space-y-6">
@@ -1465,7 +1488,7 @@ export default function AdminDashboard() {
                       <th className="p-5">User ID</th>
                       <th className="p-5">Role</th>
                       <th className="p-5">Company</th>
-                      <th className="p-5 text-right pr-6">Change Role / Company</th>
+                      <th className="p-5 text-right pr-6">Manage User</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
@@ -1494,13 +1517,13 @@ export default function AdminDashboard() {
                             {u.company || <span className="text-zinc-600 italic">None</span>}
                           </span>
                         </td>
-                        <td className="p-5 pr-6 text-right flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <td className="p-5 pr-6 text-right flex items-center justify-end gap-2">
                           {u.role === 'client' && (
                             <Button
-                              variant="ghost"
+                              variant="outline"
                               size="sm"
                               onClick={() => window.open(`/portal/dashboard?impersonate=${u.id}`, '_blank')}
-                              className="text-xs text-zinc-400 hover:text-white hover:bg-white/5 h-8 mr-2"
+                              className="text-xs border-blue-500/20 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 h-8 mr-2"
                               title="View portal as this client"
                             >
                               <Eye className="w-3.5 h-3.5 mr-1.5" /> View As Client
