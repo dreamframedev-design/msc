@@ -22,6 +22,7 @@ import {
   ShieldAlert,
   Search,
   MoreVertical,
+  GripVertical,
   ChevronRight,
   CheckSquare,
   Share2,
@@ -30,7 +31,8 @@ import {
   Users,
   Sparkles,
   Eye,
-  Settings
+  Settings,
+  Activity as ActivityIcon
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -40,6 +42,7 @@ import { useToast } from "@/components/ui/toast";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { SkeletonList, SkeletonGrid, SkeletonRow } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
+import { logActivity, describeAction, targetAccent } from "@/lib/activity";
 import { useRegisterCommandsMemo, useCommandPalette } from "@/components/command/CommandPaletteContext";
 import type { CommandItem } from "@/components/command/CommandPalette";
 import { Command as CommandIcon } from "lucide-react";
@@ -77,6 +80,9 @@ export default function AdminDashboard() {
 
   const [allInternalTasks, setAllInternalTasks] = useState<any[]>([]);
   const [firstFetchDone, setFirstFetchDone] = useState(false);
+  const [activityEvents, setActivityEvents] = useState<any[]>([]);
+  const [activityLoading, setActivityLoading] = useState(false);
+  const [activityTableMissing, setActivityTableMissing] = useState(false);
 
   const fetchBoardMembers = async (boardId: string) => {
     const { data } = await supabase
@@ -95,6 +101,9 @@ export default function AdminDashboard() {
       user_id: selectedUserToAdd
     });
     if (!error) {
+      const memberEmail = usersList.find(u => u.id === selectedUserToAdd)?.email;
+      const boardTitle = taskBoards.find(b => b.id === activeBoardId)?.title;
+      logActivity({ action: "board.member.add", target_type: "board", target_id: activeBoardId, target_label: boardTitle, metadata: { member: memberEmail } });
       fetchBoardMembers(activeBoardId);
       setSelectedUserToAdd("");
     } else {
@@ -109,6 +118,9 @@ export default function AdminDashboard() {
       .eq('board_id', activeBoardId)
       .eq('user_id', userId);
     if (!error) {
+      const memberEmail = usersList.find(u => u.id === userId)?.email;
+      const boardTitle = taskBoards.find(b => b.id === activeBoardId)?.title;
+      logActivity({ action: "board.member.remove", target_type: "board", target_id: activeBoardId, target_label: boardTitle, metadata: { member: memberEmail } });
       fetchBoardMembers(activeBoardId);
     }
   };
@@ -263,11 +275,22 @@ export default function AdminDashboard() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'vault_files' }, () => fetchVaultFiles())
       .subscribe();
 
+    const activityChannel = supabase
+      .channel('admin_activity_feed')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activity_log' }, (payload) => {
+        setActivityEvents((prev) => {
+          if (prev.find((e) => e.id === payload.new.id)) return prev;
+          return [payload.new, ...prev].slice(0, 200);
+        });
+      })
+      .subscribe();
+
     const cleanup = () => {
       supabase.removeChannel(ticketsChannel);
       supabase.removeChannel(tasksChannel);
       supabase.removeChannel(boardsChannel);
       supabase.removeChannel(filesChannel);
+      supabase.removeChannel(activityChannel);
     };
 
     // Register Service Worker for PWA / Push
@@ -287,11 +310,29 @@ export default function AdminDashboard() {
     if (data) setUsersList(data);
   };
 
+  const fetchActivity = async () => {
+    setActivityLoading(true);
+    const { data, error } = await supabase
+      .from('activity_log')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(200);
+    setActivityLoading(false);
+    if (error) {
+      if (error.code === '42P01') setActivityTableMissing(true);
+      return;
+    }
+    setActivityTableMissing(false);
+    setActivityEvents(data ?? []);
+  };
+
   const handleUpdateUserRole = async (userId: string, newRole: string) => {
     if (!confirm(`Are you sure you want to change this user's role to ${newRole.toUpperCase()}?`)) return;
     
     const { error } = await supabase.rpc('set_user_role', { target_user_id: userId, new_role: newRole });
     if (!error) {
+      const targetEmail = usersList.find(u => u.id === userId)?.email;
+      logActivity({ action: "user.role", target_type: "user", target_id: userId, target_label: targetEmail, metadata: { new_role: newRole } });
       fetchUsersList();
       toast.success("Role updated");
     } else {
@@ -302,6 +343,8 @@ export default function AdminDashboard() {
   const handleUpdateUserCompany = async (userId: string, newCompany: string) => {
     const { error } = await supabase.rpc('set_user_company', { target_user_id: userId, new_company: newCompany });
     if (!error) {
+      const targetEmail = usersList.find(u => u.id === userId)?.email;
+      logActivity({ action: "user.company", target_type: "user", target_id: userId, target_label: targetEmail, metadata: { new_company: newCompany } });
       fetchUsersList();
       toast.success("Company updated");
     } else {
@@ -339,6 +382,7 @@ export default function AdminDashboard() {
     if (error) {
       toast.error("Couldn't create user", error.message);
     } else {
+      logActivity({ action: "user.create", target_type: "user", target_id: data?.user?.id ?? null, target_label: newUserEmail, metadata: { role: newUserRole, company: newUserCompany } });
       toast.success("User created", newUserEmail);
       setShowNewUserModal(false);
       setNewUserEmail("");
@@ -409,7 +453,7 @@ export default function AdminDashboard() {
 
   const fetchTasks = async (boardId?: string, mode?: string) => {
     const currentMode = mode || taskViewMode;
-    
+
     if (currentMode === "overview") {
       const { data } = await supabase
         .from("admin_tasks")
@@ -427,7 +471,32 @@ export default function AdminDashboard() {
       .select("*")
       .eq('board_id', targetBoard)
       .order("created_at", { ascending: false });
-    if (data) setInternalTasks(data);
+    if (!data) return;
+
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    const orderMap = (currentUser?.user_metadata?.task_order_by_board || {}) as Record<string, string[]>;
+    const savedOrder = orderMap[targetBoard];
+    if (savedOrder && savedOrder.length > 0) {
+      data.sort((a: any, b: any) => {
+        const ai = savedOrder.indexOf(a.id);
+        const bi = savedOrder.indexOf(b.id);
+        if (ai !== -1 && bi !== -1) return ai - bi;
+        if (ai !== -1) return -1;
+        if (bi !== -1) return 1;
+        return 0;
+      });
+    }
+    setInternalTasks(data);
+  };
+
+  const handleReorderTasks = async (newOrder: any[]) => {
+    setInternalTasks(newOrder);
+    if (!activeBoardId) return;
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    const orderMap = (currentUser?.user_metadata?.task_order_by_board || {}) as Record<string, string[]>;
+    const next = { ...orderMap, [activeBoardId]: newOrder.map((t) => t.id) };
+    await supabase.auth.updateUser({ data: { task_order_by_board: next } });
+    logActivity({ action: "task.reorder", target_type: "board", target_id: activeBoardId, target_label: taskBoards.find(b => b.id === activeBoardId)?.title });
   };
 
   useEffect(() => {
@@ -438,6 +507,10 @@ export default function AdminDashboard() {
       fetchBoardMembers(activeBoardId);
     }
   }, [activeBoardId, taskViewMode]);
+
+  useEffect(() => {
+    if (activeTab === "activity") fetchActivity();
+  }, [activeTab]);
 
   const handleCreateBoard = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -463,6 +536,7 @@ export default function AdminDashboard() {
       setShowNewBoardModal(false);
       setTaskBoards([data, ...taskBoards]);
       setActiveBoardId(data.id);
+      logActivity({ action: "board.create", target_type: "board", target_id: data.id, target_label: data.title, metadata: { client_tag: data.client_tag } });
     } else {
       toast.error("Couldn't create board", error?.message);
     }
@@ -476,8 +550,9 @@ export default function AdminDashboard() {
     if (!confirm(`Are you sure you want to completely delete the project "${board.title}"?\n\nThis will instantly delete ALL tasks and comments inside this project forever. This cannot be undone.`)) return;
     
     const { error } = await supabase.from('task_boards').delete().eq('id', activeBoardId);
-    
+
     if (!error) {
+      logActivity({ action: "board.delete", target_type: "board", target_id: board.id, target_label: board.title });
       const remainingBoards = taskBoards.filter(b => b.id !== activeBoardId);
       setTaskBoards(remainingBoards);
       setActiveBoardId(remainingBoards.length > 0 ? remainingBoards[0].id : "");
@@ -506,6 +581,8 @@ export default function AdminDashboard() {
     const { error } = await supabase.from('admin_tasks').insert(tasksToInsert);
     
     if (!error) {
+      const boardTitle = taskBoards.find(b => b.id === activeBoardId)?.title;
+      titles.forEach(title => logActivity({ action: "task.create", target_type: "task", target_label: title, metadata: { board: boardTitle, client_tag: newTaskClient.trim() || null } }));
       setNewTaskTitle("");
       setNewTaskClient("");
       fetchTasks();
@@ -518,6 +595,8 @@ export default function AdminDashboard() {
   const updateInternalTaskStatus = async (id: string, newStatus: string) => {
     const { error } = await supabase.from('admin_tasks').update({ status: newStatus }).eq('id', id);
     if (!error) {
+      const task = internalTasks.find(t => t.id === id) || allInternalTasks.find(t => t.id === id);
+      logActivity({ action: "task.status", target_type: "task", target_id: id, target_label: task?.title, metadata: { new_status: newStatus } });
       fetchTasks();
       fetchAllInternalTasks();
 
@@ -533,8 +612,10 @@ export default function AdminDashboard() {
 
   const deleteInternalTask = async (id: string) => {
     if (!confirm("Delete this task?")) return;
+    const task = internalTasks.find(t => t.id === id) || allInternalTasks.find(t => t.id === id);
     const { error } = await supabase.from('admin_tasks').delete().eq('id', id);
     if (!error) {
+      logActivity({ action: "task.delete", target_type: "task", target_id: id, target_label: task?.title });
       fetchTasks();
       fetchAllInternalTasks();
     }
@@ -556,17 +637,23 @@ export default function AdminDashboard() {
   };
 
   const toggleFileInternal = async (id: string, currentStatus: boolean) => {
-    const { error } = await supabase.from('vault_files').update({ 
+    const { error } = await supabase.from('vault_files').update({
       is_internal: !currentStatus,
       is_superadmin_only: !currentStatus ? false : false // Reset superadmin if toggled
     }).eq('id', id);
-    if (!error) fetchVaultFiles();
+    if (!error) {
+      const file = vaultFiles.find(f => f.id === id);
+      logActivity({ action: "file.visibility", target_type: "file", target_id: id, target_label: file?.filename, metadata: { is_internal: !currentStatus } });
+      fetchVaultFiles();
+    }
   };
 
   const deleteVaultFile = async (id: string, storagePath: string) => {
     if (!confirm("Delete this file permanently?")) return;
+    const file = vaultFiles.find(f => f.id === id);
     await supabase.storage.from('client-vault').remove([storagePath]);
     await supabase.from('vault_files').delete().eq('id', id);
+    logActivity({ action: "file.delete", target_type: "file", target_id: id, target_label: file?.filename });
     fetchVaultFiles();
   };
 
@@ -681,6 +768,7 @@ export default function AdminDashboard() {
     } else if (data) {
       const url = `${window.location.origin}/request/${data.id}`;
       await navigator.clipboard.writeText(url);
+      logActivity({ action: "file.request.create", target_type: "file", target_id: data.id, target_label: requestClient.trim(), metadata: { url } });
       toast.success("File request created", `Link copied — ${url}`);
       setShowRequestModal(false);
       setRequestClient("");
@@ -702,6 +790,8 @@ export default function AdminDashboard() {
       .update({ status: newStatus })
       .eq("id", id);
     if (!error) {
+      const ticket = tickets.find(t => t.id === id);
+      logActivity({ action: "ticket.status", target_type: "ticket", target_id: id, target_label: ticket?.subject, metadata: { new_status: newStatus } });
       fetchTickets();
       if (selectedTicket && selectedTicket.id === id) {
         setSelectedTicket({ ...selectedTicket, status: newStatus });
@@ -756,6 +846,8 @@ export default function AdminDashboard() {
 
     if (error) {
        toast.error("Couldn't post comment", error.message);
+    } else {
+       logActivity({ action: "ticket.comment", target_type: "ticket", target_id: selectedTicket.id, target_label: selectedTicket.subject });
     }
   };
 
@@ -798,6 +890,8 @@ export default function AdminDashboard() {
 
     if (error) {
        toast.error("Couldn't post comment", error.message);
+    } else {
+       logActivity({ action: "task.comment", target_type: "task", target_id: selectedTask.id, target_label: selectedTask.title });
     }
   };
 
@@ -887,6 +981,7 @@ export default function AdminDashboard() {
       { id: "tab-tasks", group: "Navigate", label: "Project Boards", sublabel: "Internal task management", icon: <CheckSquare className="w-3.5 h-3.5" />, accent: "#F0564A", action: goto("tasks"), keywords: "kanban tasks projects boards" },
       { id: "tab-files", group: "Navigate", label: "Global Vault", sublabel: "Files & folders", icon: <FolderOpen className="w-3.5 h-3.5" />, action: goto("files"), keywords: "documents storage uploads" },
       { id: "tab-users", group: "Navigate", label: "User Management", sublabel: "Clients & admins", icon: <Users className="w-3.5 h-3.5" />, action: goto("users"), keywords: "people accounts roles" },
+      { id: "tab-activity", group: "Navigate", label: "Activity Feed", sublabel: "Audit log", icon: <ActivityIcon className="w-3.5 h-3.5" />, action: goto("activity"), keywords: "audit log history events" },
       { id: "tab-news", group: "Navigate", label: "News Articles", sublabel: "Published & drafts", icon: <Newspaper className="w-3.5 h-3.5" />, action: goto("news"), keywords: "blog posts press" },
       { id: "tab-settings", group: "Navigate", label: "Account Settings", icon: <Settings className="w-3.5 h-3.5" />, action: goto("settings"), keywords: "preferences profile" },
     ];
@@ -1063,6 +1158,7 @@ export default function AdminDashboard() {
                 {[
                   { key: "files", label: "Global Vault", Icon: FolderOpen },
                   { key: "users", label: "User Management", Icon: Users },
+                  { key: "activity", label: "Activity Feed", Icon: ActivityIcon },
                   { key: "news", label: "News Articles", Icon: Newspaper },
                   { key: "settings", label: "Account Settings", Icon: Settings },
                 ].map(({ key, label, Icon }) => (
@@ -1164,7 +1260,7 @@ export default function AdminDashboard() {
         {/* Top Header */}
         <header className="h-16 border-b border-white/5 flex items-center justify-between px-8 sticky top-0 z-40 bg-[#0A0A0A]/80 backdrop-blur-xl">
           <h1 className="text-lg font-semibold text-white">
-            {activeTab === "tickets" ? "Ticket Queue" : activeTab === "tasks" ? "Internal Tasks" : activeTab === "files" ? "File Vault" : "Insights"}
+            {activeTab === "tickets" ? "Ticket Queue" : activeTab === "tasks" ? "Internal Tasks" : activeTab === "files" ? "File Vault" : activeTab === "activity" ? "Activity Feed" : activeTab === "users" ? "User Management" : activeTab === "settings" ? "Account Settings" : activeTab === "news" ? "News" : "Insights"}
           </h1>
 
           <div className="flex items-center gap-3">
@@ -1569,18 +1665,23 @@ export default function AdminDashboard() {
 
               {/* Task List */}
               <div className="bg-[#111111] rounded-2xl border border-white/5 overflow-hidden">
-                <AnimatePresence mode="popLayout">
+                <Reorder.Group axis="y" values={internalTasks} onReorder={handleReorderTasks}>
                   {internalTasks.map((task) => (
-                    <motion.div
+                    <Reorder.Item
                       key={task.id}
+                      value={task}
                       layout
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      className={`border-b border-white/5 last:border-0 p-5 hover:bg-white/[0.02] transition-colors flex flex-col gap-3 ${task.status === 'completed' ? 'opacity-60' : ''}`}
+                      whileDrag={{ scale: 1.01, boxShadow: "0 16px 40px -10px rgba(0,0,0,0.5)", zIndex: 20 }}
+                      className={`border-b border-white/5 last:border-0 p-5 hover:bg-white/[0.02] transition-colors flex flex-col gap-3 group/task bg-[#111111] ${task.status === 'completed' ? 'opacity-60' : ''}`}
                     >
-                      <div className="flex items-center gap-4">
-                        <button 
+                      <div className="flex items-center gap-3">
+                        <span className="cursor-grab active:cursor-grabbing text-zinc-600 hover:text-zinc-300 transition-colors shrink-0" title="Drag to reorder" aria-label="Drag to reorder">
+                          <GripVertical className="w-4 h-4" />
+                        </span>
+                        <button
                           onClick={() => updateInternalTaskStatus(task.id, task.status === 'completed' ? 'pending' : 'completed')}
                           className={`w-6 h-6 rounded-md border flex items-center justify-center shrink-0 transition-colors ${task.status === 'completed' ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-transparent border-zinc-600 hover:border-emerald-500 text-transparent hover:text-emerald-500'}`}
                         >
@@ -1640,24 +1741,24 @@ export default function AdminDashboard() {
                         </div>
                       </div>
 
-                    </motion.div>
+                    </Reorder.Item>
                   ))}
-                  {internalTasks.length === 0 && (
-                    !firstFetchDone ? (
-                      <div className="p-2">
-                        <SkeletonRow />
-                        <SkeletonRow />
-                        <SkeletonRow />
-                      </div>
-                    ) : (
-                      <div className="text-center p-16">
-                        <CheckSquare className="w-10 h-10 text-zinc-700 mx-auto mb-4" />
-                        <p className="text-lg font-medium text-white mb-1">No pending tasks</p>
-                        <p className="text-sm text-zinc-500">Add a task above to get started.</p>
-                      </div>
-                    )
-                  )}
-                </AnimatePresence>
+                </Reorder.Group>
+                {internalTasks.length === 0 && (
+                  !firstFetchDone ? (
+                    <div className="p-2">
+                      <SkeletonRow />
+                      <SkeletonRow />
+                      <SkeletonRow />
+                    </div>
+                  ) : (
+                    <div className="text-center p-16">
+                      <CheckSquare className="w-10 h-10 text-zinc-700 mx-auto mb-4" />
+                      <p className="text-lg font-medium text-white mb-1">No pending tasks</p>
+                      <p className="text-sm text-zinc-500">Add a task above to get started.</p>
+                    </div>
+                  )
+                )}
               </div>
                     </div>
                   </div>
@@ -1998,6 +2099,90 @@ export default function AdminDashboard() {
                   </form>
                 </div>
               </div>
+            </motion.div>
+          )}
+
+          {/* ============ ACTIVITY FEED ============ */}
+          {activeTab === "activity" && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-6"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-semibold text-white">Activity Feed</h2>
+                  <p className="text-sm text-zinc-500 mt-1">Live audit log — every meaningful action across the platform.</p>
+                </div>
+                <div className="flex items-center gap-2 text-[11px] text-zinc-500">
+                  <span className="relative flex w-2 h-2">
+                    <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-60" />
+                    <span className="relative w-2 h-2 rounded-full bg-emerald-400" />
+                  </span>
+                  Realtime
+                </div>
+              </div>
+
+              {activityTableMissing ? (
+                <EmptyState
+                  Icon={ActivityIcon}
+                  title="Activity log table not set up yet"
+                  description="Run master_activity_log.sql against your Supabase project to enable the audit log. After that, every action across the platform will start appearing here automatically."
+                  accent="spark"
+                />
+              ) : activityLoading && activityEvents.length === 0 ? (
+                <SkeletonList count={8} />
+              ) : activityEvents.length === 0 ? (
+                <EmptyState
+                  Icon={ActivityIcon}
+                  title="No activity yet"
+                  description="As people create tickets, complete tasks, upload files, and manage users — those events will appear here in realtime."
+                  accent="neutral"
+                />
+              ) : (
+                <div className="rounded-2xl border border-white/5 bg-[#0E0E0E] overflow-hidden">
+                  <AnimatePresence initial={false}>
+                    {activityEvents.map((event) => {
+                      const verb = describeAction(event.action);
+                      const accentClass = targetAccent(event.target_type);
+                      return (
+                        <motion.div
+                          key={event.id}
+                          layout
+                          initial={{ opacity: 0, y: -8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          className="flex items-center gap-4 px-5 py-4 border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors"
+                        >
+                          <UserAvatar email={event.actor_email} size="sm" ringClassName="ring-white/10" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-semibold text-zinc-100 truncate">
+                                {event.actor_email?.split('@')[0] || 'Unknown'}
+                              </span>
+                              <span className="text-sm text-zinc-400">{verb}</span>
+                              {event.target_label && (
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10.5px] font-semibold border ${accentClass}`}>
+                                  {event.target_label.length > 40 ? event.target_label.slice(0, 40) + '…' : event.target_label}
+                                </span>
+                              )}
+                            </div>
+                            {event.metadata && Object.keys(event.metadata).length > 0 && (
+                              <p className="text-[11px] text-zinc-500 mt-0.5 truncate font-mono">
+                                {Object.entries(event.metadata).map(([k, v]) => `${k}: ${typeof v === 'string' ? v : JSON.stringify(v)}`).join(' · ')}
+                              </p>
+                            )}
+                          </div>
+                          <time className="text-[11px] text-zinc-500 shrink-0 whitespace-nowrap">
+                            {new Date(event.created_at).toLocaleString()}
+                          </time>
+                        </motion.div>
+                      );
+                    })}
+                  </AnimatePresence>
+                </div>
+              )}
             </motion.div>
           )}
 

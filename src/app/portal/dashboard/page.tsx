@@ -59,6 +59,7 @@ import {
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
 import { useToast } from "@/components/ui/toast";
 import { UserAvatar } from "@/components/ui/user-avatar";
+import { logActivity } from "@/lib/activity";
 import { useRegisterCommandsMemo, useCommandPalette } from "@/components/command/CommandPaletteContext";
 import type { CommandItem } from "@/components/command/CommandPalette";
 import { Command as CommandIcon } from "lucide-react";
@@ -402,6 +403,8 @@ function DashboardContent() {
 
     if (error && error.code !== '42P01') {
        toast.error("Couldn't post comment", error.message);
+    } else {
+       logActivity({ action: "ticket.comment", target_type: "ticket", target_id: selectedTicket.id, target_label: selectedTicket.subject });
     }
   };
 
@@ -444,6 +447,8 @@ function DashboardContent() {
 
     if (error) {
        toast.error("Couldn't post comment", error.message);
+    } else {
+       logActivity({ action: "task.comment", target_type: "task", target_id: selectedTask.id, target_label: selectedTask.title });
     }
   };
 
@@ -497,6 +502,7 @@ function DashboardContent() {
       });
 
       if (!dbError) {
+        logActivity({ action: "file.upload", target_type: "file", target_label: file.name, metadata: { folder: currentFolder, size: file.size } });
         setRecentUpload(file.name);
         setTimeout(() => setRecentUpload(null), 3000);
         await fetchFiles();
@@ -650,8 +656,9 @@ function DashboardContent() {
     setIsSubmittingTicket(false);
     
     if (!error && data) {
+      logActivity({ action: "ticket.create", target_type: "ticket", target_id: data[0].id, target_label: newTicketSubject, metadata: { priority: newTicketPriority } });
       setShowNewTicket(false);
-      
+
       // Fire Slack Notification
       fetch('/api/slack', {
         method: 'POST',
