@@ -38,7 +38,8 @@ import {
   PanelLeft,
   PanelTop,
   LayoutPanelLeft,
-  UploadCloud
+  UploadCloud,
+  Star
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -673,6 +674,34 @@ export default function AdminDashboard() {
           content: "✅ This task has been marked as completed."
         });
       }
+    }
+  };
+
+  const toggleTaskHighlight = async (id: string) => {
+    const task = internalTasks.find(t => t.id === id) || allInternalTasks.find(t => t.id === id);
+    const next = !task?.is_highlighted;
+    // optimistic
+    setInternalTasks(prev => prev.map(t => t.id === id ? { ...t, is_highlighted: next } : t));
+    setTasksView(prev => prev.map(t => t.id === id ? { ...t, is_highlighted: next } : t));
+    setAllInternalTasks(prev => prev.map(t => t.id === id ? { ...t, is_highlighted: next } : t));
+    const { error } = await supabase.from('admin_tasks').update({ is_highlighted: next }).eq('id', id);
+    if (error) {
+      toast.error("Couldn't toggle highlight", error.message.includes("column") ? "Run master_task_notes_highlights.sql" : error.message);
+      // revert
+      setInternalTasks(prev => prev.map(t => t.id === id ? { ...t, is_highlighted: !next } : t));
+      setTasksView(prev => prev.map(t => t.id === id ? { ...t, is_highlighted: !next } : t));
+      setAllInternalTasks(prev => prev.map(t => t.id === id ? { ...t, is_highlighted: !next } : t));
+    }
+  };
+
+  const updateTaskNote = async (id: string, note: string) => {
+    const value = note.trim() || null;
+    setInternalTasks(prev => prev.map(t => t.id === id ? { ...t, note: value } : t));
+    setTasksView(prev => prev.map(t => t.id === id ? { ...t, note: value } : t));
+    setAllInternalTasks(prev => prev.map(t => t.id === id ? { ...t, note: value } : t));
+    const { error } = await supabase.from('admin_tasks').update({ note: value }).eq('id', id);
+    if (error) {
+      toast.error("Couldn't save note", error.message.includes("column") ? "Run master_task_notes_highlights.sql" : error.message);
     }
   };
 
@@ -1950,23 +1979,81 @@ export default function AdminDashboard() {
                             onReorder={handleReorderBoards}
                             className="flex overflow-x-auto pb-2 gap-3 no-scrollbar"
                           >
-                            {taskBoards.map(board => (
-                              <Reorder.Item
-                                key={board.id}
-                                value={board}
-                                className="shrink-0 cursor-grab active:cursor-grabbing list-none"
-                              >
-                                <button
-                                  onClick={() => setActiveBoardId(board.id)}
-                                  className={`w-64 flex flex-col items-start gap-1.5 p-4 rounded-xl text-left transition-all border ${activeBoardId === board.id ? 'bg-[#F0564A]/10 border-[#F0564A]/30 text-white shadow-sm ring-1 ring-[#F0564A]/50' : 'bg-[#111111] border-white/5 text-zinc-400 hover:bg-white/5 hover:text-zinc-200 hover:border-white/10'}`}
+                            {taskBoards.map(board => {
+                              const boardTasks = allInternalTasks.filter((t: any) => t.board_id === board.id);
+                              const completed = boardTasks.filter((t: any) => t.status === 'completed').length;
+                              const total = boardTasks.length;
+                              const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+                              const isActive = activeBoardId === board.id;
+                              const isFav = boardShortcuts.includes(board.id);
+                              return (
+                                <Reorder.Item
+                                  key={board.id}
+                                  value={board}
+                                  className="shrink-0 cursor-grab active:cursor-grabbing list-none"
                                 >
-                                  <span className="font-semibold text-sm truncate w-full">{board.title}</span>
-                                  <span className={`text-[10px] uppercase tracking-wider font-bold truncate w-full ${activeBoardId === board.id ? 'text-[#F0564A]' : 'text-zinc-500'}`}>
-                                    {board.client_tag || 'Internal / Untagged'}
-                                  </span>
-                                </button>
-                              </Reorder.Item>
-                            ))}
+                                  <div
+                                    onClick={() => setActiveBoardId(board.id)}
+                                    className={`relative w-64 flex flex-col items-start gap-1.5 p-4 rounded-xl text-left transition-all border cursor-pointer ${
+                                      isActive
+                                        ? 'bg-[#F0564A]/10 border-[#F0564A]/30 text-white shadow-sm ring-1 ring-[#F0564A]/50'
+                                        : isFav
+                                        ? 'bg-gradient-to-br from-amber-500/[0.08] via-[#111] to-[#111] border-amber-500/25 text-zinc-200 hover:from-amber-500/[0.12] hover:border-amber-500/40 shadow-[0_0_0_1px_rgba(250,176,64,0.15),0_4px_20px_-8px_rgba(250,176,64,0.25)]'
+                                        : 'bg-[#111111] border-white/5 text-zinc-400 hover:bg-white/5 hover:text-zinc-200 hover:border-white/10'
+                                    }`}
+                                  >
+                                    <div className="flex items-start justify-between w-full gap-2">
+                                      <span className="font-semibold text-sm break-words leading-snug flex-1 min-w-0">{board.title}</span>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          if (isFav) {
+                                            const evt = { stopPropagation: () => {}, preventDefault: () => {} } as any;
+                                            handleRemoveShortcut(board.id, evt);
+                                          } else {
+                                            handleAddShortcut(board.id);
+                                          }
+                                        }}
+                                        title={isFav ? "Remove favorite" : "Mark as favorite"}
+                                        aria-label={isFav ? "Remove favorite" : "Mark as favorite"}
+                                        className={`shrink-0 p-1 rounded-md transition-colors ${
+                                          isFav
+                                            ? 'text-amber-400 hover:text-amber-300'
+                                            : 'text-zinc-700 hover:text-amber-400 opacity-0 group-hover:opacity-100'
+                                        }`}
+                                        style={{ opacity: isFav ? 1 : undefined }}
+                                      >
+                                        <Star className={`w-4 h-4 ${isFav ? 'fill-amber-400' : ''}`} />
+                                      </button>
+                                    </div>
+                                    <span className={`text-[10px] uppercase tracking-wider font-bold truncate w-full ${isActive ? 'text-[#F0564A]' : isFav ? 'text-amber-400/80' : 'text-zinc-500'}`}>
+                                      {board.client_tag || 'Internal / Untagged'}
+                                    </span>
+                                    {total > 0 && (
+                                      <div className="w-full mt-1.5 space-y-1">
+                                        <div className="flex items-center justify-between text-[10.5px]">
+                                          <span className={isActive ? 'text-white/80' : 'text-zinc-400'}>
+                                            <span className="font-semibold tabular-nums">{completed}</span>
+                                            <span className="opacity-50"> / </span>
+                                            <span className="tabular-nums">{total}</span>
+                                            <span className="opacity-50 ml-1">done</span>
+                                          </span>
+                                          <span className={`tabular-nums font-mono text-[10px] ${isActive ? 'text-[#F0564A]' : isFav ? 'text-amber-400/80' : 'text-zinc-500'}`}>{pct}%</span>
+                                        </div>
+                                        <div className="h-1 rounded-full bg-white/5 overflow-hidden">
+                                          <div
+                                            className={`h-full rounded-full transition-all ${
+                                              isActive ? 'bg-[#F0564A]' : isFav ? 'bg-gradient-to-r from-amber-400 to-orange-400' : 'bg-zinc-500'
+                                            }`}
+                                            style={{ width: `${pct}%` }}
+                                          />
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </Reorder.Item>
+                              );
+                            })}
                           </Reorder.Group>
                         )
                       ) : (
@@ -2107,6 +2194,8 @@ export default function AdminDashboard() {
                       onStart={() => updateInternalTaskStatus(task.id, 'in_progress')}
                       onOpen={() => handleOpenTask(task)}
                       onDelete={() => deleteInternalTask(task.id)}
+                      onToggleHighlight={() => toggleTaskHighlight(task.id)}
+                      onUpdateNote={(note) => updateTaskNote(task.id, note)}
                     />
                   ))}
                 </Reorder.Group>
