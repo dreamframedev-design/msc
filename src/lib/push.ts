@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { authFetch } from "@/lib/auth-fetch";
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -100,9 +101,8 @@ export async function sendPush(
   payload: { title: string; body?: string; url?: string }
 ): Promise<void> {
   try {
-    await fetch("/api/push", {
+    await authFetch("/api/push", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ user_id: userId, ...payload }),
     });
   } catch {
@@ -115,9 +115,8 @@ export async function sendPushToRoles(
   payload: { title: string; body?: string; url?: string }
 ): Promise<void> {
   try {
-    await fetch("/api/push", {
+    await authFetch("/api/push", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ roles, ...payload }),
     });
   } catch {

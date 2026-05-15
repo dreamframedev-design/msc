@@ -50,6 +50,7 @@ import { KanbanBoard } from "@/components/admin/KanbanBoard";
 import { TodayDashboard } from "@/components/admin/TodayDashboard";
 import { ClientDrawer } from "@/components/admin/ClientDrawer";
 import { subscribeToPush, sendPush, sendPushToRoles } from "@/lib/push";
+import { authFetch } from "@/lib/auth-fetch";
 import { LayoutList, Columns3, Sunrise } from "lucide-react";
 import { useRegisterCommandsMemo, useCommandPalette } from "@/components/command/CommandPaletteContext";
 import type { CommandItem } from "@/components/command/CommandPalette";
@@ -97,6 +98,7 @@ export default function AdminDashboard() {
   const [selectedClient, setSelectedClient] = useState<any | null>(null);
   const [aiBusy, setAiBusy] = useState<"none" | "suggest" | "summarize">("none");
   const [aiSummary, setAiSummary] = useState<{ open: boolean; text: string; title: string }>({ open: false, text: "", title: "" });
+  const [aiAvailable, setAiAvailable] = useState(false);
   const [tasksView, setTasksView] = useState<any[]>([]);
   const isReorderingRef = useRef(false);
   const reorderSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -538,6 +540,23 @@ export default function AdminDashboard() {
     if (activeTab === "activity" || activeTab === "today") fetchActivity();
   }, [activeTab]);
 
+  // Probe whether AI is configured on the server (so we can hide buttons when it isn't)
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await authFetch("/api/ai/status");
+        if (!res.ok) return;
+        const json = await res.json();
+        if (!cancelled) setAiAvailable(!!json.available);
+      } catch {
+        // leave aiAvailable false
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
   const handleCreateBoard = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newBoardTitle.trim() || !user) return;
@@ -769,7 +788,7 @@ export default function AdminDashboard() {
     if (!selectedTicket) return;
     setAiBusy("suggest");
     try {
-      const res = await fetch("/api/ai/suggest-reply", {
+      const res = await authFetch("/api/ai/suggest-reply", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -800,7 +819,7 @@ export default function AdminDashboard() {
     if (!selectedTicket) return;
     setAiBusy("summarize");
     try {
-      const res = await fetch("/api/ai/summarize", {
+      const res = await authFetch("/api/ai/summarize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -830,7 +849,7 @@ export default function AdminDashboard() {
     if (!selectedTask) return;
     setAiBusy("suggest");
     try {
-      const res = await fetch("/api/ai/suggest-reply", {
+      const res = await authFetch("/api/ai/suggest-reply", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -862,7 +881,7 @@ export default function AdminDashboard() {
     if (!selectedTask) return;
     setAiBusy("summarize");
     try {
-      const res = await fetch("/api/ai/summarize", {
+      const res = await authFetch("/api/ai/summarize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -949,7 +968,7 @@ export default function AdminDashboard() {
     if (!error) {
       const ticket = tickets.find(t => t.id === id);
       logActivity({ action: "ticket.status", target_type: "ticket", target_id: id, target_label: ticket?.subject, metadata: { new_status: newStatus } });
-      fetch('/api/slack', {
+      authFetch('/api/slack', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1024,7 +1043,7 @@ export default function AdminDashboard() {
        toast.error("Couldn't post comment", error.message);
     } else {
        logActivity({ action: "ticket.comment", target_type: "ticket", target_id: selectedTicket.id, target_label: selectedTicket.subject });
-       fetch('/api/slack', {
+       authFetch('/api/slack', {
          method: 'POST',
          headers: { 'Content-Type': 'application/json' },
          body: JSON.stringify({
@@ -2539,6 +2558,7 @@ export default function AdminDashboard() {
 
                 {/* Input Area */}
                 <div className="p-4 border-t border-white/5 shrink-0 bg-black/40 space-y-2">
+                  {aiAvailable && (
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
@@ -2559,6 +2579,7 @@ export default function AdminDashboard() {
                       {aiBusy === "summarize" ? "Summarizing…" : "Summarize thread"}
                     </button>
                   </div>
+                  )}
                   <div className="flex gap-3 p-1.5 rounded-xl border bg-black/50 border-white/10 focus-within:border-zinc-500">
                     <textarea
                       value={commentText}
@@ -2674,6 +2695,7 @@ export default function AdminDashboard() {
 
                 {/* Input Area */}
                 <div className="p-4 border-t border-white/5 shrink-0 bg-black/40 space-y-2">
+                  {aiAvailable && (
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
@@ -2694,6 +2716,7 @@ export default function AdminDashboard() {
                       {aiBusy === "summarize" ? "Summarizing…" : "Summarize thread"}
                     </button>
                   </div>
+                  )}
                   <div className="flex gap-3 p-1.5 rounded-xl border bg-black/50 border-white/10 focus-within:border-zinc-500">
                     <textarea
                       value={taskCommentText}

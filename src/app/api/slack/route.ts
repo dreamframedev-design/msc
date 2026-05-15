@@ -1,4 +1,7 @@
 import { NextResponse } from 'next/server';
+import { requireUser, authErrorResponse, checkRateLimit, rateLimitResponse } from "@/lib/api-auth";
+
+export const runtime = "nodejs";
 
 const SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL || "";
 
@@ -127,6 +130,12 @@ function buildBlocks(event: SlackEvent, adminUrl: string) {
 }
 
 export async function POST(req: Request) {
+  const auth = await requireUser(req);
+  if (!auth.ok) return authErrorResponse(auth);
+
+  const limit = checkRateLimit(`slack-notify:${auth.user.id}`, 30, 30);
+  if (!limit.allowed) return rateLimitResponse(limit.retryAfterSec);
+
   if (!SLACK_WEBHOOK_URL) {
     // Quietly succeed when not configured so callers don't error.
     return NextResponse.json({ success: true, skipped: "slack-not-configured" });

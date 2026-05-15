@@ -61,6 +61,7 @@ import { useToast } from "@/components/ui/toast";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { logActivity } from "@/lib/activity";
 import { subscribeToPush, sendPushToRoles } from "@/lib/push";
+import { authFetch } from "@/lib/auth-fetch";
 import { useRegisterCommandsMemo, useCommandPalette } from "@/components/command/CommandPaletteContext";
 import type { CommandItem } from "@/components/command/CommandPalette";
 import { Command as CommandIcon } from "lucide-react";
@@ -406,7 +407,7 @@ function DashboardContent() {
        toast.error("Couldn't post comment", error.message);
     } else {
        logActivity({ action: "ticket.comment", target_type: "ticket", target_id: selectedTicket.id, target_label: selectedTicket.subject });
-       fetch('/api/slack', {
+       authFetch('/api/slack', {
          method: 'POST',
          headers: { 'Content-Type': 'application/json' },
          body: JSON.stringify({
@@ -682,7 +683,7 @@ function DashboardContent() {
       setShowNewTicket(false);
 
       // Fire Slack Notification
-      fetch('/api/slack', {
+      authFetch('/api/slack', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

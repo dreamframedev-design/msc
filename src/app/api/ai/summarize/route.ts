@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { chat } from "@/lib/ai";
+import { requireAdmin, authErrorResponse, checkRateLimit, rateLimitResponse } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 
@@ -10,6 +11,12 @@ type Body = {
 };
 
 export async function POST(req: Request) {
+  const auth = await requireAdmin(req);
+  if (!auth.ok) return authErrorResponse(auth);
+
+  const limit = checkRateLimit(`ai-summarize:${auth.user.id}`, 10, 10);
+  if (!limit.allowed) return rateLimitResponse(limit.retryAfterSec);
+
   let body: Body;
   try {
     body = (await req.json()) as Body;

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import webpush from "web-push";
+import { requireUser, authErrorResponse, checkRateLimit, rateLimitResponse } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 
@@ -29,6 +30,14 @@ function makeAdminClient() {
 }
 
 export async function POST(req: Request) {
+  const auth = await requireUser(req);
+  if (!auth.ok) return authErrorResponse(auth);
+
+  // Clients (non-admins) can only target themselves; admins can target anyone or roles.
+  const isAdmin = auth.role === "admin" || auth.role === "superadmin";
+  const limit = checkRateLimit(`push:${auth.user.id}`, 30, 30);
+  if (!limit.allowed) return rateLimitResponse(limit.retryAfterSec);
+
   if (!vapidConfigured) {
     // No keys configured — succeed silently so callers don't error.
     return NextResponse.json({ success: true, skipped: "vapid-not-configured" });
@@ -39,6 +48,16 @@ export async function POST(req: Request) {
     payload = (await req.json()) as Body;
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  // Enforce target scope for non-admin callers.
+  if (!isAdmin) {
+    if (payload.roles && payload.roles.length > 0) {
+      return NextResponse.json({ error: "Only admins can target roles" }, { status: 403 });
+    }
+    if (payload.user_id && payload.user_id !== auth.user.id) {
+      return NextResponse.json({ error: "Clients can only push to themselves" }, { status: 403 });
+    }
   }
 
   if (!payload.title) {
