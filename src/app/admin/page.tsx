@@ -47,6 +47,7 @@ import { QueueRow } from "@/components/admin/QueueRow";
 import { TaskRow } from "@/components/admin/TaskRow";
 import { KanbanBoard } from "@/components/admin/KanbanBoard";
 import { TodayDashboard } from "@/components/admin/TodayDashboard";
+import { ClientDrawer } from "@/components/admin/ClientDrawer";
 import { LayoutList, Columns3, Sunrise } from "lucide-react";
 import { useRegisterCommandsMemo, useCommandPalette } from "@/components/command/CommandPaletteContext";
 import type { CommandItem } from "@/components/command/CommandPalette";
@@ -91,6 +92,7 @@ export default function AdminDashboard() {
   const [activityTableMissing, setActivityTableMissing] = useState(false);
   const [queueOrder, setQueueOrder] = useState<string[]>([]);
   const [queueView, setQueueView] = useState<any[]>([]);
+  const [selectedClient, setSelectedClient] = useState<any | null>(null);
   const [tasksView, setTasksView] = useState<any[]>([]);
   const isReorderingRef = useRef(false);
   const reorderSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1122,7 +1124,7 @@ export default function AdminDashboard() {
           label: u.email || "Unknown",
           sublabel: `${u.role || "client"}${u.company ? ` · ${u.company}` : ""}`,
           icon: <Users className="w-3.5 h-3.5" />,
-          action: () => { setActiveTab("users"); },
+          action: () => setSelectedClient(u),
           keywords: `${u.company || ""} ${u.role || ""}`,
         }))
       : [];
@@ -1960,9 +1962,14 @@ export default function AdminDashboard() {
                   <tbody className="divide-y divide-white/5">
                     {usersList.map((u) => (
                       <tr key={u.id} className="hover:bg-white/[0.02] transition-colors group">
-                        <td className="p-5 pl-6 text-sm font-semibold text-zinc-100 flex items-center gap-3">
-                           <UserAvatar email={u.email} size="sm" ringClassName={u.role === 'admin' || u.role === 'superadmin' ? 'ring-[#F0564A]/30' : 'ring-white/10'} />
-                           {u.email}
+                        <td className="p-5 pl-6 text-sm font-semibold text-zinc-100">
+                           <button
+                             onClick={() => setSelectedClient(u)}
+                             className="flex items-center gap-3 hover:text-[#F0564A] transition-colors text-left group/email"
+                           >
+                             <UserAvatar email={u.email} size="sm" ringClassName={u.role === 'admin' || u.role === 'superadmin' ? 'ring-[#F0564A]/30' : 'ring-white/10'} />
+                             <span className="group-hover/email:underline underline-offset-2">{u.email}</span>
+                           </button>
                         </td>
                         <td className="p-5 text-xs text-zinc-500 font-mono">
                           <span className="bg-white/5 px-2 py-1 rounded">{u.id.substring(0,8)}</span>
@@ -3042,6 +3049,17 @@ export default function AdminDashboard() {
           ))}
         </div>
       </div>
+
+      <ClientDrawer
+        user={selectedClient}
+        tickets={tickets}
+        tasks={allInternalTasks}
+        files={vaultFiles}
+        onClose={() => setSelectedClient(null)}
+        onOpenTicket={(t) => { setSelectedClient(null); handleOpenTicket(t); }}
+        onOpenTask={(t) => { setSelectedClient(null); handleOpenTask(t); }}
+        onImpersonate={(id) => window.open(`/portal/dashboard?impersonate=${id}`, '_blank')}
+      />
     </div>
   );
 }
