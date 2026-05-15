@@ -37,7 +37,8 @@ import {
   PanelLeftClose,
   PanelLeft,
   PanelTop,
-  LayoutPanelLeft
+  LayoutPanelLeft,
+  UploadCloud
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -104,6 +105,15 @@ export default function AdminDashboard() {
   const [queueOrder, setQueueOrder] = useState<string[]>([]);
   const [queueView, setQueueView] = useState<any[]>([]);
   const [selectedClient, setSelectedClient] = useState<any | null>(null);
+  // Admin file upload state
+  const adminFileInputRef = useRef<HTMLInputElement>(null);
+  const [adminUploading, setAdminUploading] = useState(false);
+  const [adminUploadProgress, setAdminUploadProgress] = useState(0);
+  const [adminUploadDragging, setAdminUploadDragging] = useState(false);
+  const [adminUploadVisibility, setAdminUploadVisibility] = useState<"internal" | "global" | "client">("internal");
+  const [adminUploadClient, setAdminUploadClient] = useState("");
+  const [adminUploadFolder, setAdminUploadFolder] = useState("root");
+  const [vaultSearch, setVaultSearch] = useState("");
   const [aiBusy, setAiBusy] = useState<"none" | "suggest" | "summarize">("none");
   const [aiSummary, setAiSummary] = useState<{ open: boolean; text: string; title: string }>({ open: false, text: "", title: "" });
   const [aiAvailable, setAiAvailable] = useState(false);
@@ -702,6 +712,86 @@ export default function AdminDashboard() {
       logActivity({ action: "file.visibility", target_type: "file", target_id: id, target_label: file?.filename, metadata: { is_internal: !currentStatus } });
       fetchVaultFiles();
     }
+  };
+
+  // ====== ADMIN FILE UPLOAD ======
+  const handleAdminUpload = async (file: File) => {
+    if (!user) return;
+    if (adminUploadVisibility === "client" && !adminUploadClient) {
+      toast.error("Pick a client first", "Choose which client should see this file");
+      return;
+    }
+    setAdminUploading(true);
+    setAdminUploadProgress(0);
+    const progressInterval = setInterval(() => {
+      setAdminUploadProgress((p) => Math.min(p + 8, 92));
+    }, 120);
+
+    let targetClientId: string;
+    let isInternal: boolean;
+    if (adminUploadVisibility === "global") {
+      targetClientId = "00000000-0000-0000-0000-000000000000";
+      isInternal = false;
+    } else if (adminUploadVisibility === "client") {
+      targetClientId = adminUploadClient;
+      isInternal = false;
+    } else {
+      targetClientId = user.id;
+      isInternal = true;
+    }
+
+    const filePath = `${targetClientId}/${adminUploadFolder}/${Date.now()}_${file.name}`;
+    const { error: storageError } = await supabase.storage
+      .from("client-vault")
+      .upload(filePath, file);
+
+    clearInterval(progressInterval);
+    setAdminUploadProgress(100);
+
+    if (storageError) {
+      toast.error("Upload failed", storageError.message);
+    } else {
+      const { error: dbError } = await supabase.from("vault_files").insert({
+        client_id: targetClientId,
+        name: file.name,
+        folder: adminUploadFolder,
+        storage_path: filePath,
+        size: file.size,
+        is_internal: isInternal,
+      });
+      if (dbError) {
+        toast.error("Couldn't save file record", dbError.message);
+      } else {
+        toast.success("Uploaded", file.name);
+        logActivity({
+          action: "file.upload",
+          target_type: "file",
+          target_label: file.name,
+          metadata: { visibility: adminUploadVisibility, folder: adminUploadFolder, size: file.size },
+        });
+        fetchVaultFiles();
+      }
+    }
+
+    setTimeout(() => {
+      setAdminUploading(false);
+      setAdminUploadProgress(0);
+    }, 600);
+    if (adminFileInputRef.current) adminFileInputRef.current.value = "";
+  };
+
+  const handleAdminFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const files = Array.from(e.target.files);
+    for (const f of files) await handleAdminUpload(f);
+  };
+
+  const handleAdminDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setAdminUploadDragging(false);
+    if (!e.dataTransfer.files || e.dataTransfer.files.length === 0) return;
+    const files = Array.from(e.dataTransfer.files);
+    for (const f of files) await handleAdminUpload(f);
   };
 
   const deleteVaultFile = async (id: string, storagePath: string) => {
@@ -2104,25 +2194,118 @@ export default function AdminDashboard() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
+              className="space-y-5"
             >
-              <div className="bg-[#111111] rounded-2xl border border-white/5 overflow-hidden">
-                <div className="p-6 border-b border-white/5 flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-white">Global File Vault</h2>
-                  <div className="flex items-center gap-4">
-                    <Button 
-                      onClick={() => setShowRequestModal(true)}
-                      className="bg-white/10 hover:bg-white/20 text-white border border-white/5 rounded-lg h-9 px-4 text-xs font-medium transition-colors"
-                    >
-                      <Plus className="w-3.5 h-3.5 mr-1.5" /> Request File
-                    </Button>
-                    <div className="relative">
-                      <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                      <input 
-                        type="text" 
-                        placeholder="Search files..." 
-                        className="bg-black/50 border border-white/5 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-zinc-700 text-zinc-200 placeholder:text-zinc-600 transition-colors w-64"
-                      />
+              {/* Upload drop zone + visibility controls */}
+              <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
+                <div
+                  onDragOver={(e) => { e.preventDefault(); setAdminUploadDragging(true); }}
+                  onDragLeave={() => setAdminUploadDragging(false)}
+                  onDrop={handleAdminDrop}
+                  className={`relative rounded-2xl border-2 border-dashed transition-colors p-8 flex flex-col items-center justify-center text-center min-h-[200px] ${
+                    adminUploadDragging
+                      ? "border-[#F0564A] bg-[#F0564A]/5"
+                      : "border-white/10 bg-[#0E0E0E] hover:border-white/20 hover:bg-[#111]"
+                  }`}
+                >
+                  <input
+                    ref={adminFileInputRef}
+                    type="file"
+                    multiple
+                    onChange={handleAdminFileInputChange}
+                    className="hidden"
+                  />
+                  {adminUploading ? (
+                    <div className="w-full max-w-sm">
+                      <p className="text-sm text-white mb-3">Uploading… {adminUploadProgress}%</p>
+                      <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-[#F0564A] to-[#F08435] transition-[width] duration-200" style={{ width: `${adminUploadProgress}%` }} />
+                      </div>
                     </div>
+                  ) : (
+                    <>
+                      <div className="w-12 h-12 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-center mb-3">
+                        <UploadCloud className="w-5 h-5 text-zinc-300" />
+                      </div>
+                      <p className="text-sm font-semibold text-white mb-1">Drop files here or click to upload</p>
+                      <p className="text-xs text-zinc-500 mb-4">
+                        Saving as <span className="text-zinc-300 font-medium">{adminUploadVisibility === "internal" ? "Internal Only" : adminUploadVisibility === "global" ? "Visible to All Clients" : adminUploadClient ? `For ${usersList.find(u => u.id === adminUploadClient)?.email || "client"}` : "Pick a client →"}</span>
+                        {adminUploadFolder !== "root" && <> in <span className="text-zinc-300 font-medium">{adminUploadFolder}</span></>}
+                      </p>
+                      <Button
+                        onClick={() => adminFileInputRef.current?.click()}
+                        className="bg-[#F0564A] hover:bg-[#D94D42] text-white rounded-lg px-5 h-9 text-xs font-semibold"
+                      >
+                        <UploadCloud className="w-3.5 h-3.5 mr-1.5" /> Select Files
+                      </Button>
+                    </>
+                  )}
+                </div>
+
+                <div className="rounded-2xl border border-white/5 bg-[#0E0E0E] p-5 space-y-3">
+                  <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-zinc-500">Upload settings</h3>
+                  <div>
+                    <label className="block text-[11px] text-zinc-400 mb-1.5">Who can see this</label>
+                    <select
+                      value={adminUploadVisibility}
+                      onChange={(e) => setAdminUploadVisibility(e.target.value as any)}
+                      className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-zinc-600"
+                    >
+                      <option value="internal">Internal Only (admins)</option>
+                      <option value="global">All Clients (global)</option>
+                      <option value="client">Specific Client</option>
+                    </select>
+                  </div>
+                  {adminUploadVisibility === "client" && (
+                    <div>
+                      <label className="block text-[11px] text-zinc-400 mb-1.5">Client</label>
+                      <select
+                        value={adminUploadClient}
+                        onChange={(e) => setAdminUploadClient(e.target.value)}
+                        className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-zinc-600"
+                      >
+                        <option value="">Select a client…</option>
+                        {usersList.filter((u: any) => u.role === "client").sort((a: any, b: any) => (a.company || a.email).localeCompare(b.company || b.email)).map((u: any) => (
+                          <option key={u.id} value={u.id}>{u.company ? `${u.company} — ${u.email}` : u.email}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  <div>
+                    <label className="block text-[11px] text-zinc-400 mb-1.5">Folder</label>
+                    <input
+                      value={adminUploadFolder}
+                      onChange={(e) => setAdminUploadFolder(e.target.value || "root")}
+                      placeholder="root"
+                      className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-zinc-600 placeholder:text-zinc-600"
+                    />
+                  </div>
+                  <Button
+                    onClick={() => setShowRequestModal(true)}
+                    className="w-full bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg h-9 text-xs font-medium transition-colors mt-2"
+                  >
+                    <Link2 className="w-3.5 h-3.5 mr-1.5" /> Request File from Client
+                  </Button>
+                </div>
+              </div>
+
+              <div className="bg-[#111111] rounded-2xl border border-white/5 overflow-hidden">
+                <div className="p-5 border-b border-white/5 flex items-center justify-between gap-3">
+                  <h2 className="text-base font-bold text-white">Global File Vault <span className="text-zinc-500 text-xs font-normal ml-1.5">{vaultFiles.length} {vaultFiles.length === 1 ? "file" : "files"}</span></h2>
+                  <div className="relative">
+                    <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={vaultSearch}
+                      onChange={(e) => setVaultSearch(e.target.value)}
+                      placeholder="Search files, folders, clients…"
+                      className="bg-black/50 border border-white/5 rounded-lg pl-9 pr-9 py-2 text-sm focus:outline-none focus:border-zinc-700 text-zinc-200 placeholder:text-zinc-600 transition-colors w-72"
+                    />
+                    {vaultSearch && (
+                      <button onClick={() => setVaultSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white p-1 rounded">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
                 <table className="w-full text-left border-collapse min-w-[640px]">
@@ -2137,23 +2320,34 @@ export default function AdminDashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
-                    {vaultFiles.map(file => (
+                    {vaultFiles
+                      .filter((file) => {
+                        if (!vaultSearch.trim()) return true;
+                        const q = vaultSearch.trim().toLowerCase();
+                        const clientLabel = file.client_id === "00000000-0000-0000-0000-000000000000" ? "global" : (usersList.find(u => u.id === file.client_id)?.email || "");
+                        return (
+                          (file.name || "").toLowerCase().includes(q) ||
+                          (file.folder || "").toLowerCase().includes(q) ||
+                          clientLabel.toLowerCase().includes(q)
+                        );
+                      })
+                      .map(file => (
                       <tr key={file.id} className="hover:bg-white/[0.02] transition-colors group">
                         <td className="p-5 pl-6 text-sm text-zinc-200 font-medium flex items-center gap-3">
-                          <FolderOpen className="w-4 h-4 text-zinc-500" />
-                          {file.name}
+                          <FolderOpen className="w-4 h-4 text-zinc-500 shrink-0" />
+                          <span className="break-words leading-snug" title={file.name}>{file.name}</span>
                         </td>
                         <td className="p-5 text-xs text-zinc-500 font-mono">
-                          <span className="bg-white/5 px-2 py-1 rounded">
-                            {file.client_id === '00000000-0000-0000-0000-000000000000' 
-                              ? 'GLOBAL' 
+                          <span className="bg-white/5 px-2 py-1 rounded whitespace-nowrap">
+                            {file.client_id === '00000000-0000-0000-0000-000000000000'
+                              ? 'GLOBAL'
                               : (usersList.find(u => u.id === file.client_id)?.email || file.client_id.substring(0,8))}
                           </span>
                         </td>
-                        <td className="p-5 text-sm text-zinc-400">{file.folder}</td>
-                        <td className="p-5 text-sm text-zinc-500">{(file.size / 1024 / 1024).toFixed(2)} MB</td>
+                        <td className="p-5 text-sm text-zinc-400 whitespace-nowrap">{file.folder}</td>
+                        <td className="p-5 text-sm text-zinc-500 whitespace-nowrap font-mono tabular-nums">{(file.size / 1024 / 1024).toFixed(2)} MB</td>
                         <td className="p-5">
-                          <span className={`inline-flex px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider border ${file.is_internal ? "bg-amber-500/10 text-amber-500 border-amber-500/20" : file.client_id === '00000000-0000-0000-0000-000000000000' ? "bg-blue-500/10 text-blue-400 border-blue-500/20" : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"}`}>
+                          <span className={`inline-flex px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider border whitespace-nowrap ${file.is_internal ? "bg-amber-500/10 text-amber-500 border-amber-500/20" : file.client_id === '00000000-0000-0000-0000-000000000000' ? "bg-blue-500/10 text-blue-400 border-blue-500/20" : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"}`}>
                             {file.is_internal ? "Internal Only" : file.client_id === '00000000-0000-0000-0000-000000000000' ? "Global Visible" : "Client Visible"}
                           </span>
                         </td>
