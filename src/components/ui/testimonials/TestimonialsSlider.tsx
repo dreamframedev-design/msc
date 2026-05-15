@@ -128,22 +128,22 @@ export function TestimonialsSlider() {
       <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8 mb-16">
-          <div className="flex-1 max-w-2xl">
-            <h2 className="text-sm font-bold tracking-widest text-[#F0564A] uppercase mb-4">Testimonials</h2>
-            <h3 className="text-4xl md:text-5xl font-heading font-bold tracking-tight text-gray-900">
-              Don&apos;t just take our word for it.
-            </h3>
-          </div>
-          
-          <div className="hidden lg:flex items-center gap-3 flex-shrink-0">
+        <div className="mb-10 max-w-2xl">
+          <h2 className="text-sm font-bold tracking-widest text-[#F0564A] uppercase mb-4">Testimonials</h2>
+          <h3 className="text-4xl md:text-5xl font-heading font-bold tracking-tight text-gray-900">
+            Don&apos;t just take our word for it.
+          </h3>
+        </div>
+
+        <div className="flex items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => handleNavigation("prev")}
               disabled={currentIndex === 0}
               aria-label="Previous testimonial"
-              className={`w-12 h-12 rounded-full border flex items-center justify-center transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed ${
+              className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full border flex items-center justify-center transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed ${
                 currentIndex > 0
-                  ? "border-[#F0564A] text-[#F0564A] hover:bg-[#F0564A]/10"
+                  ? "border-[#F0564A] text-[#F0564A] hover:bg-[#F0564A]/10 hover:scale-105"
                   : "border-gray-300 text-gray-400"
               }`}
             >
@@ -153,10 +153,30 @@ export function TestimonialsSlider() {
               onClick={() => handleNavigation("next")}
               disabled={currentIndex >= testimonials.length - 1}
               aria-label="Next testimonial"
-              className="w-12 h-12 rounded-full border border-[#F0564A] flex items-center justify-center text-[#F0564A] hover:bg-[#F0564A]/10 transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed"
+              className="w-11 h-11 sm:w-12 sm:h-12 rounded-full border border-[#F0564A] flex items-center justify-center text-[#F0564A] hover:bg-[#F0564A]/10 hover:scale-105 transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <ChevronRight className="h-5 w-5 stroke-[2.5]" />
             </button>
+            <span className="ml-2 text-xs font-semibold tracking-wider text-gray-500 tabular-nums">
+              <span className="text-gray-900">{String(currentIndex + 1).padStart(2, "0")}</span>
+              <span className="mx-1.5 text-gray-300">/</span>
+              <span>{String(testimonials.length).padStart(2, "0")}</span>
+            </span>
+          </div>
+
+          <div className="hidden sm:flex items-center gap-1.5">
+            {testimonials.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentIndex(i)}
+                aria-label={`Go to testimonial ${i + 1}`}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  i === currentIndex
+                    ? "w-8 bg-[#F0564A]"
+                    : "w-1.5 bg-gray-300 hover:bg-gray-400"
+                }`}
+              />
+            ))}
           </div>
         </div>
       </div>
