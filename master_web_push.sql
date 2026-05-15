@@ -35,6 +35,12 @@ CREATE POLICY "Owner inserts own subs"
 ON public.web_push_subscriptions FOR INSERT
 WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Owner updates own subs" ON public.web_push_subscriptions;
+CREATE POLICY "Owner updates own subs"
+ON public.web_push_subscriptions FOR UPDATE
+USING (auth.uid() = user_id)
+WITH CHECK (auth.uid() = user_id);
+
 DROP POLICY IF EXISTS "Owner deletes own subs" ON public.web_push_subscriptions;
 CREATE POLICY "Owner deletes own subs"
 ON public.web_push_subscriptions FOR DELETE
