@@ -2027,12 +2027,11 @@ export default function AdminDashboard() {
                                         }}
                                         title={isFav ? "Remove favorite" : "Mark as favorite"}
                                         aria-label={isFav ? "Remove favorite" : "Mark as favorite"}
-                                        className={`shrink-0 p-1 rounded-md transition-colors ${
+                                        className={`shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-md transition-colors ${
                                           isFav
-                                            ? 'text-amber-400 hover:text-amber-300'
-                                            : 'text-zinc-700 hover:text-amber-400 opacity-0 group-hover:opacity-100'
+                                            ? 'text-amber-400 hover:bg-amber-500/15 hover:text-amber-300'
+                                            : 'text-zinc-500 hover:text-amber-400 hover:bg-white/[0.06]'
                                         }`}
-                                        style={{ opacity: isFav ? 1 : undefined }}
                                       >
                                         <Star className={`w-4 h-4 ${isFav ? 'fill-amber-400' : ''}`} />
                                       </button>
