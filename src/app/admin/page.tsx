@@ -32,7 +32,8 @@ import {
   Sparkles,
   Eye,
   Settings,
-  Activity as ActivityIcon
+  Activity as ActivityIcon,
+  LogOut
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -1488,11 +1489,22 @@ export default function AdminDashboard() {
           </button>
           <div className="flex items-center gap-3 px-2">
             <UserAvatar email={user?.email} size="sm" ringClassName="ring-white/10" />
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-xs font-medium text-white truncate">{user?.email}</p>
               <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-0.5">Administrator</p>
             </div>
           </div>
+          <button
+            onClick={async () => {
+              await supabase.auth.signOut();
+              window.location.href = "/portal";
+            }}
+            className="w-full mt-2 flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-xs font-medium text-zinc-400 hover:text-red-400 hover:bg-red-500/10 border border-white/5 hover:border-red-500/30"
+            title="Sign out"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            Sign Out
+          </button>
         </div>
       </aside>
 

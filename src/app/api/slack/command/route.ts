@@ -91,20 +91,49 @@ function ephemeral(text: string, blocks?: any[]) {
 }
 
 async function ensureSlackInboxBoard(supa: ReturnType<typeof makeAdminClient>, createdBy: string) {
+  let board: any = null;
   const { data: existing } = await supa
     .from("task_boards")
     .select("*")
     .eq("title", "Slack Inbox")
     .limit(1);
-  if (existing && existing.length > 0) return existing[0];
+  if (existing && existing.length > 0) {
+    board = existing[0];
+  } else {
+    const { data: created, error } = await supa
+      .from("task_boards")
+      .insert({ title: "Slack Inbox", created_by: createdBy, client_tag: null })
+      .select()
+      .single();
+    if (error) throw new Error("Couldn't create Slack Inbox board: " + error.message);
+    board = created;
+  }
 
-  const { data: created, error } = await supa
-    .from("task_boards")
-    .insert({ title: "Slack Inbox", created_by: createdBy, client_tag: null })
-    .select()
-    .single();
-  if (error) throw new Error("Couldn't create Slack Inbox board: " + error.message);
-  return created;
+  // Auto-share with every admin/superadmin so they all see Slack-dropped tasks,
+  // regardless of who originally created the board. Idempotent: upsert ignores
+  // existing (board_id, user_id) pairs.
+  if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    try {
+      const { data: users } = await supa.auth.admin.listUsers({ perPage: 200 });
+      if (users?.users) {
+        const adminIds = users.users
+          .filter((u) => {
+            const role = (u.user_metadata as any)?.role || (u.app_metadata as any)?.role;
+            return role === "admin" || role === "superadmin";
+          })
+          .map((u) => ({ board_id: board.id, user_id: u.id }));
+        if (adminIds.length > 0) {
+          await supa
+            .from("task_board_members")
+            .upsert(adminIds, { onConflict: "board_id,user_id", ignoreDuplicates: true });
+        }
+      }
+    } catch {
+      // best-effort — don't fail the whole Slack command if member share fails
+    }
+  }
+
+  return board;
 }
 
 async function findAnyAdminUserId(supa: ReturnType<typeof makeAdminClient>): Promise<string | null> {
