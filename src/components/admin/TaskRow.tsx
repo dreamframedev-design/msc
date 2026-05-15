@@ -149,7 +149,7 @@ export function TaskRow({
         zIndex: 20,
         cursor: "grabbing",
       }}
-      className={`relative border-b border-white/5 last:border-0 px-5 py-4 transition-colors flex items-center gap-3 group/task bg-[#111111] select-none ${
+      className={`relative border-b border-white/5 last:border-0 px-3 sm:px-5 py-3 sm:py-4 transition-colors flex flex-wrap items-center gap-x-3 gap-y-2 group/task bg-[#111111] select-none ${
         isCompleted ? "opacity-60" : ""
       } ${
         isHighlighted
@@ -201,7 +201,7 @@ export function TaskRow({
         </button>
       )}
 
-      <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-[1fr_minmax(140px,240px)] gap-x-4 gap-y-1 items-center">
+      <div className="flex-1 min-w-0 basis-[180px] grid grid-cols-1 sm:grid-cols-[1fr_minmax(140px,240px)] gap-x-4 gap-y-1 items-center">
         {/* Title block */}
         <div className="min-w-0 flex items-center gap-3">
           {editingTitle ? (
@@ -302,7 +302,7 @@ export function TaskRow({
       </div>
 
       {/* Compact action column — icon-only buttons */}
-      <div className="flex items-center gap-0.5 shrink-0">
+      <div className="flex items-center gap-0.5 shrink-0 ml-auto">
         {!isCompleted && !isInProgress && (
           <IconButton Icon={Clock} onClick={onStart} title="Start" variant="blue" />
         )}

@@ -1861,7 +1861,7 @@ export default function AdminDashboard() {
                     value={queueSearch}
                     onChange={(e) => setQueueSearch(e.target.value)}
                     placeholder="Search title, description, client, id…"
-                    className="bg-[#111111] border border-white/5 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-zinc-700 text-zinc-200 placeholder:text-zinc-600 transition-colors w-72"
+                    className="bg-[#111111] border border-white/5 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-zinc-700 text-zinc-200 placeholder:text-zinc-600 transition-colors w-full sm:w-72"
                   />
                   {queueSearch && (
                     <button
@@ -1988,7 +1988,7 @@ export default function AdminDashboard() {
                             axis="x"
                             values={taskBoards}
                             onReorder={handleReorderBoards}
-                            className="flex overflow-x-auto pb-2 gap-3 no-scrollbar"
+                            className="flex overflow-x-auto pb-2 gap-3 no-scrollbar w-full max-w-full"
                           >
                             {taskBoards.map(board => {
                               const boardTasks = allInternalTasks.filter((t: any) => t.board_id === board.id);
