@@ -7,8 +7,10 @@ import { AnimatePresence, motion } from "framer-motion";
 export function PageTransition({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
-  // Skip transition on portal dashboard — it manages its own internal tab transitions
-  if (pathname?.startsWith("/portal/dashboard")) {
+  // Skip transition on app surfaces — they manage their own internal tab transitions
+  // and they have heavy state (subscriptions, modals) that conflicts with
+  // AnimatePresence mode="wait" exit timing, causing a brief white page on nav.
+  if (pathname?.startsWith("/portal/dashboard") || pathname?.startsWith("/admin")) {
     return <>{children}</>;
   }
 

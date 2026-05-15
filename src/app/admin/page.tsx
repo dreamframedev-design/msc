@@ -33,7 +33,9 @@ import {
   Eye,
   Settings,
   Activity as ActivityIcon,
-  LogOut
+  LogOut,
+  PanelLeftClose,
+  PanelLeft
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -51,6 +53,8 @@ import { TodayDashboard } from "@/components/admin/TodayDashboard";
 import { ClientDrawer } from "@/components/admin/ClientDrawer";
 import { subscribeToPush, sendPush, sendPushToRoles } from "@/lib/push";
 import { authFetch } from "@/lib/auth-fetch";
+import { usePersistedSidebar } from "@/lib/use-sidebar";
+import { NotificationBell } from "@/components/ui/notification-bell";
 import { LayoutList, Columns3, Sunrise } from "lucide-react";
 import { useRegisterCommandsMemo, useCommandPalette } from "@/components/command/CommandPaletteContext";
 import type { CommandItem } from "@/components/command/CommandPalette";
@@ -99,6 +103,7 @@ export default function AdminDashboard() {
   const [aiBusy, setAiBusy] = useState<"none" | "suggest" | "summarize">("none");
   const [aiSummary, setAiSummary] = useState<{ open: boolean; text: string; title: string }>({ open: false, text: "", title: "" });
   const [aiAvailable, setAiAvailable] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = usePersistedSidebar(false);
   const [tasksView, setTasksView] = useState<any[]>([]);
   const isReorderingRef = useRef(false);
   const reorderSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1340,8 +1345,16 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen flex text-zinc-100 bg-[#0A0A0A] selection:bg-[#F0564A]/30">
       {/* ============ MINIMAL SIDEBAR ============ */}
-      <aside className="w-64 border-r border-white/5 flex-col hidden md:flex h-screen fixed left-0 top-0 z-50 bg-[#0A0A0A]">
-        <div className="p-6">
+      <aside className={`border-r border-white/5 flex-col hidden md:flex h-screen fixed left-0 top-0 z-50 bg-[#0A0A0A] transition-[width] duration-200 ease-out ${sidebarCollapsed ? "w-16" : "w-64"}`}>
+        <button
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          className="absolute -right-3 top-7 z-10 w-6 h-6 rounded-full bg-[#161616] border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white hover:border-white/20 transition-colors shadow"
+          title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {sidebarCollapsed ? <PanelLeft className="w-3 h-3" /> : <PanelLeftClose className="w-3 h-3" />}
+        </button>
+        <div className={sidebarCollapsed ? "p-4 flex justify-center" : "p-6"}>
           <Link href="/admin" className="flex items-center gap-3 group">
             <Image
               src="/images/MSC LOGO BITTERSWEET VECTOR (1).svg"
@@ -1350,7 +1363,7 @@ export default function AdminDashboard() {
               height={28}
               className="object-contain opacity-90 group-hover:opacity-100 transition-opacity"
             />
-            {isSuperAdmin ? (
+            {!sidebarCollapsed && (isSuperAdmin ? (
               <div className="relative group/badge ml-1">
                 {/* Minimal Particle Background */}
                 <div className="absolute -inset-2 overflow-hidden pointer-events-none mix-blend-screen">
@@ -1383,14 +1396,14 @@ export default function AdminDashboard() {
               <span className="font-heading font-semibold text-lg tracking-tight text-white flex items-center gap-2">
                 Admin <ShieldAlert className="w-3.5 h-3.5 text-zinc-500" />
               </span>
-            )}
+            ))}
           </Link>
         </div>
 
-        <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
+        <nav className={`flex-1 space-y-1 overflow-y-auto overflow-x-hidden ${sidebarCollapsed ? "px-2" : "px-3"}`}>
           <div className="space-y-6">
             <div>
-              <h4 className="px-3 text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">Core Operations</h4>
+              {!sidebarCollapsed && <h4 className="px-3 text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">Core Operations</h4>}
               <div className="space-y-1">
                 {[
                   { key: "today", label: "Today", Icon: Sunrise, accent: "text-[#F0564A]" },
@@ -1400,21 +1413,22 @@ export default function AdminDashboard() {
                   <button
                     key={key}
                     onClick={() => setActiveTab(key)}
-                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all text-sm font-semibold border ${
+                    title={sidebarCollapsed ? label : undefined}
+                    className={`w-full flex items-center ${sidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-3"} rounded-lg transition-all text-sm font-semibold border ${
                       activeTab === key
                         ? "bg-[#1A1A1A] text-white border-white/10 shadow-[0_0_15px_rgba(240,86,74,0.1)]"
                         : "bg-transparent border-transparent text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
                     }`}
                   >
-                    <Icon className={`w-4 h-4 ${activeTab === key ? accent : ""}`} />
-                    {label}
+                    <Icon className={`w-4 h-4 shrink-0 ${activeTab === key ? accent : ""}`} />
+                    {!sidebarCollapsed && <span className="truncate">{label}</span>}
                   </button>
                 ))}
               </div>
             </div>
 
             <div>
-              <h4 className="px-3 text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">System</h4>
+              {!sidebarCollapsed && <h4 className="px-3 text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">System</h4>}
               <div className="space-y-1">
                 {[
                   { key: "files", label: "Global Vault", Icon: FolderOpen },
@@ -1426,20 +1440,22 @@ export default function AdminDashboard() {
                   <button
                     key={key}
                     onClick={() => setActiveTab(key)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
+                    title={sidebarCollapsed ? label : undefined}
+                    className={`w-full flex items-center ${sidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} rounded-lg transition-colors text-sm font-medium ${
                       activeTab === key
                         ? "bg-white/10 text-white"
                         : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
                     }`}
                   >
-                    <Icon className="w-4 h-4" />
-                    {label}
+                    <Icon className="w-4 h-4 shrink-0" />
+                    {!sidebarCollapsed && <span className="truncate">{label}</span>}
                   </button>
                 ))}
               </div>
             </div>
           </div>
 
+          {!sidebarCollapsed && (
           <div className="pt-4 pb-2">
             <div className="h-px w-full bg-white/10 mb-4" />
             <div className="px-3 flex items-center justify-between mb-2">
@@ -1497,38 +1513,43 @@ export default function AdminDashboard() {
               )}
             </div>
           </div>
+          )}
         </nav>
 
-        <div className="p-4 border-t border-white/5 space-y-3">
-          <button 
-            onClick={requestNotificationPermission}
-            className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors text-xs font-medium border border-blue-500/20"
-          >
-            <Bell className="w-3.5 h-3.5" /> Enable Notifications
-          </button>
-          <div className="flex items-center gap-3 px-2">
+        <div className={`border-t border-white/5 space-y-3 ${sidebarCollapsed ? "p-2" : "p-4"}`}>
+          {!sidebarCollapsed && (
+            <button
+              onClick={requestNotificationPermission}
+              className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors text-xs font-medium border border-blue-500/20"
+            >
+              <Bell className="w-3.5 h-3.5" /> Enable Notifications
+            </button>
+          )}
+          <div className={`flex items-center ${sidebarCollapsed ? "justify-center" : "gap-3 px-2"}`} title={sidebarCollapsed ? user?.email : undefined}>
             <UserAvatar email={user?.email} size="sm" ringClassName="ring-white/10" />
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium text-white truncate">{user?.email}</p>
-              <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-0.5">Administrator</p>
-            </div>
+            {!sidebarCollapsed && (
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium text-white truncate">{user?.email}</p>
+                <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-0.5">Administrator</p>
+              </div>
+            )}
           </div>
           <button
             onClick={async () => {
               await supabase.auth.signOut();
               window.location.href = "/portal";
             }}
-            className="w-full mt-2 flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-xs font-medium text-zinc-400 hover:text-red-400 hover:bg-red-500/10 border border-white/5 hover:border-red-500/30"
+            className={`w-full flex items-center ${sidebarCollapsed ? "justify-center px-0 py-2" : "gap-3 px-3 py-2"} rounded-lg transition-colors text-xs font-medium text-zinc-400 hover:text-red-400 hover:bg-red-500/10 border border-white/5 hover:border-red-500/30`}
             title="Sign out"
           >
-            <LogOut className="w-3.5 h-3.5" />
-            Sign Out
+            <LogOut className="w-3.5 h-3.5 shrink-0" />
+            {!sidebarCollapsed && <span>Sign Out</span>}
           </button>
         </div>
       </aside>
 
       {/* ============ MAIN VIEW ============ */}
-      <main className="flex-1 flex flex-col min-h-screen ml-0 md:ml-64 relative z-40">
+      <main className={`flex-1 flex flex-col min-h-screen ml-0 relative z-40 transition-[margin] duration-200 ease-out ${sidebarCollapsed ? "md:ml-16" : "md:ml-64"}`}>
         {/* Top Header */}
         <header className="h-16 border-b border-white/5 flex items-center justify-between px-8 sticky top-0 z-40 bg-[#0A0A0A]/80 backdrop-blur-xl">
           <h1 className="text-lg font-semibold text-white">
@@ -1548,6 +1569,18 @@ export default function AdminDashboard() {
                 <CommandIcon className="w-2.5 h-2.5" />K
               </kbd>
             </button>
+            <NotificationBell
+              isDark
+              userId={user?.id}
+              adminScope
+              onSelect={(ev) => {
+                if (ev.target_type === "ticket") setActiveTab("tickets");
+                else if (ev.target_type === "task") setActiveTab("tasks");
+                else if (ev.target_type === "file") setActiveTab("files");
+                else if (ev.target_type === "user") setActiveTab("users");
+                else setActiveTab("activity");
+              }}
+            />
             <Link
               href="/"
               className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors text-zinc-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10"
@@ -1756,35 +1789,53 @@ export default function AdminDashboard() {
                       </div>
                       
                       {taskBoards.length > 0 ? (
-                        <Reorder.Group 
-                          axis="x" 
-                          values={taskBoards} 
-                          onReorder={handleReorderBoards}
-                          className="flex overflow-x-auto pb-4 gap-3 custom-scrollbar"
-                        >
-                          {taskBoards.map(board => (
-                            <Reorder.Item
-                              key={board.id}
-                              value={board}
-                              className="shrink-0 cursor-grab active:cursor-grabbing list-none"
+                        taskBoards.length > 8 ? (
+                          // Many projects → compact dropdown selector
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <select
+                              value={activeBoardId}
+                              onChange={(e) => setActiveBoardId(e.target.value)}
+                              className="bg-[#111111] border border-white/10 hover:border-white/15 focus:border-[#F0564A]/50 rounded-xl px-4 py-3 text-sm font-semibold text-white focus:outline-none transition-colors min-w-[280px]"
                             >
-                              <button
-                                onClick={() => setActiveBoardId(board.id)}
-                                className={`w-64 flex flex-col items-start gap-1.5 p-4 rounded-xl text-left transition-all border ${activeBoardId === board.id ? 'bg-[#F0564A]/10 border-[#F0564A]/30 text-white shadow-sm ring-1 ring-[#F0564A]/50' : 'bg-[#111111] border-white/5 text-zinc-400 hover:bg-white/5 hover:text-zinc-200 hover:border-white/10'}`}
-                              >
-                                <span className="font-semibold text-sm truncate w-full">{board.title}</span>
-                                <span className={`text-[10px] uppercase tracking-wider font-bold truncate w-full ${activeBoardId === board.id ? 'text-[#F0564A]' : 'text-zinc-500'}`}>
-                                  {board.client_tag || 'Internal / Untagged'}
-                                </span>
-                              </button>
-                            </Reorder.Item>
-                          ))}
-                        </Reorder.Group>
-                      ) : (
-                        <div className="flex overflow-x-auto pb-4 gap-3 custom-scrollbar">
-                          <div className="text-sm text-zinc-500 italic p-4 text-center border border-white/5 rounded-xl border-dashed w-full">
-                            No projects available.
+                              {taskBoards.map((b) => (
+                                <option key={b.id} value={b.id}>
+                                  {b.title}{b.client_tag ? ` — ${b.client_tag}` : ""}
+                                </option>
+                              ))}
+                            </select>
+                            <span className="text-[10.5px] text-zinc-500 font-medium">
+                              {taskBoards.length} projects · use ⌘K to jump
+                            </span>
                           </div>
+                        ) : (
+                          <Reorder.Group
+                            axis="x"
+                            values={taskBoards}
+                            onReorder={handleReorderBoards}
+                            className="flex overflow-x-auto pb-2 gap-3 no-scrollbar"
+                          >
+                            {taskBoards.map(board => (
+                              <Reorder.Item
+                                key={board.id}
+                                value={board}
+                                className="shrink-0 cursor-grab active:cursor-grabbing list-none"
+                              >
+                                <button
+                                  onClick={() => setActiveBoardId(board.id)}
+                                  className={`w-64 flex flex-col items-start gap-1.5 p-4 rounded-xl text-left transition-all border ${activeBoardId === board.id ? 'bg-[#F0564A]/10 border-[#F0564A]/30 text-white shadow-sm ring-1 ring-[#F0564A]/50' : 'bg-[#111111] border-white/5 text-zinc-400 hover:bg-white/5 hover:text-zinc-200 hover:border-white/10'}`}
+                                >
+                                  <span className="font-semibold text-sm truncate w-full">{board.title}</span>
+                                  <span className={`text-[10px] uppercase tracking-wider font-bold truncate w-full ${activeBoardId === board.id ? 'text-[#F0564A]' : 'text-zinc-500'}`}>
+                                    {board.client_tag || 'Internal / Untagged'}
+                                  </span>
+                                </button>
+                              </Reorder.Item>
+                            ))}
+                          </Reorder.Group>
+                        )
+                      ) : (
+                        <div className="text-sm text-zinc-500 italic p-4 text-center border border-white/5 rounded-xl border-dashed">
+                          No projects available.
                         </div>
                       )}
                     </div>

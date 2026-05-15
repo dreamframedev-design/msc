@@ -76,19 +76,19 @@ export function TodayDashboard({
       className="space-y-8"
     >
       {/* Hero */}
-      <div className="relative overflow-hidden rounded-2xl border border-white/5 bg-gradient-to-br from-[#141414] via-[#0F0F0F] to-[#0A0A0A] p-8">
+      <div className="relative overflow-hidden rounded-2xl border border-white/5 bg-gradient-to-br from-[#141414] via-[#0F0F0F] to-[#0A0A0A] p-5 sm:p-7 lg:p-8">
         <div className="absolute -top-32 -right-32 w-80 h-80 rounded-full bg-[#F0564A]/15 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -left-24 w-80 h-80 rounded-full bg-[#5BCBD7]/10 blur-3xl pointer-events-none" />
-        <div className="relative flex flex-col sm:flex-row sm:items-end justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-2 text-[10.5px] uppercase tracking-[0.18em] text-zinc-500 font-bold mb-2">
-              <Sparkles className="w-3 h-3 text-[#F0564A]" />
-              {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+        <div className="relative flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-[10px] sm:text-[10.5px] uppercase tracking-[0.18em] text-zinc-500 font-bold mb-1.5 sm:mb-2">
+              <Sparkles className="w-3 h-3 text-[#F0564A] shrink-0" />
+              <span className="truncate">{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-semibold text-white tracking-tight">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-white tracking-tight">
               {greeting}, <span className="text-[#F0564A]">{name}</span>.
             </h1>
-            <p className="text-sm text-zinc-400 mt-2">
+            <p className="text-xs sm:text-sm text-zinc-400 mt-1.5 sm:mt-2">
               {urgentTickets.length > 0
                 ? `${urgentTickets.length} urgent ${urgentTickets.length === 1 ? "item needs" : "items need"} your attention.`
                 : openTickets.length > 0
@@ -96,7 +96,7 @@ export function TodayDashboard({
                 : "Inbox zero. Nice."}
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-3 shrink-0">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 shrink-0">
             <MiniStat label="Opened today" value={ticketsToday} />
             <MiniStat label="Resolved today" value={tasksCompletedToday} accent="text-emerald-400" />
           </div>

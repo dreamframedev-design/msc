@@ -550,6 +550,23 @@
   100% { transform: translateX(100%); }
 }
 
+/* Hide scrollbar while keeping scroll functionality */
+.no-scrollbar {
+  scrollbar-width: none;       /* Firefox */
+  -ms-overflow-style: none;    /* IE/Edge */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;               /* Chrome/Safari */
+  width: 0;
+  height: 0;
+}
+
+/* Fade-out edges to hint at horizontal scrollable content */
+.scroll-fade-x {
+  mask-image: linear-gradient(to right, transparent 0, black 24px, black calc(100% - 32px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0, black 24px, black calc(100% - 32px), transparent 100%);
+}
+
 /* ===== SCROLLBAR POLISH ===== */
 @media (hover: hover) {
   ::-webkit-scrollbar { width: 10px; height: 10px; }

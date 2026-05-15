@@ -62,6 +62,10 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import { logActivity } from "@/lib/activity";
 import { subscribeToPush, sendPushToRoles } from "@/lib/push";
 import { authFetch } from "@/lib/auth-fetch";
+import { usePersistedTheme } from "@/lib/use-theme";
+import { usePersistedSidebar } from "@/lib/use-sidebar";
+import { NotificationBell } from "@/components/ui/notification-bell";
+import { PanelLeftClose, PanelLeft } from "lucide-react";
 import { useRegisterCommandsMemo, useCommandPalette } from "@/components/command/CommandPaletteContext";
 import type { CommandItem } from "@/components/command/CommandPalette";
 import { Command as CommandIcon } from "lucide-react";
@@ -148,7 +152,8 @@ function DashboardContent() {
   const [user, setUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [isLoading, setIsLoading] = useState(true);
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme, setTheme] = usePersistedTheme("dark");
+  const [sidebarCollapsed, setSidebarCollapsed] = usePersistedSidebar(false);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [recentUpload, setRecentUpload] = useState<string | null>(null);
@@ -853,8 +858,20 @@ function DashboardContent() {
       </div>
 
       {/* ============ SIDEBAR ============ */}
-      <aside className={`w-64 border-r flex-col hidden md:flex h-screen fixed left-0 top-0 z-50 ${isDark ? 'bg-black/50 backdrop-blur-2xl border-white/[0.08]' : 'bg-white/70 backdrop-blur-2xl border-gray-200'}`}>
-        <div className={`p-6 border-b ${isDark ? 'border-white/[0.08]' : 'border-gray-200'}`}>
+      <aside className={`border-r flex-col hidden md:flex h-screen fixed left-0 top-0 z-50 transition-[width] duration-200 ease-out ${sidebarCollapsed ? "w-16" : "w-64"} ${isDark ? 'bg-black/50 backdrop-blur-2xl border-white/[0.08]' : 'bg-white/70 backdrop-blur-2xl border-gray-200'}`}>
+        <button
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          className={`absolute -right-3 top-7 z-10 w-6 h-6 rounded-full border flex items-center justify-center transition-colors shadow ${
+            isDark
+              ? "bg-[#161616] border-white/10 text-zinc-400 hover:text-white hover:border-white/20"
+              : "bg-white border-gray-200 text-gray-500 hover:text-gray-900 hover:border-gray-300"
+          }`}
+          title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {sidebarCollapsed ? <PanelLeft className="w-3 h-3" /> : <PanelLeftClose className="w-3 h-3" />}
+        </button>
+        <div className={`${sidebarCollapsed ? "p-4 flex justify-center" : "p-6"} border-b ${isDark ? 'border-white/[0.08]' : 'border-gray-200'}`}>
           <div className="flex items-center gap-3">
             <div className="relative">
               <div className="absolute inset-0 rounded-full bg-[#F0564A]/40 blur-md" />
@@ -866,11 +883,13 @@ function DashboardContent() {
                 className="object-contain relative"
               />
             </div>
-            <span className={`font-heading font-bold text-xl tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>Client Portal</span>
+            {!sidebarCollapsed && (
+              <span className={`font-heading font-bold text-xl tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>Client Portal</span>
+            )}
           </div>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+        <nav className={`flex-1 space-y-1 overflow-y-auto overflow-x-hidden ${sidebarCollapsed ? "p-2" : "p-4"}`}>
           {[
             { key: "overview", label: "Overview", Icon: LayoutDashboard },
             { key: "tasks", label: "Shared Projects", Icon: CheckSquare },
@@ -882,7 +901,8 @@ function DashboardContent() {
             <button
               key={key}
               onClick={() => setActiveTab(key)}
-              className={`group relative w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
+              title={sidebarCollapsed ? label : undefined}
+              className={`group relative w-full flex items-center ${sidebarCollapsed ? "justify-center px-0 py-3" : "gap-3 px-4 py-3"} rounded-xl transition-all duration-300 ${
                 activeTab === key
                   ? isDark
                     ? "bg-[#F0564A]/15 text-[#F0564A]"
@@ -892,36 +912,39 @@ function DashboardContent() {
                     : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
               }`}
             >
-              {activeTab === key && (
+              {activeTab === key && !sidebarCollapsed && (
                 <motion.span
                   layoutId="activeTabIndicator"
                   className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[#F0564A] rounded-r-full"
                   transition={{ type: "spring", stiffness: 380, damping: 30 }}
                 />
               )}
-              <Icon className="w-5 h-5 transition-transform group-hover:scale-110" />
-              <span className="font-medium">{label}</span>
+              <Icon className="w-5 h-5 shrink-0 transition-transform group-hover:scale-110" />
+              {!sidebarCollapsed && <span className="font-medium truncate">{label}</span>}
             </button>
           ))}
         </nav>
 
-        <div className={`p-4 border-t ${isDark ? 'border-white/[0.08]' : 'border-gray-200'}`}>
-          <div className={`px-4 py-3 mb-2 rounded-xl border backdrop-blur-xl ${isDark ? 'bg-black/40 border-white/[0.08]' : 'bg-white/60 border-gray-200'}`}>
-            <p className={`text-eyebrow mb-1 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Logged in as</p>
-            <p className={`text-sm truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{user.email}</p>
-          </div>
+        <div className={`${sidebarCollapsed ? "p-2" : "p-4"} border-t ${isDark ? 'border-white/[0.08]' : 'border-gray-200'}`}>
+          {!sidebarCollapsed && (
+            <div className={`px-4 py-3 mb-2 rounded-xl border backdrop-blur-xl ${isDark ? 'bg-black/40 border-white/[0.08]' : 'bg-white/60 border-gray-200'}`}>
+              <p className={`text-eyebrow mb-1 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Logged in as</p>
+              <p className={`text-sm truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{user.email}</p>
+            </div>
+          )}
           <button
             onClick={handleSignOut}
-            className={`group w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${isDark ? 'text-gray-400 hover:bg-red-500/15 hover:text-red-400' : 'text-gray-600 hover:bg-red-50 hover:text-red-600'}`}
+            title={sidebarCollapsed ? "Sign Out" : undefined}
+            className={`group w-full flex items-center ${sidebarCollapsed ? "justify-center px-0 py-3" : "gap-3 px-4 py-3"} rounded-xl transition-all duration-300 ${isDark ? 'text-gray-400 hover:bg-red-500/15 hover:text-red-400' : 'text-gray-600 hover:bg-red-50 hover:text-red-600'}`}
           >
-            <LogOut className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-            <span className="font-medium">Sign Out</span>
+            <LogOut className="w-5 h-5 shrink-0 group-hover:-translate-x-1 transition-transform" />
+            {!sidebarCollapsed && <span className="font-medium">Sign Out</span>}
           </button>
         </div>
       </aside>
 
       {/* ============ MAIN ============ */}
-      <main className="flex-1 flex flex-col min-h-screen ml-0 md:ml-64 relative z-40">
+      <main className={`flex-1 flex flex-col min-h-screen ml-0 relative z-40 transition-[margin] duration-200 ease-out ${sidebarCollapsed ? "md:ml-16" : "md:ml-64"}`}>
         {/* Top Header */}
         <header className={`h-20 border-b flex items-center justify-between px-4 sm:px-8 sticky top-0 z-40 backdrop-blur-2xl ${isDark ? 'bg-black/50 border-white/[0.08]' : 'bg-white/70 border-gray-200'}`}>
           <h1 className={`text-xl sm:text-2xl font-heading font-bold capitalize ${isDark ? 'text-white' : 'text-gray-900'}`}>
@@ -974,12 +997,16 @@ function DashboardContent() {
               </AnimatePresence>
             </Button>
 
-            <Button variant="ghost" size="icon" className={`relative rounded-full ${isDark ? 'text-gray-400 hover:text-white hover:bg-white/[0.08]' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}>
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#F0564A]">
-                <span className="absolute inset-0 rounded-full bg-[#F0564A] animate-ping" />
-              </span>
-            </Button>
+            <NotificationBell
+              isDark={isDark}
+              userId={user?.id}
+              adminScope={false}
+              onSelect={(ev) => {
+                if (ev.target_type === "ticket") setActiveTab("tickets");
+                else if (ev.target_type === "task") setActiveTab("tasks");
+                else if (ev.target_type === "file") setActiveTab("files");
+              }}
+            />
 
             {activeTab === "tickets" && (
               <Button
@@ -1442,10 +1469,10 @@ function DashboardContent() {
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
-                className={`relative min-h-[400px] rounded-3xl border transition-all duration-300 overflow-hidden flex flex-col ${
+                className={`relative min-h-[520px] rounded-3xl border transition-all duration-300 overflow-hidden flex flex-col ${
                   isDragging
                     ? isDark ? "border-[#F0564A] bg-[#F0564A]/5" : "border-[#F0564A] bg-[#F0564A]/5"
-                    : isDark ? "glass-panel-dark border-transparent" : "glass-panel border-transparent"
+                    : isDark ? "glass-panel-dark border-transparent" : "bg-white border-gray-200 shadow-sm"
                 }`}
               >
                 {/* Drag Overlay */}
@@ -1493,11 +1520,11 @@ function DashboardContent() {
 
                 {/* File Header (Columns) */}
                 {displayedFiles.length > 0 && (
-                  <div className={`grid grid-cols-12 gap-4 p-4 sm:px-6 border-b text-xs font-bold uppercase tracking-wider ${isDark ? 'border-white/[0.05] text-gray-500' : 'border-gray-200 text-gray-500'}`}>
-                    <div className="col-span-6 sm:col-span-5">Name</div>
-                    <div className="col-span-3 hidden sm:block">Date Modified</div>
-                    <div className="col-span-3 sm:col-span-2 text-right sm:text-left">Size</div>
-                    <div className="col-span-3 sm:col-span-2 text-right">Actions</div>
+                  <div className={`grid grid-cols-12 gap-3 p-4 sm:px-6 border-b text-xs font-bold uppercase tracking-wider ${isDark ? 'border-white/[0.05] text-gray-500' : 'border-gray-200 text-gray-500'}`}>
+                    <div className="col-span-7 sm:col-span-7">Name</div>
+                    <div className="col-span-2 hidden sm:block">Modified</div>
+                    <div className="col-span-1 hidden sm:block text-right">Size</div>
+                    <div className="col-span-5 sm:col-span-2 text-right">Actions</div>
                   </div>
                 )}
 
@@ -1535,26 +1562,26 @@ function DashboardContent() {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95 }}
                             transition={{ duration: 0.2 }}
-                            className={`grid grid-cols-12 gap-4 p-4 sm:px-6 items-center transition-colors group ${isDark ? 'hover:bg-white/[0.02]' : 'hover:bg-gray-50/80'}`}
+                            className={`grid grid-cols-12 gap-3 p-4 sm:px-6 items-center transition-colors group ${isDark ? 'hover:bg-white/[0.02]' : 'hover:bg-gray-50/80'}`}
                           >
-                            <div className="col-span-8 sm:col-span-5 flex items-center gap-4 min-w-0">
+                            <div className="col-span-7 sm:col-span-7 flex items-center gap-3 min-w-0">
                               <div className={`p-2.5 rounded-xl ${bg} ${color} shrink-0`}>
                                 <Icon className="w-5 h-5" />
                               </div>
-                              <div className="min-w-0">
-                                <p className={`font-semibold text-sm truncate ${isDark ? 'text-gray-200 group-hover:text-white' : 'text-gray-700 group-hover:text-gray-900'} transition-colors`}>{file.name}</p>
+                              <div className="min-w-0 flex-1">
+                                <p className={`font-semibold text-sm break-words leading-snug ${isDark ? 'text-gray-200 group-hover:text-white' : 'text-gray-700 group-hover:text-gray-900'} transition-colors`} title={file.name}>{file.name}</p>
                               </div>
                             </div>
-                            
-                            <div className={`col-span-3 hidden sm:flex items-center text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+
+                            <div className={`col-span-2 hidden sm:flex items-center text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
                               {new Date(file.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                             </div>
-                            
-                            <div className={`col-span-2 hidden sm:flex items-center text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                              {(file.size / 1024 / 1024).toFixed(2)} MB
+
+                            <div className={`col-span-1 hidden sm:flex items-center justify-end text-sm font-mono tabular-nums ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                              {(file.size / 1024 / 1024).toFixed(2)}<span className="text-[10px] ml-1 text-gray-600">MB</span>
                             </div>
-                            
-                            <div className="col-span-4 sm:col-span-2 flex items-center justify-end gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+
+                            <div className="col-span-5 sm:col-span-2 flex items-center justify-end gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                               {file.name.match(/\.(jpeg|jpg|gif|png|webp)$/i) && (
                                 <Button
                                   onClick={() => handlePreviewFile(file)}
