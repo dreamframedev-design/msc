@@ -60,6 +60,7 @@ import { motion, AnimatePresence, useMotionValue, useTransform, animate } from '
 import { useToast } from "@/components/ui/toast";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { logActivity } from "@/lib/activity";
+import { subscribeToPush, sendPushToRoles } from "@/lib/push";
 import { useRegisterCommandsMemo, useCommandPalette } from "@/components/command/CommandPaletteContext";
 import type { CommandItem } from "@/components/command/CommandPalette";
 import { Command as CommandIcon } from "lucide-react";
@@ -416,6 +417,11 @@ function DashboardContent() {
            preview: newComment.content.slice(0, 200),
          }),
        }).catch(() => {});
+       sendPushToRoles(['admin', 'superadmin'], {
+         title: `💬 ${user.email?.split('@')[0]} replied`,
+         body: newComment.content.slice(0, 140),
+         url: '/admin',
+       });
     }
   };
 
@@ -668,6 +674,11 @@ function DashboardContent() {
     
     if (!error && data) {
       logActivity({ action: "ticket.create", target_type: "ticket", target_id: data[0].id, target_label: newTicketSubject, metadata: { priority: newTicketPriority } });
+      sendPushToRoles(['admin', 'superadmin'], {
+        title: `🚨 New ${newTicketPriority} ticket`,
+        body: `${user.email?.split('@')[0]}: ${newTicketSubject}`,
+        url: '/admin',
+      });
       setShowNewTicket(false);
 
       // Fire Slack Notification

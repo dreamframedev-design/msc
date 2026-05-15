@@ -48,6 +48,7 @@ import { TaskRow } from "@/components/admin/TaskRow";
 import { KanbanBoard } from "@/components/admin/KanbanBoard";
 import { TodayDashboard } from "@/components/admin/TodayDashboard";
 import { ClientDrawer } from "@/components/admin/ClientDrawer";
+import { subscribeToPush, sendPush, sendPushToRoles } from "@/lib/push";
 import { LayoutList, Columns3, Sunrise } from "lucide-react";
 import { useRegisterCommandsMemo, useCommandPalette } from "@/components/command/CommandPaletteContext";
 import type { CommandItem } from "@/components/command/CommandPalette";
@@ -766,12 +767,19 @@ export default function AdminDashboard() {
       return;
     }
     const permission = await Notification.requestPermission();
-    if (permission === "granted") {
-      toast.success("Push notifications enabled", "You'll receive alerts for urgent tickets");
-      // In a full implementation, you would subscribe the user to push manager and save the PushSubscription to Supabase.
-      // e.g., const registration = await navigator.serviceWorker.ready;
-      // const subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: 'YOUR_PUBLIC_VAPID_KEY' });
-      // await supabase.from('admin_push_subs').insert({ user_id: user.id, subscription });
+    if (permission !== "granted") {
+      toast.error("Permission denied", "You can re-enable in your browser settings");
+      return;
+    }
+    const result = await subscribeToPush();
+    if (result.ok) {
+      toast.success("Push notifications enabled", "You'll receive alerts on this device");
+    } else if (result.reason === "no-vapid") {
+      toast.error("Push not configured yet", "Run master_web_push.sql + add VAPID env keys");
+    } else if (result.reason === "unsupported") {
+      toast.error("Push not supported in this browser");
+    } else {
+      toast.error("Couldn't enable push", result.detail || result.reason);
     }
   };
 
@@ -825,6 +833,14 @@ export default function AdminDashboard() {
           newStatus,
         }),
       }).catch(() => {});
+      if (ticket?.client_id && ticket.client_id !== user?.id) {
+        const statusLabel = newStatus === 'completed' ? '✅ Resolved' : newStatus === 'in_progress' ? '▶️ Started' : newStatus === 'review' ? '👀 In review' : 'Status updated';
+        sendPush(ticket.client_id, {
+          title: `MSC: ${statusLabel}`,
+          body: ticket.subject || ticket.title || 'Your ticket has an update',
+          url: '/portal/dashboard?tab=tickets',
+        });
+      }
       fetchTickets();
       if (selectedTicket && selectedTicket.id === id) {
         setSelectedTicket({ ...selectedTicket, status: newStatus });
@@ -892,6 +908,13 @@ export default function AdminDashboard() {
            preview: newComment.content.slice(0, 200),
          }),
        }).catch(() => {});
+       if (selectedTicket.client_id && selectedTicket.client_id !== user.id) {
+         sendPush(selectedTicket.client_id, {
+           title: `MSC: ${selectedTicket.subject || 'New reply'}`,
+           body: newComment.content.slice(0, 140),
+           url: '/portal/dashboard?tab=tickets',
+         });
+       }
     }
   };
 
