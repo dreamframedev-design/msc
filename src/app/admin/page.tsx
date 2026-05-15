@@ -83,6 +83,7 @@ export default function AdminDashboard() {
   const [activityEvents, setActivityEvents] = useState<any[]>([]);
   const [activityLoading, setActivityLoading] = useState(false);
   const [activityTableMissing, setActivityTableMissing] = useState(false);
+  const [queueOrder, setQueueOrder] = useState<string[]>([]);
 
   const fetchBoardMembers = async (boardId: string) => {
     const { data } = await supabase
@@ -237,6 +238,8 @@ export default function AdminDashboard() {
       } else {
         setUser(session.user);
         setIsSuperAdmin(role === 'superadmin');
+        const savedQueueOrder = session.user?.user_metadata?.queue_order;
+        if (Array.isArray(savedQueueOrder)) setQueueOrder(savedQueueOrder);
       }
       setIsLoading(false);
     };
@@ -951,23 +954,42 @@ export default function AdminDashboard() {
       filtered = filtered.filter(item => item.client === clientFilter);
     }
 
-    // Sort by Priority, then Client, then Date
+    // Sort by saved custom order first (if set), then Priority, Client, Date
     const priorityWeight = { 'Urgent': 3, 'High': 2, 'Normal': 1 };
-    
-    filtered.sort((a, b) => {
+
+    const defaultSort = (a: any, b: any) => {
       const pA = priorityWeight[a.priority as keyof typeof priorityWeight] || 1;
       const pB = priorityWeight[b.priority as keyof typeof priorityWeight] || 1;
       if (pA !== pB) return pB - pA;
-      
+
       const cA = a.client.toLowerCase();
       const cB = b.client.toLowerCase();
       if (cA !== cB) return cA.localeCompare(cB);
 
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-    });
+    };
+
+    if (queueOrder.length > 0) {
+      filtered.sort((a, b) => {
+        const ai = queueOrder.indexOf(`${a.type}-${a.id}`);
+        const bi = queueOrder.indexOf(`${b.type}-${b.id}`);
+        if (ai !== -1 && bi !== -1) return ai - bi;
+        if (ai !== -1) return -1;
+        if (bi !== -1) return 1;
+        return defaultSort(a, b);
+      });
+    } else {
+      filtered.sort(defaultSort);
+    }
 
     return filtered;
-  }, [tickets, allInternalTasks, usersList, taskBoards, ticketFilter, clientFilter]);
+  }, [tickets, allInternalTasks, usersList, taskBoards, ticketFilter, clientFilter, queueOrder]);
+
+  const handleReorderQueue = async (newOrder: any[]) => {
+    const orderKeys = newOrder.map((item) => `${item.type}-${item.id}`);
+    setQueueOrder(orderKeys);
+    await supabase.auth.updateUser({ data: { queue_order: orderKeys } });
+  };
 
   // ============ COMMAND PALETTE REGISTRATION ============
   useRegisterCommandsMemo(() => {
@@ -1351,15 +1373,17 @@ export default function AdminDashboard() {
 
               {/* Tickets List */}
               <div className="space-y-4">
-                <AnimatePresence mode="popLayout">
-                  {unifiedQueue.length > 0 ? unifiedQueue.map((item, i) => (
-                    <motion.div
+                {unifiedQueue.length > 0 ? (
+                  <Reorder.Group axis="y" values={unifiedQueue} onReorder={handleReorderQueue} className="space-y-4">
+                    {unifiedQueue.map((item) => (
+                    <Reorder.Item
                       key={`${item.type}-${item.id}`}
+                      value={item}
                       layout
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.98 }}
-                      transition={{ duration: 0.2, delay: i * 0.03 }}
+                      whileDrag={{ scale: 1.01, boxShadow: "0 18px 40px -10px rgba(0,0,0,0.55)", zIndex: 20 }}
                       className={`bg-[#111111] border border-white/5 rounded-xl p-4 transition-all hover:border-white/10 group relative flex flex-col gap-3`}
                     >
                       {/* Urgent Edge Highlight */}
@@ -1368,6 +1392,13 @@ export default function AdminDashboard() {
                       )}
 
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <span
+                          className="cursor-grab active:cursor-grabbing text-zinc-600 hover:text-zinc-300 transition-colors shrink-0 self-start sm:self-center pt-1 sm:pt-0"
+                          title="Drag to reorder"
+                          aria-label="Drag to reorder"
+                        >
+                          <GripVertical className="w-4 h-4" />
+                        </span>
                         <div className="flex-1 min-w-0 flex flex-col gap-1.5 pl-2">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-xs font-mono text-zinc-500">#{item.id.substring(0,6)}</span>
@@ -1431,18 +1462,19 @@ export default function AdminDashboard() {
                           )}
                         </div>
                       </div>
-                    </motion.div>
-                  )) : !firstFetchDone ? (
-                    <SkeletonList count={4} />
-                  ) : (
-                    <EmptyState
-                      Icon={MessageSquare}
-                      title="No action items found"
-                      description="You're all caught up. Nothing matches the current filter."
-                      accent="spark"
-                    />
-                  )}
-                </AnimatePresence>
+                    </Reorder.Item>
+                    ))}
+                  </Reorder.Group>
+                ) : !firstFetchDone ? (
+                  <SkeletonList count={4} />
+                ) : (
+                  <EmptyState
+                    Icon={MessageSquare}
+                    title="No action items found"
+                    description="You're all caught up. Nothing matches the current filter."
+                    accent="spark"
+                  />
+                )}
               </div>
             </motion.div>
           )}
