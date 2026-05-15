@@ -63,9 +63,9 @@ import { logActivity } from "@/lib/activity";
 import { subscribeToPush, sendPushToRoles } from "@/lib/push";
 import { authFetch } from "@/lib/auth-fetch";
 import { usePersistedTheme } from "@/lib/use-theme";
-import { usePersistedSidebar } from "@/lib/use-sidebar";
+import { usePersistedSidebar, usePersistedLayout } from "@/lib/use-sidebar";
 import { NotificationBell } from "@/components/ui/notification-bell";
-import { PanelLeftClose, PanelLeft } from "lucide-react";
+import { PanelLeftClose, PanelLeft, PanelTop, LayoutPanelLeft } from "lucide-react";
 import { useRegisterCommandsMemo, useCommandPalette } from "@/components/command/CommandPaletteContext";
 import type { CommandItem } from "@/components/command/CommandPalette";
 import { Command as CommandIcon } from "lucide-react";
@@ -154,6 +154,8 @@ function DashboardContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [theme, setTheme] = usePersistedTheme("dark");
   const [sidebarCollapsed, setSidebarCollapsed] = usePersistedSidebar(false);
+  const [sidebarLayout, setSidebarLayout] = usePersistedLayout("vertical");
+  const isHorizontal = sidebarLayout === "horizontal";
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [recentUpload, setRecentUpload] = useState<string | null>(null);
@@ -857,8 +859,58 @@ function DashboardContent() {
         />
       </div>
 
+      {/* ============ HORIZONTAL TOP NAV (when layout = "horizontal") ============ */}
+      {isHorizontal && (
+        <header className={`fixed top-0 left-0 right-0 h-14 z-50 backdrop-blur-xl border-b grid grid-cols-[auto_1fr_auto] items-center gap-3 px-4 ${isDark ? 'bg-black/60 border-white/[0.08]' : 'bg-white/80 border-gray-200'}`}>
+          <Link href="/portal/dashboard" className="flex items-center gap-2">
+            <Image src="/images/MSC LOGO BITTERSWEET VECTOR (1).svg" alt="MSC" width={24} height={24} />
+            <span className={`font-heading font-semibold text-sm tracking-tight hidden lg:inline ${isDark ? 'text-white' : 'text-gray-900'}`}>Portal</span>
+          </Link>
+          <nav className="flex items-center justify-center gap-1 overflow-x-auto no-scrollbar min-w-0">
+            {[
+              { key: "overview", label: "Overview", Icon: LayoutDashboard },
+              { key: "tasks", label: "Projects", Icon: CheckSquare },
+              { key: "tickets", label: "Tickets", Icon: Ticket },
+              { key: "files", label: "Vault", Icon: FolderOpen },
+              { key: "billing", label: "Billing", Icon: CreditCard },
+              { key: "settings", label: "Settings", Icon: Settings },
+            ].map(({ key, label, Icon }) => (
+              <button
+                key={key}
+                onClick={() => setActiveTab(key)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors shrink-0 ${
+                  activeTab === key
+                    ? isDark ? 'bg-[#F0564A]/15 text-[#F0564A]' : 'bg-[#F0564A]/10 text-[#F0564A]'
+                    : isDark ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span>{label}</span>
+              </button>
+            ))}
+          </nav>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSidebarLayout("vertical")}
+              className={`p-1.5 rounded-md transition-colors ${isDark ? 'text-zinc-500 hover:text-white hover:bg-white/5' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'}`}
+              title="Switch to vertical sidebar"
+            >
+              <LayoutPanelLeft className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={handleSignOut}
+              className={`p-1.5 rounded-md transition-colors ${isDark ? 'text-zinc-500 hover:text-red-400 hover:bg-red-500/10' : 'text-gray-500 hover:text-red-600 hover:bg-red-50'}`}
+              title="Sign out"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
+            <UserAvatar email={user?.email} size="xs" ringClassName={isDark ? "ring-white/10" : "ring-gray-200"} />
+          </div>
+        </header>
+      )}
+
       {/* ============ SIDEBAR ============ */}
-      <aside className={`border-r flex-col hidden md:flex h-screen fixed left-0 top-0 z-50 transition-[width] duration-200 ease-out ${sidebarCollapsed ? "w-16" : "w-64"} ${isDark ? 'bg-black/50 backdrop-blur-2xl border-white/[0.08]' : 'bg-white/70 backdrop-blur-2xl border-gray-200'}`}>
+      <aside className={`border-r flex-col h-screen fixed left-0 top-0 z-50 transition-[width] duration-200 ease-out ${isHorizontal ? 'hidden' : 'hidden md:flex'} ${sidebarCollapsed ? "w-16" : "w-64"} ${isDark ? 'bg-black/50 backdrop-blur-2xl border-white/[0.08]' : 'bg-white/70 backdrop-blur-2xl border-gray-200'}`}>
         <button
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           className={`absolute -right-3 top-7 z-10 w-6 h-6 rounded-full border flex items-center justify-center transition-colors shadow ${
@@ -870,6 +922,18 @@ function DashboardContent() {
           aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {sidebarCollapsed ? <PanelLeft className="w-3 h-3" /> : <PanelLeftClose className="w-3 h-3" />}
+        </button>
+        <button
+          onClick={() => setSidebarLayout("horizontal")}
+          className={`absolute -right-3 top-16 z-10 w-6 h-6 rounded-full border flex items-center justify-center transition-colors shadow ${
+            isDark
+              ? "bg-[#161616] border-white/10 text-zinc-400 hover:text-white hover:border-white/20"
+              : "bg-white border-gray-200 text-gray-500 hover:text-gray-900 hover:border-gray-300"
+          }`}
+          title="Switch to top-bar layout"
+          aria-label="Switch to top-bar layout"
+        >
+          <PanelTop className="w-3 h-3" />
         </button>
         <div className={`${sidebarCollapsed ? "p-4 flex justify-center" : "p-6"} border-b ${isDark ? 'border-white/[0.08]' : 'border-gray-200'}`}>
           <div className="flex items-center gap-3">
@@ -944,7 +1008,7 @@ function DashboardContent() {
       </aside>
 
       {/* ============ MAIN ============ */}
-      <main className={`flex-1 flex flex-col min-h-screen ml-0 relative z-40 transition-[margin] duration-200 ease-out ${sidebarCollapsed ? "md:ml-16" : "md:ml-64"}`}>
+      <main className={`flex-1 flex flex-col min-h-screen relative z-40 transition-[margin] duration-200 ease-out ${isHorizontal ? 'ml-0 mt-14' : `ml-0 ${sidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}`}>
         {/* Top Header */}
         <header className={`h-20 border-b flex items-center justify-between px-4 sm:px-8 sticky top-0 z-40 backdrop-blur-2xl ${isDark ? 'bg-black/50 border-white/[0.08]' : 'bg-white/70 border-gray-200'}`}>
           <h1 className={`text-xl sm:text-2xl font-heading font-bold capitalize ${isDark ? 'text-white' : 'text-gray-900'}`}>

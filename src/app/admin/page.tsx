@@ -1564,13 +1564,12 @@ export default function AdminDashboard() {
 
       {/* ============ HORIZONTAL TOP NAV (when layout = "horizontal") ============ */}
       {isHorizontal && (
-        <header className="fixed top-0 left-0 right-0 h-14 z-50 bg-[#0A0A0A]/95 backdrop-blur-xl border-b border-white/5 flex items-center px-4 gap-3">
-          <Link href="/admin" className="flex items-center gap-2 shrink-0">
+        <header className="fixed top-0 left-0 right-0 h-14 z-50 bg-[#0A0A0A]/95 backdrop-blur-xl border-b border-white/5 grid grid-cols-[auto_1fr_auto] items-center gap-3 px-4">
+          <Link href="/admin" className="flex items-center gap-2">
             <Image src="/images/MSC LOGO BITTERSWEET VECTOR (1).svg" alt="MSC" width={24} height={24} />
             <span className="font-heading font-semibold text-sm tracking-tight text-white hidden lg:inline">Admin</span>
           </Link>
-          <div className="h-6 w-px bg-white/10 shrink-0 hidden md:block" />
-          <nav className="flex items-center gap-1 overflow-x-auto no-scrollbar flex-1 min-w-0">
+          <nav className="flex items-center justify-center gap-1 overflow-x-auto no-scrollbar min-w-0">
             {[
               { key: "today", label: "Today", Icon: Sunrise, accent: "text-[#F0564A]" },
               { key: "tickets", label: "Queue", Icon: Ticket, accent: "text-[#F0564A]" },
@@ -1595,7 +1594,7 @@ export default function AdminDashboard() {
               </button>
             ))}
           </nav>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setSidebarLayout("vertical")}
               className="p-1.5 rounded-md text-zinc-500 hover:text-white hover:bg-white/5 transition-colors"
