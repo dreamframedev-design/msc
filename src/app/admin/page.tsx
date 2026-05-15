@@ -35,7 +35,9 @@ import {
   Activity as ActivityIcon,
   LogOut,
   PanelLeftClose,
-  PanelLeft
+  PanelLeft,
+  PanelTop,
+  LayoutPanelLeft
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -50,10 +52,11 @@ import { QueueRow } from "@/components/admin/QueueRow";
 import { TaskRow } from "@/components/admin/TaskRow";
 import { KanbanBoard } from "@/components/admin/KanbanBoard";
 import { TodayDashboard } from "@/components/admin/TodayDashboard";
+import { CompactStat } from "@/components/admin/CompactStat";
 import { ClientDrawer } from "@/components/admin/ClientDrawer";
 import { subscribeToPush, sendPush, sendPushToRoles } from "@/lib/push";
 import { authFetch } from "@/lib/auth-fetch";
-import { usePersistedSidebar } from "@/lib/use-sidebar";
+import { usePersistedSidebar, usePersistedLayout } from "@/lib/use-sidebar";
 import { NotificationBell } from "@/components/ui/notification-bell";
 import { LayoutList, Columns3, Sunrise } from "lucide-react";
 import { useRegisterCommandsMemo, useCommandPalette } from "@/components/command/CommandPaletteContext";
@@ -104,6 +107,8 @@ export default function AdminDashboard() {
   const [aiSummary, setAiSummary] = useState<{ open: boolean; text: string; title: string }>({ open: false, text: "", title: "" });
   const [aiAvailable, setAiAvailable] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = usePersistedSidebar(false);
+  const [sidebarLayout, setSidebarLayout] = usePersistedLayout("vertical");
+  const isHorizontal = sidebarLayout === "horizontal";
   const [tasksView, setTasksView] = useState<any[]>([]);
   const isReorderingRef = useRef(false);
   const reorderSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1345,7 +1350,7 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen flex text-zinc-100 bg-[#0A0A0A] selection:bg-[#F0564A]/30">
       {/* ============ MINIMAL SIDEBAR ============ */}
-      <aside className={`border-r border-white/5 flex-col hidden md:flex h-screen fixed left-0 top-0 z-50 bg-[#0A0A0A] transition-[width] duration-200 ease-out ${sidebarCollapsed ? "w-16" : "w-64"}`}>
+      <aside className={`border-r border-white/5 flex-col h-screen fixed left-0 top-0 z-50 bg-[#0A0A0A] transition-[width] duration-200 ease-out ${isHorizontal ? "hidden" : "hidden md:flex"} ${sidebarCollapsed ? "w-16" : "w-64"}`}>
         <button
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           className="absolute -right-3 top-7 z-10 w-6 h-6 rounded-full bg-[#161616] border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white hover:border-white/20 transition-colors shadow"
@@ -1353,6 +1358,14 @@ export default function AdminDashboard() {
           aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {sidebarCollapsed ? <PanelLeft className="w-3 h-3" /> : <PanelLeftClose className="w-3 h-3" />}
+        </button>
+        <button
+          onClick={() => setSidebarLayout("horizontal")}
+          className="absolute -right-3 top-16 z-10 w-6 h-6 rounded-full bg-[#161616] border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white hover:border-white/20 transition-colors shadow"
+          title="Switch to top-bar layout"
+          aria-label="Switch to top-bar layout"
+        >
+          <PanelTop className="w-3 h-3" />
         </button>
         <div className={sidebarCollapsed ? "p-4 flex justify-center" : "p-6"}>
           <Link href="/admin" className="flex items-center gap-3 group">
@@ -1406,21 +1419,22 @@ export default function AdminDashboard() {
               {!sidebarCollapsed && <h4 className="px-3 text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">Core Operations</h4>}
               <div className="space-y-1">
                 {[
-                  { key: "today", label: "Today", Icon: Sunrise, accent: "text-[#F0564A]" },
-                  { key: "tickets", label: "Global Action Queue", Icon: Ticket, accent: "text-[#F0564A]" },
-                  { key: "tasks", label: "Project Boards", Icon: CheckSquare, accent: "text-[#F0564A]" },
-                ].map(({ key, label, Icon, accent }) => (
+                  { key: "today", label: "Today", Icon: Sunrise, accent: "text-[#F0564A]", glow: "rgba(240,86,74,0.12)" },
+                  { key: "tickets", label: "Global Action Queue", Icon: Ticket, accent: "text-[#F0564A]", glow: "rgba(240,86,74,0.12)" },
+                  { key: "tasks", label: "Project Boards", Icon: CheckSquare, accent: "text-violet-400", glow: "rgba(167,139,250,0.12)" },
+                ].map(({ key, label, Icon, accent, glow }) => (
                   <button
                     key={key}
                     onClick={() => setActiveTab(key)}
                     title={sidebarCollapsed ? label : undefined}
                     className={`w-full flex items-center ${sidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-3"} rounded-lg transition-all text-sm font-semibold border ${
                       activeTab === key
-                        ? "bg-[#1A1A1A] text-white border-white/10 shadow-[0_0_15px_rgba(240,86,74,0.1)]"
-                        : "bg-transparent border-transparent text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
+                        ? "bg-[#1A1A1A] text-white border-white/10"
+                        : "bg-transparent border-transparent text-zinc-300 hover:bg-white/5 hover:text-white"
                     }`}
+                    style={activeTab === key ? { boxShadow: `0 0 15px ${glow}` } : undefined}
                   >
-                    <Icon className={`w-4 h-4 shrink-0 ${activeTab === key ? accent : ""}`} />
+                    <Icon className={`w-4 h-4 shrink-0 ${accent}`} />
                     {!sidebarCollapsed && <span className="truncate">{label}</span>}
                   </button>
                 ))}
@@ -1431,12 +1445,12 @@ export default function AdminDashboard() {
               {!sidebarCollapsed && <h4 className="px-3 text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">System</h4>}
               <div className="space-y-1">
                 {[
-                  { key: "files", label: "Global Vault", Icon: FolderOpen },
-                  { key: "users", label: "User Management", Icon: Users },
-                  { key: "activity", label: "Activity Feed", Icon: ActivityIcon },
-                  { key: "news", label: "News Articles", Icon: Newspaper },
-                  { key: "settings", label: "Account Settings", Icon: Settings },
-                ].map(({ key, label, Icon }) => (
+                  { key: "files", label: "Global Vault", Icon: FolderOpen, accent: "text-cyan-400" },
+                  { key: "users", label: "User Management", Icon: Users, accent: "text-blue-400" },
+                  { key: "activity", label: "Activity Feed", Icon: ActivityIcon, accent: "text-emerald-400" },
+                  { key: "news", label: "News Articles", Icon: Newspaper, accent: "text-amber-400" },
+                  { key: "settings", label: "Account Settings", Icon: Settings, accent: "text-zinc-400" },
+                ].map(({ key, label, Icon, accent }) => (
                   <button
                     key={key}
                     onClick={() => setActiveTab(key)}
@@ -1444,10 +1458,10 @@ export default function AdminDashboard() {
                     className={`w-full flex items-center ${sidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} rounded-lg transition-colors text-sm font-medium ${
                       activeTab === key
                         ? "bg-white/10 text-white"
-                        : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
+                        : "text-zinc-300 hover:bg-white/5 hover:text-white"
                     }`}
                   >
-                    <Icon className="w-4 h-4 shrink-0" />
+                    <Icon className={`w-4 h-4 shrink-0 ${accent}`} />
                     {!sidebarCollapsed && <span className="truncate">{label}</span>}
                   </button>
                 ))}
@@ -1548,8 +1562,68 @@ export default function AdminDashboard() {
         </div>
       </aside>
 
+      {/* ============ HORIZONTAL TOP NAV (when layout = "horizontal") ============ */}
+      {isHorizontal && (
+        <header className="fixed top-0 left-0 right-0 h-14 z-50 bg-[#0A0A0A]/95 backdrop-blur-xl border-b border-white/5 flex items-center px-4 gap-3">
+          <Link href="/admin" className="flex items-center gap-2 shrink-0">
+            <Image src="/images/MSC LOGO BITTERSWEET VECTOR (1).svg" alt="MSC" width={24} height={24} />
+            <span className="font-heading font-semibold text-sm tracking-tight text-white hidden lg:inline">Admin</span>
+          </Link>
+          <div className="h-6 w-px bg-white/10 shrink-0 hidden md:block" />
+          <nav className="flex items-center gap-1 overflow-x-auto no-scrollbar flex-1 min-w-0">
+            {[
+              { key: "today", label: "Today", Icon: Sunrise, accent: "text-[#F0564A]" },
+              { key: "tickets", label: "Queue", Icon: Ticket, accent: "text-[#F0564A]" },
+              { key: "tasks", label: "Boards", Icon: CheckSquare, accent: "text-violet-400" },
+              { key: "files", label: "Vault", Icon: FolderOpen, accent: "text-cyan-400" },
+              { key: "users", label: "Users", Icon: Users, accent: "text-blue-400" },
+              { key: "activity", label: "Activity", Icon: ActivityIcon, accent: "text-emerald-400" },
+              { key: "news", label: "News", Icon: Newspaper, accent: "text-amber-400" },
+              { key: "settings", label: "Settings", Icon: Settings, accent: "text-zinc-400" },
+            ].map(({ key, label, Icon, accent }) => (
+              <button
+                key={key}
+                onClick={() => setActiveTab(key)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors shrink-0 ${
+                  activeTab === key
+                    ? "bg-white/10 text-white"
+                    : "text-zinc-400 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <Icon className={`w-3.5 h-3.5 ${accent}`} />
+                <span>{label}</span>
+              </button>
+            ))}
+          </nav>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => setSidebarLayout("vertical")}
+              className="p-1.5 rounded-md text-zinc-500 hover:text-white hover:bg-white/5 transition-colors"
+              title="Switch to vertical sidebar"
+            >
+              <LayoutPanelLeft className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={async () => {
+                await supabase.auth.signOut();
+                window.location.href = "/portal";
+              }}
+              className="p-1.5 rounded-md text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+              title="Sign out"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
+            <UserAvatar email={user?.email} size="xs" ringClassName="ring-white/10" />
+          </div>
+        </header>
+      )}
+
       {/* ============ MAIN VIEW ============ */}
-      <main className={`flex-1 flex flex-col min-h-screen ml-0 relative z-40 transition-[margin] duration-200 ease-out ${sidebarCollapsed ? "md:ml-16" : "md:ml-64"}`}>
+      <main className={`flex-1 flex flex-col min-h-screen relative z-40 transition-[margin] duration-200 ease-out ${
+        isHorizontal
+          ? "ml-0 mt-14"
+          : `ml-0 ${sidebarCollapsed ? "md:ml-16" : "md:ml-64"}`
+      }`}>
         {/* Top Header */}
         <header className="h-16 border-b border-white/5 flex items-center justify-between px-8 sticky top-0 z-40 bg-[#0A0A0A]/80 backdrop-blur-xl">
           <h1 className="text-lg font-semibold text-white">
@@ -1626,32 +1700,14 @@ export default function AdminDashboard() {
               className="space-y-6"
             >
               {/* Stats Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-[#111111] rounded-2xl p-6 border border-white/5 flex flex-col gap-2 relative overflow-hidden">
-                   <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-bl-full pointer-events-none" />
-                   <p className="text-sm text-zinc-400 font-medium flex items-center gap-2">
-                     <AlertCircle className="w-4 h-4 text-amber-500/50" /> Pending Review
-                   </p>
-                   <p className="text-4xl font-semibold text-white tracking-tight">{tickets.filter(t => t.status === 'pending').length}</p>
-                </div>
-                <div className="bg-[#111111] rounded-2xl p-6 border border-white/5 flex flex-col gap-2 relative overflow-hidden">
-                   <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-bl-full pointer-events-none" />
-                   <p className="text-sm text-zinc-400 font-medium flex items-center gap-2">
-                     <Clock className="w-4 h-4 text-blue-500/50" /> In Progress
-                   </p>
-                   <p className="text-4xl font-semibold text-white tracking-tight">{tickets.filter(t => t.status === 'in_progress').length}</p>
-                </div>
-                <div className="bg-[#111111] rounded-2xl p-6 border border-white/5 flex flex-col gap-2 relative overflow-hidden">
-                   <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full pointer-events-none" />
-                   <p className="text-sm text-zinc-400 font-medium flex items-center gap-2">
-                     <CheckCircle2 className="w-4 h-4 text-emerald-500/50" /> Resolved
-                   </p>
-                   <p className="text-4xl font-semibold text-white tracking-tight">{tickets.filter(t => t.status === 'completed').length}</p>
-                </div>
+              <div className="grid grid-cols-3 gap-2 sm:gap-4">
+                <CompactStat Icon={AlertCircle} label="Pending" value={tickets.filter(t => t.status === 'pending').length} accent="amber" />
+                <CompactStat Icon={Clock} label="In Progress" value={tickets.filter(t => t.status === 'in_progress').length} accent="blue" />
+                <CompactStat Icon={CheckCircle2} label="Resolved" value={tickets.filter(t => t.status === 'completed').length} accent="emerald" />
               </div>
 
               {/* Toolbar */}
-              <div className="flex flex-wrap items-center justify-between gap-4 mt-10 mb-4">
+              <div className="flex flex-wrap items-center justify-between gap-4 mt-6 mb-4">
                 <div className="flex bg-[#111111] p-1 rounded-lg border border-white/5">
                   {(["all", "active", "completed"] as const).map((f) => (
                     <button
@@ -1729,28 +1785,10 @@ export default function AdminDashboard() {
               className="space-y-6"
             >
               {/* Stats Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-[#111111] rounded-2xl p-6 border border-white/5 flex flex-col gap-2 relative overflow-hidden">
-                   <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-bl-full pointer-events-none" />
-                   <p className="text-sm text-zinc-400 font-medium flex items-center gap-2">
-                     <AlertCircle className="w-4 h-4 text-amber-500/50" /> Pending Tasks
-                   </p>
-                   <p className="text-4xl font-semibold text-white tracking-tight">{allInternalTasks.filter(t => t.status === 'pending').length}</p>
-                </div>
-                <div className="bg-[#111111] rounded-2xl p-6 border border-white/5 flex flex-col gap-2 relative overflow-hidden">
-                   <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-bl-full pointer-events-none" />
-                   <p className="text-sm text-zinc-400 font-medium flex items-center gap-2">
-                     <Clock className="w-4 h-4 text-blue-500/50" /> In Progress Tasks
-                   </p>
-                   <p className="text-4xl font-semibold text-white tracking-tight">{allInternalTasks.filter(t => t.status === 'in_progress').length}</p>
-                </div>
-                <div className="bg-[#111111] rounded-2xl p-6 border border-white/5 flex flex-col gap-2 relative overflow-hidden">
-                   <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full pointer-events-none" />
-                   <p className="text-sm text-zinc-400 font-medium flex items-center gap-2">
-                     <CheckCircle2 className="w-4 h-4 text-emerald-500/50" /> Completed Tasks
-                   </p>
-                   <p className="text-4xl font-semibold text-white tracking-tight">{allInternalTasks.filter(t => t.status === 'completed').length}</p>
-                </div>
+              <div className="grid grid-cols-3 gap-2 sm:gap-4">
+                <CompactStat Icon={AlertCircle} label="Pending" value={allInternalTasks.filter(t => t.status === 'pending').length} accent="amber" />
+                <CompactStat Icon={Clock} label="In Progress" value={allInternalTasks.filter(t => t.status === 'in_progress').length} accent="blue" />
+                <CompactStat Icon={CheckCircle2} label="Completed" value={allInternalTasks.filter(t => t.status === 'completed').length} accent="emerald" />
               </div>
 
               {/* Top Navigation / Toggle */}
