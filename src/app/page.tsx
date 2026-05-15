@@ -69,7 +69,8 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.15 }}
-              className="text-display text-[2.75rem] sm:text-6xl md:text-7xl lg:text-8xl mb-4 text-gray-900 font-light"
+              className="text-display text-[2.75rem] sm:text-6xl md:text-7xl lg:text-8xl mb-4 text-gray-900"
+              style={{ fontWeight: 250, letterSpacing: "-0.045em" }}
             >
               Mighty Spark<br className="hidden sm:block" /> Communications
             </motion.h1>
@@ -90,13 +91,20 @@ export default function Home() {
               className="flex flex-wrap gap-3"
             >
               <Link href="/contact">
-                <Button size="lg" className="group text-base sm:text-lg px-7 sm:px-8 py-6 rounded-full bg-[#F0564A] hover:bg-[#D94D42] text-white glow-spark-sm glow-spark-hover">
+                <Button
+                  size="lg"
+                  className="group text-base sm:text-lg px-7 sm:px-8 py-6 rounded-full bg-gray-900 hover:bg-black text-white border border-gray-900 hover:border-black shadow-[0_8px_24px_-6px_rgba(0,0,0,0.25)] hover:shadow-[0_12px_32px_-6px_rgba(0,0,0,0.35)] transition-all"
+                >
                   Book A Free Consultation
                   <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
                 </Button>
               </Link>
               <Link href="/portfolio">
-                <Button size="lg" variant="outline" className="text-base sm:text-lg px-7 sm:px-8 py-6 rounded-full border-gray-300 bg-white/60 backdrop-blur-md text-gray-800 hover:bg-white hover:border-gray-400 transition-all">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="text-base sm:text-lg px-7 sm:px-8 py-6 rounded-full border-gray-900/15 bg-white/70 backdrop-blur-md text-gray-900 hover:bg-white hover:border-gray-900/30 transition-all"
+                >
                   View Our Work
                 </Button>
               </Link>
