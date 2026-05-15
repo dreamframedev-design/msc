@@ -54,6 +54,7 @@ import { KanbanBoard } from "@/components/admin/KanbanBoard";
 import { TodayDashboard } from "@/components/admin/TodayDashboard";
 import { CompactStat } from "@/components/admin/CompactStat";
 import { ClientDrawer } from "@/components/admin/ClientDrawer";
+import { UserMenu } from "@/components/ui/user-menu";
 import { subscribeToPush, sendPush, sendPushToRoles } from "@/lib/push";
 import { authFetch } from "@/lib/auth-fetch";
 import { usePersistedSidebar, usePersistedLayout } from "@/lib/use-sidebar";
@@ -1602,17 +1603,17 @@ export default function AdminDashboard() {
             >
               <LayoutPanelLeft className="w-3.5 h-3.5" />
             </button>
-            <button
-              onClick={async () => {
+            <UserMenu
+              isDark
+              email={user?.email}
+              role={isSuperAdmin ? "superadmin" : "admin"}
+              size="xs"
+              onOpenSettings={() => setActiveTab("settings")}
+              onSignOut={async () => {
                 await supabase.auth.signOut();
                 window.location.href = "/portal";
               }}
-              className="p-1.5 rounded-md text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-              title="Sign out"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-            </button>
-            <UserAvatar email={user?.email} size="xs" ringClassName="ring-white/10" />
+            />
           </div>
         </header>
       )}
@@ -2872,15 +2873,27 @@ export default function AdminDashboard() {
                 <form onSubmit={handleCreateRequest} className="p-6 space-y-5 bg-black/20">
                   <div>
                     <label className="block text-sm font-medium text-zinc-300 mb-2">Client</label>
-                    <input 
-                      type="text" 
-                      list="client-suggestions"
+                    <select
                       value={requestClient}
                       onChange={(e) => setRequestClient(e.target.value)}
-                      placeholder="Select or type client name..." 
-                      className="w-full bg-black/50 border border-white/5 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-zinc-500 text-white placeholder:text-zinc-600"
                       required
-                    />
+                      className="w-full bg-black/50 border border-white/5 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-zinc-500 text-white"
+                    >
+                      <option value="" disabled>Select a client…</option>
+                      {usersList
+                        .filter((u: any) => u.role === "client")
+                        .sort((a: any, b: any) => (a.company || a.email).localeCompare(b.company || b.email))
+                        .map((u: any) => (
+                          <option key={u.id} value={u.email}>
+                            {u.company ? `${u.company} — ${u.email}` : u.email}
+                          </option>
+                        ))}
+                    </select>
+                    {usersList.filter((u: any) => u.role === "client").length === 0 && (
+                      <p className="mt-1.5 text-[11px] text-amber-400">
+                        No clients yet. Create one in User Management first.
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-zinc-300 mb-2">Request Message (Optional)</label>

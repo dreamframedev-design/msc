@@ -65,6 +65,7 @@ import { authFetch } from "@/lib/auth-fetch";
 import { usePersistedTheme } from "@/lib/use-theme";
 import { usePersistedSidebar, usePersistedLayout } from "@/lib/use-sidebar";
 import { NotificationBell } from "@/components/ui/notification-bell";
+import { UserMenu } from "@/components/ui/user-menu";
 import { PanelLeftClose, PanelLeft, PanelTop, LayoutPanelLeft } from "lucide-react";
 import { useRegisterCommandsMemo, useCommandPalette } from "@/components/command/CommandPaletteContext";
 import type { CommandItem } from "@/components/command/CommandPalette";
@@ -897,14 +898,15 @@ function DashboardContent() {
             >
               <LayoutPanelLeft className="w-3.5 h-3.5" />
             </button>
-            <button
-              onClick={handleSignOut}
-              className={`p-1.5 rounded-md transition-colors ${isDark ? 'text-zinc-500 hover:text-red-400 hover:bg-red-500/10' : 'text-gray-500 hover:text-red-600 hover:bg-red-50'}`}
-              title="Sign out"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-            </button>
-            <UserAvatar email={user?.email} size="xs" ringClassName={isDark ? "ring-white/10" : "ring-gray-200"} />
+            <UserMenu
+              isDark={isDark}
+              email={user?.email}
+              role={user?.user_metadata?.role || "client"}
+              company={user?.user_metadata?.company}
+              size="xs"
+              onOpenSettings={() => setActiveTab("settings")}
+              onSignOut={handleSignOut}
+            />
           </div>
         </header>
       )}
