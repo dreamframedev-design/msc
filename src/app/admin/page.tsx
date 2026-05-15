@@ -1581,12 +1581,20 @@ export default function AdminDashboard() {
                 else setActiveTab("activity");
               }}
             />
-            <Link
+            <a
               href="/"
+              onClick={(e) => {
+                // Force a full page reload to ensure admin's realtime subscriptions,
+                // providers (Toast / CommandPalette), and modals fully tear down.
+                // Soft client-side navigation leaves stale state mid-flight, causing
+                // a brief blank page until the user manually refreshes.
+                e.preventDefault();
+                window.location.href = "/";
+              }}
               className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors text-zinc-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10"
             >
               <ArrowLeft className="w-3.5 h-3.5" /> Return to Website
-            </Link>
+            </a>
           </div>
         </header>
 
