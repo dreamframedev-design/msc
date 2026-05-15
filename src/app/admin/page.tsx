@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { createClient } from "@supabase/supabase-js";
@@ -43,6 +43,8 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import { SkeletonList, SkeletonGrid, SkeletonRow } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { logActivity, describeAction, targetAccent } from "@/lib/activity";
+import { QueueRow } from "@/components/admin/QueueRow";
+import { TaskRow } from "@/components/admin/TaskRow";
 import { useRegisterCommandsMemo, useCommandPalette } from "@/components/command/CommandPaletteContext";
 import type { CommandItem } from "@/components/command/CommandPalette";
 import { Command as CommandIcon } from "lucide-react";
@@ -84,6 +86,10 @@ export default function AdminDashboard() {
   const [activityLoading, setActivityLoading] = useState(false);
   const [activityTableMissing, setActivityTableMissing] = useState(false);
   const [queueOrder, setQueueOrder] = useState<string[]>([]);
+  const [queueView, setQueueView] = useState<any[]>([]);
+  const [tasksView, setTasksView] = useState<any[]>([]);
+  const isReorderingRef = useRef(false);
+  const reorderSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchBoardMembers = async (boardId: string) => {
     const { data } = await supabase
@@ -492,15 +498,22 @@ export default function AdminDashboard() {
     setInternalTasks(data);
   };
 
-  const handleReorderTasks = async (newOrder: any[]) => {
-    setInternalTasks(newOrder);
-    if (!activeBoardId) return;
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
-    const orderMap = (currentUser?.user_metadata?.task_order_by_board || {}) as Record<string, string[]>;
-    const next = { ...orderMap, [activeBoardId]: newOrder.map((t) => t.id) };
-    await supabase.auth.updateUser({ data: { task_order_by_board: next } });
-    logActivity({ action: "task.reorder", target_type: "board", target_id: activeBoardId, target_label: taskBoards.find(b => b.id === activeBoardId)?.title });
-  };
+  const handleReorderTasks = useCallback((newOrder: any[]) => {
+    isReorderingRef.current = true;
+    setTasksView(newOrder);
+    if (reorderSaveTimeoutRef.current) clearTimeout(reorderSaveTimeoutRef.current);
+    reorderSaveTimeoutRef.current = setTimeout(async () => {
+      setInternalTasks(newOrder);
+      if (activeBoardId) {
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        const orderMap = (currentUser?.user_metadata?.task_order_by_board || {}) as Record<string, string[]>;
+        const next = { ...orderMap, [activeBoardId]: newOrder.map((t) => t.id) };
+        await supabase.auth.updateUser({ data: { task_order_by_board: next } });
+        logActivity({ action: "task.reorder", target_type: "board", target_id: activeBoardId, target_label: taskBoards.find(b => b.id === activeBoardId)?.title });
+      }
+      isReorderingRef.current = false;
+    }, 400);
+  }, [activeBoardId, taskBoards]);
 
   useEffect(() => {
     if (taskViewMode === "overview") {
@@ -985,11 +998,27 @@ export default function AdminDashboard() {
     return filtered;
   }, [tickets, allInternalTasks, usersList, taskBoards, ticketFilter, clientFilter, queueOrder]);
 
-  const handleReorderQueue = async (newOrder: any[]) => {
-    const orderKeys = newOrder.map((item) => `${item.type}-${item.id}`);
-    setQueueOrder(orderKeys);
-    await supabase.auth.updateUser({ data: { queue_order: orderKeys } });
-  };
+  const handleReorderQueue = useCallback((newOrder: any[]) => {
+    isReorderingRef.current = true;
+    setQueueView(newOrder);
+    if (reorderSaveTimeoutRef.current) clearTimeout(reorderSaveTimeoutRef.current);
+    reorderSaveTimeoutRef.current = setTimeout(async () => {
+      const orderKeys = newOrder.map((item) => `${item.type}-${item.id}`);
+      setQueueOrder(orderKeys);
+      await supabase.auth.updateUser({ data: { queue_order: orderKeys } });
+      isReorderingRef.current = false;
+    }, 400);
+  }, []);
+
+  useEffect(() => {
+    if (isReorderingRef.current) return;
+    setQueueView(unifiedQueue);
+  }, [unifiedQueue]);
+
+  useEffect(() => {
+    if (isReorderingRef.current) return;
+    setTasksView(internalTasks);
+  }, [internalTasks]);
 
   // ============ COMMAND PALETTE REGISTRATION ============
   useRegisterCommandsMemo(() => {
@@ -1373,96 +1402,19 @@ export default function AdminDashboard() {
 
               {/* Tickets List */}
               <div className="space-y-4">
-                {unifiedQueue.length > 0 ? (
-                  <Reorder.Group axis="y" values={unifiedQueue} onReorder={handleReorderQueue} className="space-y-4">
-                    {unifiedQueue.map((item) => (
-                    <Reorder.Item
-                      key={`${item.type}-${item.id}`}
-                      value={item}
-                      layout
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.98 }}
-                      whileDrag={{ scale: 1.01, boxShadow: "0 18px 40px -10px rgba(0,0,0,0.55)", zIndex: 20 }}
-                      className={`bg-[#111111] border border-white/5 rounded-xl p-4 transition-all hover:border-white/10 group relative flex flex-col gap-3`}
-                    >
-                      {/* Urgent Edge Highlight */}
-                      {item.priority === 'Urgent' && (
-                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-500 rounded-l-xl" />
-                      )}
-
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <span
-                          className="cursor-grab active:cursor-grabbing text-zinc-600 hover:text-zinc-300 transition-colors shrink-0 self-start sm:self-center pt-1 sm:pt-0"
-                          title="Drag to reorder"
-                          aria-label="Drag to reorder"
-                        >
-                          <GripVertical className="w-4 h-4" />
-                        </span>
-                        <div className="flex-1 min-w-0 flex flex-col gap-1.5 pl-2">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-xs font-mono text-zinc-500">#{item.id.substring(0,6)}</span>
-                            <h3 className="text-base font-bold text-white truncate max-w-sm" title={item.title}>{item.title}</h3>
-                            {item.priority === 'Urgent' && <span className="bg-red-500/10 text-red-500 border border-red-500/20 text-[9px] uppercase font-bold px-1.5 py-0.5 rounded">Urgent</span>}
-                            {item.type === 'ticket' ? (
-                              <span className="bg-purple-500/10 text-purple-400 border border-purple-500/20 text-[9px] uppercase font-bold px-1.5 py-0.5 rounded">Ticket</span>
-                            ) : (
-                              <span className="bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[9px] uppercase font-bold px-1.5 py-0.5 rounded">Task</span>
-                            )}
-                            <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded border ${getStatusColor(item.status)}`}>
-                              {item.status.replace('_', ' ')}
-                            </span>
-                            <span className="flex items-center gap-1 bg-white/5 text-zinc-300 border border-white/5 text-[9px] uppercase font-bold px-1.5 py-0.5 rounded">
-                              {item.client.split('@')[0]}
-                            </span>
-                          </div>
-                          
-                          {/* Description */}
-                          <div className="text-xs text-zinc-400 truncate max-w-4xl pr-4">
-                            {item.description}
-                          </div>
-                        </div>
-
-                        {/* Actions (right aligned on desktop) */}
-                        <div className="flex items-center gap-2 shrink-0">
-                          {item.status === 'pending' && (
-                            <Button 
-                              variant="outline" size="sm" 
-                              onClick={() => item.type === 'ticket' ? updateTicketStatus(item.id, 'in_progress') : updateInternalTaskStatus(item.id, 'in_progress')} 
-                              className="h-8 text-xs text-blue-400 border-blue-400/20 bg-blue-400/10 hover:bg-blue-400/20 px-3"
-                            >
-                              <Clock className="w-3.5 h-3.5 mr-1.5" /> Start
-                            </Button>
-                          )}
-                          {item.status !== 'completed' && (
-                            <Button 
-                              variant="outline" size="sm" 
-                              onClick={() => item.type === 'ticket' ? updateTicketStatus(item.id, 'completed') : updateInternalTaskStatus(item.id, 'completed')} 
-                              className="h-8 text-xs text-emerald-400 border-emerald-400/20 bg-emerald-400/10 hover:bg-emerald-400/20 px-3"
-                            >
-                              <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" /> Resolve
-                            </Button>
-                          )}
-                          
-                          <div className="w-px h-5 bg-white/10 mx-1 hidden sm:block" />
-
-                          {item.type === 'ticket' ? (
-                            <Button variant="ghost" size="sm" onClick={() => handleOpenTicket(item.originalItem)} className="h-8 text-xs text-zinc-400 hover:text-white hover:bg-white/5">
-                              Details <ChevronRight className="w-3.5 h-3.5 ml-1" />
-                            </Button>
-                          ) : (
-                            <>
-                              <Button variant="ghost" size="sm" onClick={() => handleOpenTask(item.originalItem)} className="h-8 text-xs text-zinc-400 hover:text-white hover:bg-white/5">
-                                <MessageSquare className="w-3.5 h-3.5" />
-                              </Button>
-                              <Button variant="ghost" size="sm" onClick={() => { setActiveTab('tasks'); setActiveBoardId(item.originalItem.board_id); setTaskViewMode('lists'); }} className="h-8 text-xs text-zinc-400 hover:text-white hover:bg-white/5 px-2">
-                                Project <ChevronRight className="w-3.5 h-3.5 ml-1" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </Reorder.Item>
+                {queueView.length > 0 ? (
+                  <Reorder.Group axis="y" values={queueView} onReorder={handleReorderQueue} className="space-y-4">
+                    {queueView.map((item) => (
+                      <QueueRow
+                        key={`${item.type}-${item.id}`}
+                        item={item}
+                        statusColor={getStatusColor(item.status)}
+                        onStart={() => item.type === 'ticket' ? updateTicketStatus(item.id, 'in_progress') : updateInternalTaskStatus(item.id, 'in_progress')}
+                        onResolve={() => item.type === 'ticket' ? updateTicketStatus(item.id, 'completed') : updateInternalTaskStatus(item.id, 'completed')}
+                        onOpenTicket={() => handleOpenTicket(item.originalItem)}
+                        onOpenTask={() => handleOpenTask(item.originalItem)}
+                        onGoToProject={() => { setActiveTab('tasks'); setActiveBoardId(item.originalItem.board_id); setTaskViewMode('lists'); }}
+                      />
                     ))}
                   </Reorder.Group>
                 ) : !firstFetchDone ? (
@@ -1697,86 +1649,19 @@ export default function AdminDashboard() {
 
               {/* Task List */}
               <div className="bg-[#111111] rounded-2xl border border-white/5 overflow-hidden">
-                <Reorder.Group axis="y" values={internalTasks} onReorder={handleReorderTasks}>
-                  {internalTasks.map((task) => (
-                    <Reorder.Item
+                <Reorder.Group axis="y" values={tasksView} onReorder={handleReorderTasks}>
+                  {tasksView.map((task) => (
+                    <TaskRow
                       key={task.id}
-                      value={task}
-                      layout
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      whileDrag={{ scale: 1.01, boxShadow: "0 16px 40px -10px rgba(0,0,0,0.5)", zIndex: 20 }}
-                      className={`border-b border-white/5 last:border-0 p-5 hover:bg-white/[0.02] transition-colors flex flex-col gap-3 group/task bg-[#111111] ${task.status === 'completed' ? 'opacity-60' : ''}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="cursor-grab active:cursor-grabbing text-zinc-600 hover:text-zinc-300 transition-colors shrink-0" title="Drag to reorder" aria-label="Drag to reorder">
-                          <GripVertical className="w-4 h-4" />
-                        </span>
-                        <button
-                          onClick={() => updateInternalTaskStatus(task.id, task.status === 'completed' ? 'pending' : 'completed')}
-                          className={`w-6 h-6 rounded-md border flex items-center justify-center shrink-0 transition-colors ${task.status === 'completed' ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-transparent border-zinc-600 hover:border-emerald-500 text-transparent hover:text-emerald-500'}`}
-                        >
-                          <CheckCircle2 className="w-4 h-4" />
-                        </button>
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-4 mb-1">
-                            <p className={`text-base font-medium break-words whitespace-pre-wrap flex-1 min-w-0 ${task.status === 'completed' ? 'text-zinc-500 line-through' : 'text-zinc-100'}`}>
-                              {task.title}
-                            </p>
-                            {task.client_tag && (
-                              <span className="inline-flex shrink-0 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-white/10 text-zinc-300 border border-white/10 mt-1">
-                                {task.client_tag}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <p className="text-xs text-zinc-500">
-                              Added {new Date(task.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          {task.status !== 'completed' && task.status !== 'in_progress' && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => updateInternalTaskStatus(task.id, 'in_progress')}
-                              className="h-8 text-xs text-blue-400 hover:bg-blue-400/10 hover:text-blue-300"
-                            >
-                              <Clock className="w-3.5 h-3.5 mr-1.5" /> Start
-                            </Button>
-                          )}
-                          {task.status === 'in_progress' && (
-                            <span className="inline-flex px-2 py-1 rounded text-[10px] font-bold uppercase border bg-blue-500/10 text-blue-400 border-blue-500/20 mr-2">
-                              In Progress
-                            </span>
-                          )}
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleOpenTask(task)}
-                            className="h-8 text-xs text-zinc-400 hover:text-white hover:bg-white/5"
-                          >
-                            <MessageSquare className="w-4 h-4 mr-1.5" /> Chat
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => deleteInternalTask(task.id)}
-                            className="h-8 w-8 text-zinc-500 hover:text-red-400 hover:bg-red-500/10"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-
-                    </Reorder.Item>
+                      task={task}
+                      onToggleComplete={() => updateInternalTaskStatus(task.id, task.status === 'completed' ? 'pending' : 'completed')}
+                      onStart={() => updateInternalTaskStatus(task.id, 'in_progress')}
+                      onOpen={() => handleOpenTask(task)}
+                      onDelete={() => deleteInternalTask(task.id)}
+                    />
                   ))}
                 </Reorder.Group>
-                {internalTasks.length === 0 && (
+                {tasksView.length === 0 && (
                   !firstFetchDone ? (
                     <div className="p-2">
                       <SkeletonRow />
