@@ -59,11 +59,12 @@ export function Navbar() {
   };
 
   return (
-    <header 
-      className={cn(
-        "fixed top-0 z-50 w-full transition-all duration-300",
-        isActive ? "py-4" : "py-0"
-      )}
+    <header
+      // Constant hit area regardless of the pill's animated size — prevents the
+      // hover state from oscillating when the cursor sits at the edge of an
+      // expanding/contracting pill (which would otherwise mouseleave → contract
+      // → mouseenter → expand in a runaway loop).
+      className="fixed top-0 z-50 w-full min-h-[7rem] pt-4"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
