@@ -705,6 +705,17 @@ export default function AdminDashboard() {
     }
   };
 
+  const updateTaskTitle = async (id: string, title: string) => {
+    const trimmed = title.trim();
+    if (!trimmed) return;
+    setInternalTasks(prev => prev.map(t => t.id === id ? { ...t, title: trimmed } : t));
+    setTasksView(prev => prev.map(t => t.id === id ? { ...t, title: trimmed } : t));
+    setAllInternalTasks(prev => prev.map(t => t.id === id ? { ...t, title: trimmed } : t));
+    const { error } = await supabase.from('admin_tasks').update({ title: trimmed }).eq('id', id);
+    if (error) toast.error("Couldn't update task", error.message);
+    else logActivity({ action: "task.create", target_type: "task", target_id: id, target_label: trimmed, metadata: { edited: true } });
+  };
+
   const deleteInternalTask = async (id: string) => {
     if (!confirm("Delete this task?")) return;
     const task = internalTasks.find(t => t.id === id) || allInternalTasks.find(t => t.id === id);
@@ -2196,6 +2207,7 @@ export default function AdminDashboard() {
                       onDelete={() => deleteInternalTask(task.id)}
                       onToggleHighlight={() => toggleTaskHighlight(task.id)}
                       onUpdateNote={(note) => updateTaskNote(task.id, note)}
+                      onUpdateTitle={(title) => updateTaskTitle(task.id, title)}
                     />
                   ))}
                 </Reorder.Group>
