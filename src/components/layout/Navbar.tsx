@@ -121,6 +121,8 @@ export function Navbar() {
                 href={href}
                 className={cn(
                   "link-reveal transition-colors relative",
+                  isDarkPage && "link-reveal-flame",
+                  isCurrent && isDarkPage && "is-current",
                   linkColor,
                   isCurrent && !isDarkPage && "text-[#F0564A]",
                   isCurrent && isDarkPage && "text-white font-semibold"

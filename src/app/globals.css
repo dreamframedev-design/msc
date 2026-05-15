@@ -302,6 +302,34 @@
   transform-origin: left center;
 }
 
+/* Flame variant — animated coral-to-amber gradient underline with soft glow.
+   Used on dark pages so the reveal pops as fire instead of a plain white line. */
+@keyframes flame-shift {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+.link-reveal-flame::after {
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    #F0564A 0%,
+    #FF5757 20%,
+    #F08435 45%,
+    #FAAC40 65%,
+    #F08435 85%,
+    #F0564A 100%
+  );
+  background-size: 200% 100%;
+  border-radius: 2px;
+  box-shadow:
+    0 0 8px rgba(240, 86, 74, 0.55),
+    0 0 16px rgba(240, 132, 53, 0.35);
+}
+.link-reveal-flame:hover::after,
+.link-reveal-flame.is-current::after {
+  animation: flame-shift 2.8s linear infinite;
+}
+
 /* Aurora gradient text — for showpiece headings */
 .text-aurora {
   background: linear-gradient(
