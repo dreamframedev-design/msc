@@ -67,10 +67,10 @@ export function Navbar() {
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className={cn(
-        "mx-auto flex items-center justify-between transition-all duration-500 relative",
+        "mx-auto flex items-center justify-between transition-[height,background-color,backdrop-filter,border-color,box-shadow,border-radius] duration-500 relative container max-w-6xl border",
         isActive
-          ? "container max-w-6xl h-16 px-5 sm:px-6 bg-white/85 backdrop-blur-2xl border border-gray-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.06)] rounded-full"
-          : "container h-20 sm:h-24 px-4 sm:px-6 bg-transparent border-transparent"
+          ? "h-16 px-5 sm:px-6 bg-white/85 backdrop-blur-2xl border-gray-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.06)] rounded-full"
+          : "h-20 sm:h-24 px-4 sm:px-6 bg-transparent border-transparent rounded-none"
       )}>
         <Link href="/" className="flex items-center gap-2 group">
           <motion.div 
