@@ -1,77 +1,159 @@
-# Setup steps for new features
+# Setup steps for the platform
 
-Everything that's been built is in code — but two features need you to provision external resources before they activate. Until then, the UI gracefully no-ops (shows a setup card or silently skips).
+The code is fully built — but several features need you to provision external resources before they activate. Until then everything no-ops gracefully (setup card, silent skip, etc.).
 
-## 1. Activity Audit Log (1 minute)
+Everything below is one-time setup. After it's done, you don't touch it again.
 
-Run [master_activity_log.sql](master_activity_log.sql) in your Supabase SQL editor. After that, the **Activity Feed** admin tab and the **Today** dashboard's "Recent activity" panel will start streaming events. The per-client drawer's Activity tab will populate too.
+---
 
-Until you run it, those views show a setup card and `logActivity()` calls silently no-op.
+## ✅ Already done
 
-## 2. Push Notifications (5 minutes, requires VAPID keys)
+You ran `master_activity_log.sql` → audit log is live.
+You ran `master_web_push.sql` + `fix_web_push_update_policy.sql` → push table is live.
+You generated VAPID keys → push from server is signed.
 
-This is what enables:
-- Admins get a phone/desktop push when a client opens or replies to a ticket
-- Clients get a phone/desktop push when an admin replies or changes ticket status (works on installed iOS/Android PWAs too)
+---
 
-### Steps
+## 1. Slack slash command (`/msc client: task`)
 
-**a. Run the SQL migration** — [master_web_push.sql](master_web_push.sql) in Supabase SQL editor. Creates the `web_push_subscriptions` table with RLS.
+**The goal:** your boss types `/msc CELLTAXIS: fix the homepage hero !urgent` in Slack and a task appears in the **Slack Inbox** board in the admin portal.
 
-**b. Generate VAPID keys.** From any machine with Node.js:
+### What you do
 
-```bash
-npx web-push generate-vapid-keys
-```
+**a. In Slack — add a slash command to your app.**
 
-That prints a public key and a private key.
+Go to <https://api.slack.com/apps> → click your existing MSC app (the same one with your webhook) → **Slash Commands** → **Create New Command**.
 
-**c. Add three env vars** to your `.env.local` (and to Vercel project env for production):
+Fill in:
+- **Command:** `/msc`
+- **Request URL:** `https://yourdomain.com/api/slack/command` (must be public; for local testing use ngrok)
+- **Short description:** `Create a task in the MSC admin portal`
+- **Usage hint:** `<client>: <task description> [!urgent|!high|!ticket]`
 
-```
-NEXT_PUBLIC_VAPID_PUBLIC_KEY=<public key from step b>
-VAPID_PRIVATE_KEY=<private key from step b>
-VAPID_CONTACT_EMAIL=mailto:you@yourdomain.com
-```
+Save. Reinstall the app to your workspace if it asks.
 
-**d. (Recommended) Add the Supabase service-role key** so the `/api/push` route can dispatch to all admins on new tickets:
+**b. Get your Slack signing secret.**
 
-```
-SUPABASE_SERVICE_ROLE_KEY=<from Supabase dashboard → Project Settings → API → service_role>
-```
+In the same app config → **Basic Information** → scroll to **App Credentials** → copy **Signing Secret**.
 
-Without this, push-to-roles (e.g. notify all admins of a new ticket) won't work — but push-to-a-specific-user (e.g. notify the client when admin replies) still will.
-
-**e. Restart your dev server** (`npm run dev`) so the new env vars load.
-
-**f. Test.** In admin, click "Enable Notifications" in the sidebar. Grant permission. You should get a toast saying "Push notifications enabled." Now have someone create a ticket as a client — you should get a notification on your device.
-
-### How to add the "Enable Notifications" button to the client portal too
-
-Currently only the admin sidebar has it. Easiest place: add a button to the portal Settings tab that calls `subscribeToPush()` from `@/lib/push`. Or have me wire it in next session — say "enable push for clients" and I'll add it.
-
-## 3. Slack Webhook (optional, 2 minutes)
-
-The Slack integration was already in place, just polished. To activate:
+**c. Add env vars** to `.env.local` (and to your Vercel project env for production):
 
 ```
-SLACK_WEBHOOK_URL=https://hooks.slack.com/services/...
-NEXT_PUBLIC_SITE_URL=https://yourdomain.com   # for the "View" button link
+SLACK_SIGNING_SECRET=<paste it here>
+
+# Required so the Slack route can write tasks bypassing RLS:
+SUPABASE_SERVICE_ROLE_KEY=<from Supabase Dashboard → Project Settings → API → service_role>
+
+# Optional — UUID of the admin user that "owns" Slack-created tasks.
+# If unset, the route picks the first admin/superadmin it finds.
+# SLACK_INBOX_CREATED_BY=
 ```
 
-Without `SLACK_WEBHOOK_URL` the route silently no-ops, so nothing breaks if you don't set it.
+**d. Restart your dev server** (or redeploy on Vercel).
 
-## What's already working without setup
+### How to use it
 
-Everything else ships and runs as-is:
-- Cmd+K command palette
-- Toast notifications
-- UserAvatar (gradient + initials fallback)
-- Realtime list updates (tickets, tasks, files, boards)
-- Realtime ticket/task comment threads
-- Skeleton loaders and empty states
-- Drag-to-reorder Global Action Queue and tasks
-- Kanban view with drag-between-columns status change
-- "Today" landing dashboard
-- Per-client deep-dive drawer
-- Live ticket search
+```
+/msc CELLTAXIS: fix the homepage hero
+/msc CELLTAXIS: critical bug on checkout !urgent
+/msc CELLTAXIS: rebuild contact page !high
+/msc CELLTAXIS: please update the team page !ticket
+/msc help
+```
+
+- Default: creates an **internal task** on the auto-created "Slack Inbox" board.
+- `!urgent` / `!high`: sets priority on the resulting ticket (only matters with `!ticket`).
+- `!ticket`: makes it a client-facing ticket instead of an internal task.
+- The board "Slack Inbox" auto-creates on first use.
+
+Slack will reply ephemerally (only your boss sees it) with a confirmation and an "Open in Admin" button that deep-links to /admin.
+
+---
+
+## 2. AI ticket assist (Suggest reply + Summarize thread)
+
+**The goal:** when you open a ticket or task chat in /admin, two buttons appear above the reply input:
+- **✨ Suggest reply** — drafts a reply based on the conversation, fills the input. You edit + send.
+- **✨ Summarize thread** — pops a modal with TL;DR + key points + next step.
+
+### What you do
+
+Pick one path:
+
+#### Path A — Vercel AI Gateway (recommended if you're deploying to Vercel)
+
+Get a Gateway key: <https://vercel.com/dashboard/ai-gateway>.
+
+Add to `.env.local`:
+
+```
+AI_API_KEY=<your Vercel AI Gateway key>
+AI_BASE_URL=https://gateway.ai.vercel.app/v1
+AI_MODEL=openai/gpt-4o-mini
+```
+
+#### Path B — OpenAI directly
+
+Get a key: <https://platform.openai.com/api-keys>.
+
+Add to `.env.local`:
+
+```
+AI_API_KEY=sk-...
+AI_MODEL=gpt-4o-mini
+```
+
+(Omit `AI_BASE_URL` — it defaults to OpenAI.)
+
+#### Path C — Anthropic (uses OpenAI-compat endpoint)
+
+```
+AI_API_KEY=sk-ant-...
+AI_BASE_URL=https://api.anthropic.com/v1/openai
+AI_MODEL=claude-3-5-sonnet-20241022
+```
+
+Restart dev server. Open any ticket → two new buttons appear above the input. That's it.
+
+---
+
+## 3. Optional Slack production URL
+
+So the "Open in Admin" / "View" buttons in Slack messages point to production instead of localhost:
+
+```
+NEXT_PUBLIC_SITE_URL=https://yourdomain.com
+```
+
+---
+
+## All the env vars in one place
+
+Copy this template into `.env.local` (skip the ones you don't need):
+
+```
+# Supabase (you already have these)
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+
+# Push (already set)
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=...
+VAPID_PRIVATE_KEY=...
+VAPID_CONTACT_EMAIL=mailto:you@example.com
+
+# Required for Slack /msc and full push fan-out:
+SUPABASE_SERVICE_ROLE_KEY=
+
+# Slack
+SLACK_WEBHOOK_URL=
+SLACK_SIGNING_SECRET=
+# SLACK_INBOX_CREATED_BY=  (optional, defaults to first admin)
+
+# AI assist
+AI_API_KEY=
+# AI_BASE_URL=https://gateway.ai.vercel.app/v1
+# AI_MODEL=openai/gpt-4o-mini
+
+# Production base URL (used by Slack and push notification links)
+NEXT_PUBLIC_SITE_URL=
+```

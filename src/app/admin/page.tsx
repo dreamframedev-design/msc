@@ -94,6 +94,8 @@ export default function AdminDashboard() {
   const [queueOrder, setQueueOrder] = useState<string[]>([]);
   const [queueView, setQueueView] = useState<any[]>([]);
   const [selectedClient, setSelectedClient] = useState<any | null>(null);
+  const [aiBusy, setAiBusy] = useState<"none" | "suggest" | "summarize">("none");
+  const [aiSummary, setAiSummary] = useState<{ open: boolean; text: string; title: string }>({ open: false, text: "", title: "" });
   const [tasksView, setTasksView] = useState<any[]>([]);
   const isReorderingRef = useRef(false);
   const reorderSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -758,6 +760,130 @@ export default function AdminDashboard() {
       }
     } else {
       window.open(supabase.storage.from('client-vault').getPublicUrl(file.storage_path).data.publicUrl, '_blank');
+    }
+  };
+
+  // ============ AI ASSIST ============
+  const aiSuggestReplyForTicket = async () => {
+    if (!selectedTicket) return;
+    setAiBusy("suggest");
+    try {
+      const res = await fetch("/api/ai/suggest-reply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subject: selectedTicket.subject || selectedTicket.title,
+          description: selectedTicket.description,
+          thread: ticketComments.map((c: any) => ({
+            author: usersList.find((u) => u.id === c.user_id)?.email?.split("@")[0] || "User",
+            content: c.content,
+            role: c.user_id === user.id ? "admin" : "client",
+          })),
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.reply) {
+        toast.error("AI couldn't draft a reply", json.error || `HTTP ${res.status}`);
+      } else {
+        setCommentText(json.reply);
+        toast.success("Draft ready — edit before sending");
+      }
+    } catch (e: any) {
+      toast.error("AI error", e?.message ?? "network");
+    } finally {
+      setAiBusy("none");
+    }
+  };
+
+  const aiSummarizeTicket = async () => {
+    if (!selectedTicket) return;
+    setAiBusy("summarize");
+    try {
+      const res = await fetch("/api/ai/summarize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subject: selectedTicket.subject || selectedTicket.title,
+          description: selectedTicket.description,
+          thread: ticketComments.map((c: any) => ({
+            author: usersList.find((u) => u.id === c.user_id)?.email?.split("@")[0] || "User",
+            content: c.content,
+            role: c.user_id === user.id ? "admin" : "client",
+          })),
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.summary) {
+        toast.error("AI couldn't summarize", json.error || `HTTP ${res.status}`);
+      } else {
+        setAiSummary({ open: true, text: json.summary, title: selectedTicket.subject || selectedTicket.title || "Ticket" });
+      }
+    } catch (e: any) {
+      toast.error("AI error", e?.message ?? "network");
+    } finally {
+      setAiBusy("none");
+    }
+  };
+
+  const aiSuggestReplyForTask = async () => {
+    if (!selectedTask) return;
+    setAiBusy("suggest");
+    try {
+      const res = await fetch("/api/ai/suggest-reply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subject: selectedTask.title,
+          description: `Internal task. Client tag: ${selectedTask.client_tag || "None"}.`,
+          thread: taskComments.map((c: any) => ({
+            author: usersList.find((u) => u.id === c.user_id)?.email?.split("@")[0] || "User",
+            content: c.content,
+            role: c.user_id === user.id ? "admin" : "client",
+          })),
+          tone: "concise",
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.reply) {
+        toast.error("AI couldn't draft a reply", json.error || `HTTP ${res.status}`);
+      } else {
+        setTaskCommentText(json.reply);
+        toast.success("Draft ready — edit before sending");
+      }
+    } catch (e: any) {
+      toast.error("AI error", e?.message ?? "network");
+    } finally {
+      setAiBusy("none");
+    }
+  };
+
+  const aiSummarizeTask = async () => {
+    if (!selectedTask) return;
+    setAiBusy("summarize");
+    try {
+      const res = await fetch("/api/ai/summarize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subject: selectedTask.title,
+          description: `Internal task. Client tag: ${selectedTask.client_tag || "None"}.`,
+          thread: taskComments.map((c: any) => ({
+            author: usersList.find((u) => u.id === c.user_id)?.email?.split("@")[0] || "User",
+            content: c.content,
+            role: c.user_id === user.id ? "admin" : "client",
+          })),
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.summary) {
+        toast.error("AI couldn't summarize", json.error || `HTTP ${res.status}`);
+      } else {
+        setAiSummary({ open: true, text: json.summary, title: selectedTask.title || "Task" });
+      }
+    } catch (e: any) {
+      toast.error("AI error", e?.message ?? "network");
+    } finally {
+      setAiBusy("none");
     }
   };
 
@@ -2400,20 +2526,40 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Input Area */}
-                <div className="p-4 border-t border-white/5 shrink-0 bg-black/40">
+                <div className="p-4 border-t border-white/5 shrink-0 bg-black/40 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={aiSuggestReplyForTicket}
+                      disabled={aiBusy !== "none"}
+                      className="inline-flex items-center gap-1.5 text-[11px] font-medium text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/30 px-2.5 py-1 rounded-md disabled:opacity-50 transition-colors"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      {aiBusy === "suggest" ? "Drafting…" : "Suggest reply"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={aiSummarizeTicket}
+                      disabled={aiBusy !== "none"}
+                      className="inline-flex items-center gap-1.5 text-[11px] font-medium text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 px-2.5 py-1 rounded-md disabled:opacity-50 transition-colors"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      {aiBusy === "summarize" ? "Summarizing…" : "Summarize thread"}
+                    </button>
+                  </div>
                   <div className="flex gap-3 p-1.5 rounded-xl border bg-black/50 border-white/10 focus-within:border-zinc-500">
-                    <input
-                      type="text"
+                    <textarea
                       value={commentText}
                       onChange={(e) => setCommentText(e.target.value)}
                       placeholder="Type a reply..."
-                      onKeyDown={(e) => { if(e.key === 'Enter') handleSubmitComment(); }}
-                      className="flex-1 bg-transparent border-none outline-none px-3 text-sm text-white placeholder:text-zinc-600"
+                      onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmitComment(); } }}
+                      rows={Math.min(6, Math.max(1, (commentText.match(/\n/g)?.length ?? 0) + 1))}
+                      className="flex-1 bg-transparent border-none outline-none px-3 py-1.5 text-sm text-white placeholder:text-zinc-600 resize-none"
                     />
                     <Button
                       onClick={handleSubmitComment}
                       disabled={!commentText.trim()}
-                      className="bg-[#F0564A] hover:bg-[#D94D42] text-white rounded-lg h-9 px-6 shadow-sm disabled:opacity-50"
+                      className="bg-[#F0564A] hover:bg-[#D94D42] text-white rounded-lg h-9 px-6 shadow-sm disabled:opacity-50 self-end"
                     >
                       Reply
                     </Button>
@@ -2515,20 +2661,40 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Input Area */}
-                <div className="p-4 border-t border-white/5 shrink-0 bg-black/40">
+                <div className="p-4 border-t border-white/5 shrink-0 bg-black/40 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={aiSuggestReplyForTask}
+                      disabled={aiBusy !== "none"}
+                      className="inline-flex items-center gap-1.5 text-[11px] font-medium text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/30 px-2.5 py-1 rounded-md disabled:opacity-50 transition-colors"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      {aiBusy === "suggest" ? "Drafting…" : "Suggest reply"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={aiSummarizeTask}
+                      disabled={aiBusy !== "none"}
+                      className="inline-flex items-center gap-1.5 text-[11px] font-medium text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 px-2.5 py-1 rounded-md disabled:opacity-50 transition-colors"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      {aiBusy === "summarize" ? "Summarizing…" : "Summarize thread"}
+                    </button>
+                  </div>
                   <div className="flex gap-3 p-1.5 rounded-xl border bg-black/50 border-white/10 focus-within:border-zinc-500">
-                    <input
-                      type="text"
+                    <textarea
                       value={taskCommentText}
                       onChange={(e) => setTaskCommentText(e.target.value)}
                       placeholder="Add a comment to this task..."
-                      onKeyDown={(e) => { if(e.key === 'Enter') handleSubmitTaskComment(); }}
-                      className="flex-1 bg-transparent border-none outline-none px-3 text-sm text-white placeholder:text-zinc-600"
+                      onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmitTaskComment(); } }}
+                      rows={Math.min(6, Math.max(1, (taskCommentText.match(/\n/g)?.length ?? 0) + 1))}
+                      className="flex-1 bg-transparent border-none outline-none px-3 py-1.5 text-sm text-white placeholder:text-zinc-600 resize-none"
                     />
                     <Button
                       onClick={handleSubmitTaskComment}
                       disabled={!taskCommentText.trim()}
-                      className="bg-[#F0564A] hover:bg-[#D94D42] text-white rounded-lg h-9 px-6 shadow-sm disabled:opacity-50"
+                      className="bg-[#F0564A] hover:bg-[#D94D42] text-white rounded-lg h-9 px-6 shadow-sm disabled:opacity-50 self-end"
                     >
                       Post
                     </Button>
@@ -3072,6 +3238,62 @@ export default function AdminDashboard() {
           ))}
         </div>
       </div>
+
+      {/* ============ AI SUMMARY MODAL ============ */}
+      <AnimatePresence>
+        {aiSummary.open && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setAiSummary({ open: false, text: "", title: "" })}
+              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[130]"
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.96 }}
+              transition={{ type: "spring", stiffness: 400, damping: 32 }}
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-xl z-[131] rounded-2xl border border-white/10 bg-[#111] shadow-2xl overflow-hidden"
+            >
+              <div className="flex items-center justify-between px-5 py-4 border-b border-white/5 bg-black/40">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-cyan-400" />
+                  <h3 className="text-sm font-semibold text-white truncate">AI summary — {aiSummary.title}</h3>
+                </div>
+                <button
+                  onClick={() => setAiSummary({ open: false, text: "", title: "" })}
+                  className="text-zinc-500 hover:text-white p-1 rounded"
+                  aria-label="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="p-5 max-h-[60vh] overflow-y-auto">
+                <pre className="text-sm text-zinc-200 whitespace-pre-wrap font-sans leading-relaxed">{aiSummary.text}</pre>
+              </div>
+              <div className="px-5 py-3 border-t border-white/5 bg-black/40 flex justify-end gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { navigator.clipboard.writeText(aiSummary.text); toast.success("Summary copied"); }}
+                  className="text-zinc-300 hover:text-white text-xs"
+                >
+                  Copy
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => setAiSummary({ open: false, text: "", title: "" })}
+                  className="bg-[#F0564A] hover:bg-[#D94D42] text-white text-xs px-4"
+                >
+                  Done
+                </Button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       <ClientDrawer
         user={selectedClient}
