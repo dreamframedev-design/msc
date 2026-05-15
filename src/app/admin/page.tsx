@@ -45,6 +45,9 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { logActivity, describeAction, targetAccent } from "@/lib/activity";
 import { QueueRow } from "@/components/admin/QueueRow";
 import { TaskRow } from "@/components/admin/TaskRow";
+import { KanbanBoard } from "@/components/admin/KanbanBoard";
+import { TodayDashboard } from "@/components/admin/TodayDashboard";
+import { LayoutList, Columns3, Sunrise } from "lucide-react";
 import { useRegisterCommandsMemo, useCommandPalette } from "@/components/command/CommandPaletteContext";
 import type { CommandItem } from "@/components/command/CommandPalette";
 import { Command as CommandIcon } from "lucide-react";
@@ -53,13 +56,13 @@ export default function AdminDashboard() {
   const router = useRouter();
   const toast = useToast();
   const palette = useCommandPalette();
-  const [activeTab, setActiveTab] = useState("tickets");
+  const [activeTab, setActiveTab] = useState("today");
   const [tickets, setTickets] = useState<any[]>([]);
   const [vaultFiles, setVaultFiles] = useState<any[]>([]);
   // Internal Tasks State
   const [taskBoards, setTaskBoards] = useState<any[]>([]);
   const [activeBoardId, setActiveBoardId] = useState<string>("");
-  const [taskViewMode, setTaskViewMode] = useState<"lists" | "overview">("lists");
+  const [taskViewMode, setTaskViewMode] = useState<"lists" | "kanban" | "overview">("lists");
   const [showNewBoardModal, setShowNewBoardModal] = useState(false);
   const [newBoardTitle, setNewBoardTitle] = useState("");
   const [newBoardClient, setNewBoardClient] = useState("");
@@ -73,6 +76,7 @@ export default function AdminDashboard() {
   const [newTaskClient, setNewTaskClient] = useState("");
   const [ticketFilter, setTicketFilter] = useState("active");
   const [clientFilter, setClientFilter] = useState("all");
+  const [queueSearch, setQueueSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
@@ -525,7 +529,7 @@ export default function AdminDashboard() {
   }, [activeBoardId, taskViewMode]);
 
   useEffect(() => {
-    if (activeTab === "activity") fetchActivity();
+    if (activeTab === "activity" || activeTab === "today") fetchActivity();
   }, [activeTab]);
 
   const handleCreateBoard = async (e: React.FormEvent) => {
@@ -808,6 +812,17 @@ export default function AdminDashboard() {
     if (!error) {
       const ticket = tickets.find(t => t.id === id);
       logActivity({ action: "ticket.status", target_type: "ticket", target_id: id, target_label: ticket?.subject, metadata: { new_status: newStatus } });
+      fetch('/api/slack', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          kind: 'ticket.status',
+          ticketId: id,
+          title: ticket?.subject || ticket?.title || 'Ticket',
+          author: user?.email || 'Admin',
+          newStatus,
+        }),
+      }).catch(() => {});
       fetchTickets();
       if (selectedTicket && selectedTicket.id === id) {
         setSelectedTicket({ ...selectedTicket, status: newStatus });
@@ -864,6 +879,17 @@ export default function AdminDashboard() {
        toast.error("Couldn't post comment", error.message);
     } else {
        logActivity({ action: "ticket.comment", target_type: "ticket", target_id: selectedTicket.id, target_label: selectedTicket.subject });
+       fetch('/api/slack', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({
+           kind: 'ticket.commented',
+           ticketId: selectedTicket.id,
+           title: selectedTicket.subject || selectedTicket.title || 'Ticket',
+           author: user.email || 'Admin',
+           preview: newComment.content.slice(0, 200),
+         }),
+       }).catch(() => {});
     }
   };
 
@@ -967,6 +993,17 @@ export default function AdminDashboard() {
       filtered = filtered.filter(item => item.client === clientFilter);
     }
 
+    // Apply text search
+    if (queueSearch.trim()) {
+      const q = queueSearch.trim().toLowerCase();
+      filtered = filtered.filter((item) =>
+        (item.title || "").toLowerCase().includes(q) ||
+        (item.description || "").toLowerCase().includes(q) ||
+        (item.client || "").toLowerCase().includes(q) ||
+        (item.id || "").toLowerCase().includes(q)
+      );
+    }
+
     // Sort by saved custom order first (if set), then Priority, Client, Date
     const priorityWeight = { 'Urgent': 3, 'High': 2, 'Normal': 1 };
 
@@ -996,7 +1033,7 @@ export default function AdminDashboard() {
     }
 
     return filtered;
-  }, [tickets, allInternalTasks, usersList, taskBoards, ticketFilter, clientFilter, queueOrder]);
+  }, [tickets, allInternalTasks, usersList, taskBoards, ticketFilter, clientFilter, queueOrder, queueSearch]);
 
   const handleReorderQueue = useCallback((newOrder: any[]) => {
     isReorderingRef.current = true;
@@ -1028,6 +1065,7 @@ export default function AdminDashboard() {
     };
 
     const tabItems: CommandItem[] = [
+      { id: "tab-today", group: "Navigate", label: "Today", sublabel: "Daily overview", icon: <Sunrise className="w-3.5 h-3.5" />, accent: "#F0564A", action: goto("today"), keywords: "dashboard home overview" },
       { id: "tab-tickets", group: "Navigate", label: "Global Action Queue", sublabel: "Tickets dashboard", icon: <Ticket className="w-3.5 h-3.5" />, accent: "#F0564A", action: goto("tickets"), keywords: "support help requests inbox" },
       { id: "tab-tasks", group: "Navigate", label: "Project Boards", sublabel: "Internal task management", icon: <CheckSquare className="w-3.5 h-3.5" />, accent: "#F0564A", action: goto("tasks"), keywords: "kanban tasks projects boards" },
       { id: "tab-files", group: "Navigate", label: "Global Vault", sublabel: "Files & folders", icon: <FolderOpen className="w-3.5 h-3.5" />, action: goto("files"), keywords: "documents storage uploads" },
@@ -1184,6 +1222,7 @@ export default function AdminDashboard() {
               <h4 className="px-3 text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">Core Operations</h4>
               <div className="space-y-1">
                 {[
+                  { key: "today", label: "Today", Icon: Sunrise, accent: "text-[#F0564A]" },
                   { key: "tickets", label: "Global Action Queue", Icon: Ticket, accent: "text-[#F0564A]" },
                   { key: "tasks", label: "Project Boards", Icon: CheckSquare, accent: "text-[#F0564A]" },
                 ].map(({ key, label, Icon, accent }) => (
@@ -1311,7 +1350,7 @@ export default function AdminDashboard() {
         {/* Top Header */}
         <header className="h-16 border-b border-white/5 flex items-center justify-between px-8 sticky top-0 z-40 bg-[#0A0A0A]/80 backdrop-blur-xl">
           <h1 className="text-lg font-semibold text-white">
-            {activeTab === "tickets" ? "Ticket Queue" : activeTab === "tasks" ? "Internal Tasks" : activeTab === "files" ? "File Vault" : activeTab === "activity" ? "Activity Feed" : activeTab === "users" ? "User Management" : activeTab === "settings" ? "Account Settings" : activeTab === "news" ? "News" : "Insights"}
+            {activeTab === "today" ? "Today" : activeTab === "tickets" ? "Ticket Queue" : activeTab === "tasks" ? "Internal Tasks" : activeTab === "files" ? "File Vault" : activeTab === "activity" ? "Activity Feed" : activeTab === "users" ? "User Management" : activeTab === "settings" ? "Account Settings" : activeTab === "news" ? "News" : "Insights"}
           </h1>
 
           <div className="flex items-center gap-3">
@@ -1338,6 +1377,22 @@ export default function AdminDashboard() {
 
         {/* Dynamic Content Area */}
         <div className="flex-1 p-4 md:p-8 pb-24 md:pb-8 max-w-7xl mx-auto w-full">
+
+          {/* ============ TODAY ============ */}
+          {activeTab === "today" && (
+            <TodayDashboard
+              userEmail={user?.email}
+              tickets={tickets}
+              tasks={allInternalTasks}
+              activity={activityEvents}
+              activityTableMissing={activityTableMissing}
+              onGoToTickets={() => setActiveTab("tickets")}
+              onGoToTasks={() => setActiveTab("tasks")}
+              onGoToActivity={() => setActiveTab("activity")}
+              onOpenTicket={(t) => handleOpenTicket(t)}
+              onOpenTask={(t) => handleOpenTask(t)}
+            />
+          )}
 
           {/* ============ TICKETS ============ */}
           {activeTab === "tickets" && (
@@ -1392,11 +1447,22 @@ export default function AdminDashboard() {
                 
                 <div className="relative">
                   <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input 
-                    type="text" 
-                    placeholder="Search tickets..." 
+                  <input
+                    type="text"
+                    value={queueSearch}
+                    onChange={(e) => setQueueSearch(e.target.value)}
+                    placeholder="Search title, description, client, id…"
                     className="bg-[#111111] border border-white/5 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-zinc-700 text-zinc-200 placeholder:text-zinc-600 transition-colors w-72"
                   />
+                  {queueSearch && (
+                    <button
+                      onClick={() => setQueueSearch("")}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white p-1 rounded"
+                      aria-label="Clear search"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -1468,19 +1534,25 @@ export default function AdminDashboard() {
               <div className="flex bg-[#111111] border border-white/5 rounded-xl p-1 w-fit">
                 <button
                   onClick={() => setTaskViewMode("lists")}
-                  className={`px-6 py-2 rounded-lg text-sm font-semibold transition-colors ${taskViewMode === 'lists' ? 'bg-[#F0564A] text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}
+                  className={`px-5 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 ${taskViewMode === 'lists' ? 'bg-[#F0564A] text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}
                 >
-                  Project Boards
+                  <LayoutList className="w-3.5 h-3.5" /> List
+                </button>
+                <button
+                  onClick={() => setTaskViewMode("kanban")}
+                  className={`px-5 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 ${taskViewMode === 'kanban' ? 'bg-[#F0564A] text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}
+                >
+                  <Columns3 className="w-3.5 h-3.5" /> Kanban
                 </button>
                 <button
                   onClick={() => setTaskViewMode("overview")}
-                  className={`px-6 py-2 rounded-lg text-sm font-semibold transition-colors ${taskViewMode === 'overview' ? 'bg-[#F0564A] text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}
+                  className={`px-5 py-2 rounded-lg text-sm font-semibold transition-colors ${taskViewMode === 'overview' ? 'bg-[#F0564A] text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}
                 >
-                  Client Overview Dashboard
+                  Client Overview
                 </button>
               </div>
 
-              {taskViewMode === "lists" ? (
+              {taskViewMode !== "overview" ? (
                 <>
                   <div className="flex flex-col gap-8">
                     {/* Top Section: Projects List */}
@@ -1647,7 +1719,15 @@ export default function AdminDashboard() {
                 </form>
               </div>
 
-              {/* Task List */}
+              {/* Task List / Kanban */}
+              {taskViewMode === "kanban" ? (
+                <KanbanBoard
+                  tasks={tasksView}
+                  onChangeStatus={(taskId, newStatus) => updateInternalTaskStatus(taskId, newStatus)}
+                  onOpenTask={(t) => handleOpenTask(t)}
+                  onDeleteTask={(id) => deleteInternalTask(id)}
+                />
+              ) : (
               <div className="bg-[#111111] rounded-2xl border border-white/5 overflow-hidden">
                 <Reorder.Group axis="y" values={tasksView} onReorder={handleReorderTasks}>
                   {tasksView.map((task) => (
@@ -1677,6 +1757,7 @@ export default function AdminDashboard() {
                   )
                 )}
               </div>
+              )}
                     </div>
                   </div>
                 </>

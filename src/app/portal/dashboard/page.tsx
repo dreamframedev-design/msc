@@ -405,6 +405,17 @@ function DashboardContent() {
        toast.error("Couldn't post comment", error.message);
     } else {
        logActivity({ action: "ticket.comment", target_type: "ticket", target_id: selectedTicket.id, target_label: selectedTicket.subject });
+       fetch('/api/slack', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({
+           kind: 'ticket.commented',
+           ticketId: selectedTicket.id,
+           title: selectedTicket.subject || selectedTicket.title || 'Ticket',
+           author: user.email || 'Client',
+           preview: newComment.content.slice(0, 200),
+         }),
+       }).catch(() => {});
     }
   };
 
