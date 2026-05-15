@@ -1697,6 +1697,33 @@ function DashboardContent() {
                       </Button>
                     </form>
                   </div>
+
+                  <div className={`mt-6 pt-6 border-t ${isDark ? 'border-white/[0.08]' : 'border-gray-200'}`}>
+                    <h4 className={`text-base font-bold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>Notifications</h4>
+                    <p className={`text-sm mb-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                      Get alerts on this device when MSC replies or updates one of your tickets. Works on desktop, mobile web, and the installed PWA.
+                    </p>
+                    <Button
+                      onClick={async () => {
+                        if (!('Notification' in window)) {
+                          toast.error("Push not supported in this browser");
+                          return;
+                        }
+                        const permission = await Notification.requestPermission();
+                        if (permission !== "granted") {
+                          toast.error("Permission denied", "Re-enable in your browser settings");
+                          return;
+                        }
+                        const result = await subscribeToPush();
+                        if (result.ok) toast.success("Notifications enabled", "You'll get alerts on this device");
+                        else if (result.reason === "no-vapid") toast.error("Push not configured yet", "Ask MSC support — VAPID keys missing");
+                        else toast.error("Couldn't enable push", result.detail || result.reason);
+                      }}
+                      className={`border rounded-full px-6 bg-[#F0564A] text-white hover:bg-[#F0564A]/90 border-transparent`}
+                    >
+                      <Bell className="w-4 h-4 mr-2" /> Enable Notifications
+                    </Button>
+                  </div>
                 </div>
               </div>
             </motion.div>
