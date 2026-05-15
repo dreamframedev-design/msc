@@ -34,13 +34,14 @@ export function Navbar() {
 
   const isActive = isScrolled || isHovered || isMobileMenuOpen;
 
-  // Determine if we are on a page with a dark hero section and haven't scrolled yet
-  const isDarkHero = pathname === '/services' || pathname === '/bundles' || pathname === '/spark-time' || pathname === '/portal' || pathname === '/about' || pathname === '/news' || pathname?.startsWith('/news/') || pathname === '/msconboarding2026';
-  const isDarkTheme = isDarkHero && !isActive;
+  // Pages whose hero/upper content is dark-themed. The navbar should keep its
+  // light-on-dark styling on these even when the pill is active, instead of
+  // flipping to dark-on-white as we used to.
+  const isDarkPage = pathname === '/services' || pathname === '/bundles' || pathname === '/spark-time' || pathname === '/portal' || pathname === '/about' || pathname === '/news' || pathname?.startsWith('/news/') || pathname === '/msconboarding2026';
 
-  const linkColor = isDarkTheme ? "text-white hover:text-white" : "text-gray-600 hover:text-[#F0564A]";
-  const logoColor = isDarkTheme ? "text-white" : "text-gray-900";
-  const portalBtnClass = isDarkTheme
+  const linkColor = isDarkPage ? "text-white/85 hover:text-white" : (isActive ? "text-gray-700 hover:text-[#F0564A]" : "text-gray-600 hover:text-[#F0564A]");
+  const logoColor = isDarkPage ? "text-white" : "text-gray-900";
+  const portalBtnClass = isDarkPage
     ? "bg-white/5 backdrop-blur-md border-white/25 text-white hover:bg-white hover:text-gray-900 hover:border-white"
     : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900";
 
@@ -69,7 +70,9 @@ export function Navbar() {
       <div className={cn(
         "mx-auto flex items-center justify-between transition-[height,background-color,backdrop-filter,border-color,box-shadow,border-radius] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] relative container max-w-6xl border",
         isActive
-          ? "h-16 px-5 sm:px-6 bg-white/35 backdrop-blur-2xl backdrop-saturate-150 border-white/40 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.08)] rounded-full"
+          ? isDarkPage
+            ? "h-16 px-5 sm:px-6 bg-black/20 backdrop-blur-2xl backdrop-saturate-150 border-white/10 shadow-[0_8px_32px_-4px_rgba(0,0,0,0.35)] rounded-full"
+            : "h-16 px-5 sm:px-6 bg-white/35 backdrop-blur-2xl backdrop-saturate-150 border-white/40 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.08)] rounded-full"
           : "h-20 sm:h-24 px-4 sm:px-6 bg-transparent backdrop-blur-0 border-transparent rounded-none"
       )}>
         <Link href="/" className="flex items-center gap-2 group">
@@ -119,8 +122,8 @@ export function Navbar() {
                 className={cn(
                   "link-reveal transition-colors relative",
                   linkColor,
-                  isCurrent && !isDarkTheme && "text-[#F0564A]",
-                  isCurrent && isDarkTheme && "text-white"
+                  isCurrent && !isDarkPage && "text-[#F0564A]",
+                  isCurrent && isDarkPage && "text-white font-semibold"
                 )}
               >
                 {label}
